@@ -29,10 +29,10 @@ const INCOMING_AUTH_TYPES = ["API Key (header)","HMAC Signature","No Authenticat
 
 
 const PRODUCT_OBJECTS = {
-  "iMaintenance": ["Work Order","Notification","Operation","Component","Equipment","Functional Location","Measurement Point","Work Log","Attachment","Failure Posting"],
-  "mRounds":      ["Round","Round Plan","Asset","Location","Task","Issue","Action","Assignment"],
+  "iMaintenance": ["Work Order","Notification","Operation","Component","Equipment","Functional Location","Measurement Point","Work Log","Attachment","Observation"],
+  "mRounds":      ["Round","Round Plan","Asset","Location","Task","Reading","Issue","Action","Assignment"],
   "mInventory":   ["Material","Plant","Storage Location","Storage Bin","Stock","Reservation","Goods Receipt","Goods Issue","Transfer Posting","Cycle Count","Label"],
-  "EHS":          ["Incident","Observation","JHA","Permit","Risk Assessment","Audit"],
+  "EHS":          ["Incident","Observation","Alert","JHA","Permit","Risk Assessment","Audit"],
   "Platform":     ["User","Transaction Compound Object","External System"],
 }
 const PRODUCTS = Object.keys(PRODUCT_OBJECTS);
