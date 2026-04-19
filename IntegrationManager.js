@@ -1,20 +1,46 @@
 const { useState, useMemo, useEffect, useRef } = React;
 
-// ─── THEME ────────────────────────────────────────────────────────────────────
+// ─── THEME (v2 — Figma-aligned) ───────────────────────────────────────────────
 const C = {
-  pageBg:"#F0F2F5", bg0:"#FFFFFF", bg1:"#F7F8FA", bg2:"#EFF1F4", bg3:"#E5E8ED",
-  border0:"#D1D5DC", border1:"#B8BEC8", border2:"#9AA2B0",
-  text0:"#0F1923", text1:"#3D4A5C", text2:"#6B7A90", text3:"#9AA2B0",
-  navBg:"#1A2233", navBorder:"#2A3447", navText:"#C8D0DC", navActive:"#FFFFFF",
-  blue:"#1D6FE8", blueHover:"#1558C0", blueBg:"#EBF2FD", blueBorder:"#BDD3F7",
-  teal:"#0E9E8A", tealBg:"#E8F7F5", tealBorder:"#B3E5DF",
-  amber:"#C47D0A", amberBg:"#FEF6E6", amberBorder:"#F5D88A",
-  red:"#C42B2B", redBg:"#FDEAEA", redBorder:"#F0ADAD",
-  green:"#1A7A3C", greenBg:"#E8F6EE", greenBorder:"#A8DDB8",
-  purple:"#6A4FC4", purpleBg:"#F0ECFC", purpleBorder:"#C9BBF0",
+  pageBg:      "#F5F5F5",   // grey-100
+  bg0:         "#FFFFFF",   // White — cards, modals, inputs
+  bg1:         "#FAFAFA",   // slightly above pageBg — hover rows, sidebars, info blocks
+  bg2:         "#EEEEEE",   // grey-200 — disabled fill, divider bg
+  bg3:         "#E0E0E0",   // grey-300 — stronger divider
+  border0:     "#E0E0E0",   // grey-300 — default border
+  border1:     "#BDBDBD",   // grey-400 — medium emphasis border
+  border2:     "#9E9E9E",   // grey-500 — strong border
+  text0:       "#212121",   // text-primary — headings, labels
+  text1:       "#3D3D3D",   // text-secondary — body text
+  text2:       "#757575",   // grey-600 — secondary/meta
+  text3:       "#9E9E9E",   // grey-500 — placeholder, disabled
+  navBg:       "#1A2233",
+  navBorder:   "#2A3447",
+  navText:     "#C8D0DC",
+  navActive:   "#FFFFFF",
+  navActiveBg: "#2A3EB1",   // alpha/primary-700 — active nav item pill
+  blue:        "#3D4FD6",   // alpha/primary-500
+  blueHover:   "#2A3EB1",   // alpha/primary-700
+  blueBg:      "#EEF0FB",   // alpha/primary-50
+  blueBorder:  "#D5D9F5",   // alpha/primary-100
+  teal:        "#00796B",   // gamma/accent/cyan — inbound, info
+  tealBg:      "#E0F2F1",
+  tealBorder:  "#80CBC4",
+  amber:       "#C47D0A",   // gamma/accent/orange — warning, draft
+  amberBg:     "#FFF8E1",
+  amberBorder: "#FFE082",
+  red:         "#C62828",   // gamma/accent/red — error, failed
+  redBg:       "#FFEBEE",
+  redBorder:   "#EF9A9A",
+  green:       "#2E7D32",   // gamma/accent/green — active, success
+  greenBg:     "#E8F5E9",
+  greenBorder: "#A5D6A7",
+  purple:      "#6A1B9A",   // gamma/accent/purple — outbound
+  purpleBg:    "#F3E5F5",
+  purpleBorder:"#CE93D8",
 };
-const FONT = "'IBM Plex Sans','Segoe UI',system-ui,sans-serif";
-const MONO = "'IBM Plex Mono','Fira Code','Consolas',monospace";
+const FONT = "'Roboto', 'Segoe UI', system-ui, sans-serif";
+const MONO = "'Roboto Mono', 'Fira Code', 'Consolas', monospace";
 
 // ─── STATIC DATA ─────────────────────────────────────────────────────────────
 const PLANTS_OPTS = ["Houston Plant","Dallas Refinery","Austin Facility","Corpus Christi Terminal"];
@@ -537,7 +563,7 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
           </div>
           <div style={{display:"flex",gap:8}}>
             <span title="Edit Mapping will be available in a future release" style={{display:"inline-flex",alignItems:"center",gap:6,background:C.bg2,border:`1px solid ${C.border0}`,fontFamily:FONT,fontSize:13,fontWeight:600,padding:"8px 16px",color:C.text3,cursor:"not-allowed"}}>Edit Mapping <span style={{fontSize:9,fontWeight:700,letterSpacing:"0.05em"}}>COMING SOON</span></span>
-            <button onClick={()=>{resetAndClose();onGoToSystem&&onGoToSystem();}} style={{background:C.blue,border:`1px solid ${C.blueHover}`,color:"#fff",fontFamily:FONT,fontSize:13,fontWeight:700,padding:"8px 16px",cursor:"pointer"}}>Go to System Page</button>
+            <button onClick={()=>{resetAndClose();onGoToSystem&&onGoToSystem();}} style={{background:C.blue,border:`1px solid ${C.blueHover}`,color:"#fff",fontFamily:FONT,fontSize:13,fontWeight:700,padding:"8px 16px",cursor:"pointer"}}>Done</button>
           </div>
         </div>
       </div>
@@ -946,7 +972,7 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
                     </div>
                     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px 14px"}}>
                       <div><FieldLabel label="Frequency" required/><FieldSelect value={form.frequency} onChange={v=>set("frequency",v)} options={FREQ_OPTIONS}/></div>
-                      <div><FieldLabel label="Start Time" helper="Local time"/><FieldInput value={form.startTime} onChange={v=>set("startTime",v)} placeholder="06:00" mono/></div>
+                      <div><FieldLabel label="Start Time" sublabel="Local time"/><FieldInput value={form.startTime} onChange={v=>set("startTime",v)} placeholder="06:00" mono/></div>
                     </div>
                   </div>
                 </>
@@ -1087,10 +1113,11 @@ function AddSystemDrawer({ open, onClose, onSave }) {
             <div><FieldLabel label="System Name" required/><FieldInput value={form.name} onChange={v=>{set("name",v);touch("name");}} placeholder="e.g. AVEVA PI System" error={touched.name&&errors.name}/><FieldError msg={touched.name&&errors.name}/></div>
             <div><FieldLabel label="Category" required/><FieldSelect value={form.category} onChange={v=>{set("category",v);touch("category");}} options={CATEGORIES} placeholder="Select category" error={touched.category&&errors.category}/><FieldError msg={touched.category&&errors.category}/></div>
             <div>
-              <FieldLabel label="System Code" helper="Auto-generated — used in audit logs and API references"/>
-              <div style={{padding:"7px 10px",background:C.bg2,border:`1px solid ${C.border0}`,fontFamily:MONO,fontSize:13,color:form.code?C.blue:C.text3,minHeight:34}}>
-                {form.code||<span style={{fontFamily:FONT,fontSize:12,color:C.text3,fontStyle:"italic"}}>Generated from name + category</span>}
+              <FieldLabel label="System Code"/>
+              <div style={{width:"100%",boxSizing:"border-box",padding:"7px 10px",background:C.bg2,border:`1px solid ${C.border1}`,fontFamily:MONO,fontSize:13,color:form.code?C.blue:C.text3,cursor:"not-allowed"}}>
+                {form.code||<span style={{fontFamily:FONT,fontSize:13,color:C.text3}}>Generated from name + category</span>}
               </div>
+              <div style={{fontFamily:FONT,fontSize:11,color:C.text3,marginTop:4}}>Auto-generated — used in audit logs and API references</div>
             </div>
           </div>
           <div style={{marginBottom:18}}><FieldLabel label="Description"/><FieldTextarea value={form.description} onChange={v=>set("description",v)} placeholder="Briefly describe what this system does." rows={2}/></div>
@@ -1129,7 +1156,11 @@ function EditSystemDrawer({ open, system, onClose, onSave }) {
             <div><FieldLabel label="Plant" required/><FieldSelect value={form.plant} onChange={v=>{set("plant",v);touch("plant");}} options={PLANTS_OPTS} placeholder="Select plant" error={touched.plant&&errors.plant}/><FieldError msg={touched.plant&&errors.plant}/></div>
             <div><FieldLabel label="System Name" required/><FieldInput value={form.name} onChange={v=>{set("name",v);touch("name");}} placeholder="System name" error={touched.name&&errors.name}/><FieldError msg={touched.name&&errors.name}/></div>
             <div><FieldLabel label="Category" required/><FieldSelect value={form.category} onChange={v=>{set("category",v);touch("category");}} options={CATEGORIES} placeholder="Select category" error={touched.category&&errors.category}/><FieldError msg={touched.category&&errors.category}/></div>
-            <div><FieldLabel label="System Code"/><div style={{padding:"7px 10px",background:C.bg2,border:`1px solid ${C.border0}`,fontFamily:MONO,fontSize:13,color:C.blue}}>{system.code}</div><div style={{fontFamily:FONT,fontSize:10,color:C.text3,marginTop:3}}>Read-only — set at creation</div></div>
+            <div>
+              <FieldLabel label="System Code"/>
+              <div style={{width:"100%",boxSizing:"border-box",padding:"7px 10px",background:C.bg2,border:`1px solid ${C.border1}`,fontFamily:MONO,fontSize:13,color:C.blue,cursor:"not-allowed"}}>{system.code}</div>
+              <div style={{fontFamily:FONT,fontSize:11,color:C.text3,marginTop:4}}>Read-only — set at creation</div>
+            </div>
           </div>
           <div style={{marginBottom:14}}><FieldLabel label="Description"/><FieldTextarea value={form.description} onChange={v=>set("description",v)} placeholder="Briefly describe this system." rows={2}/></div>
           <div><FieldLabel label="Error Notification Email" required/><FieldInput value={form.errorEmail} onChange={v=>{set("errorEmail",v);touch("errorEmail");}} placeholder="ops@company.com" error={touched.errorEmail&&errors.errorEmail}/><FieldError msg={touched.errorEmail&&errors.errorEmail}/></div>
@@ -1400,7 +1431,7 @@ function IntegrationsTab({ system, integrations, onAddIntegration, onEditIntegra
       <div style={{fontFamily:FONT,fontSize:14,fontWeight:700,color:C.text0,marginBottom:6}}>No integrations yet</div>
       <div style={{fontFamily:FONT,fontSize:13,color:C.text2,maxWidth:460,margin:"0 auto 6px",lineHeight:1.6}}>An Integration defines one specific data flow under this system — its direction, method, connection, and runtime.</div>
       <div style={{fontFamily:FONT,fontSize:12,color:C.text3,maxWidth:400,margin:"0 auto 20px"}}>Example: pull sensor readings from {system.name} every 15 minutes, or receive real-time alerts as they happen.</div>
-      <button onClick={onAddIntegration} style={{background:C.blue,border:`1px solid ${C.blueHover}`,color:"#fff",fontFamily:FONT,fontWeight:700,fontSize:13,padding:"8px 18px",cursor:"pointer"}}>+ Create Integration</button>
+      <button onClick={onAddIntegration} style={{background:C.blue,border:`1px solid ${C.blueHover}`,color:"#fff",fontFamily:FONT,fontWeight:700,fontSize:13,padding:"8px 18px",cursor:"pointer"}}>+ Add Integration</button>
     </div>
   );
   return <div style={{display:"flex",flexDirection:"column",gap:8}}>{intgs.map(i=><IntegrationCard key={i.id} integration={i} systemName={system.name} onEdit={onEditIntegration} onDisable={onDisableIntegration}/>)}</div>;
@@ -1616,7 +1647,7 @@ function App() {
         {page==="systems"&&<SystemsPage systems={systems} integrations={integrations} onViewSystem={id=>{setSelected(id);setPage("detail");}} onAddSystem={()=>setSysDrawer(true)}/>}
         {page==="detail"&&selectedSystem&&<SystemDetailPage system={selectedSystem} integrations={integrations} onBack={()=>{setPage("systems");setSelected(null);}} onAddIntegration={()=>setIntDrawer(true)} onUpdateSystem={handleUpdateSystem} onUpdateIntegration={handleUpdateIntegration} onDisableIntegration={handleDisableIntegration}/>}
       </div>
-      <AddSystemDrawer open={sysDrawer} onClose={()=>setSysDrawer(false)} onSave={sys=>{setSystems(p=>[sys,...p]);}}/>
+      <AddSystemDrawer open={sysDrawer} onClose={()=>setSysDrawer(false)} onSave={sys=>{setSystems(p=>[sys,...p]);setSelected(sys.id);setPage("detail");}}/>
       <AddIntegrationDrawer open={intDrawer} system={selectedSystem} onClose={()=>setIntDrawer(false)} onSave={handleSaveIntegration} onGoToSystem={()=>setIntDrawer(false)} webhooks={webhooks} onAddWebhook={handleAddWebhook}/>
     </div>
   );
