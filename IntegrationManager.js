@@ -228,9 +228,9 @@ function SectionRule({ label }) {
 function FieldLabel({ label, required, helper, sublabel }) {
   return (
     <div style={{marginBottom:5}}>
-      <div style={{display:"flex",alignItems:"baseline",gap:6}}>
-        <span style={{fontFamily:FONT,fontSize:12,fontWeight:600,color:C.text1}}>{label}</span>
-        {sublabel&&<span style={{fontFamily:FONT,fontSize:10,color:C.text3,letterSpacing:"0.04em"}}>{sublabel}</span>}
+      <div style={{display:"flex",alignItems:"baseline",gap:6,flexWrap:"nowrap"}}>
+        <span style={{fontFamily:FONT,fontSize:12,fontWeight:600,color:C.text1,whiteSpace:"nowrap"}}>{label}</span>
+        {sublabel&&<span style={{fontFamily:FONT,fontSize:10,color:C.text3,letterSpacing:"0.04em",whiteSpace:"nowrap",flexShrink:0}}>{sublabel}</span>}
         {required&&<span style={{color:C.red,marginLeft:2,fontSize:12}}>*</span>}
       </div>
       {helper&&<div style={{fontFamily:FONT,fontSize:11,color:C.text3,marginTop:2,lineHeight:1.4}}>{helper}</div>}
