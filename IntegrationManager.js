@@ -1,20 +1,46 @@
 const { useState, useMemo, useEffect, useRef } = React;
 
-// ─── THEME ────────────────────────────────────────────────────────────────────
+// ─── THEME (v2 — Figma-aligned) ───────────────────────────────────────────────
 const C = {
-  pageBg:"#F0F2F5", bg0:"#FFFFFF", bg1:"#F7F8FA", bg2:"#EFF1F4", bg3:"#E5E8ED",
-  border0:"#D1D5DC", border1:"#B8BEC8", border2:"#9AA2B0",
-  text0:"#0F1923", text1:"#3D4A5C", text2:"#6B7A90", text3:"#9AA2B0",
-  navBg:"#1A2233", navBorder:"#2A3447", navText:"#C8D0DC", navActive:"#FFFFFF",
-  blue:"#1D6FE8", blueHover:"#1558C0", blueBg:"#EBF2FD", blueBorder:"#BDD3F7",
-  teal:"#0E9E8A", tealBg:"#E8F7F5", tealBorder:"#B3E5DF",
-  amber:"#C47D0A", amberBg:"#FEF6E6", amberBorder:"#F5D88A",
-  red:"#C42B2B", redBg:"#FDEAEA", redBorder:"#F0ADAD",
-  green:"#1A7A3C", greenBg:"#E8F6EE", greenBorder:"#A8DDB8",
-  purple:"#6A4FC4", purpleBg:"#F0ECFC", purpleBorder:"#C9BBF0",
+  pageBg:      "#F5F5F5",   // grey-100
+  bg0:         "#FFFFFF",   // White — cards, modals, inputs
+  bg1:         "#FAFAFA",   // slightly above pageBg — hover rows, sidebars, info blocks
+  bg2:         "#EEEEEE",   // grey-200 — disabled fill, divider bg
+  bg3:         "#E0E0E0",   // grey-300 — stronger divider
+  border0:     "#E0E0E0",   // grey-300 — default border
+  border1:     "#BDBDBD",   // grey-400 — medium emphasis border
+  border2:     "#9E9E9E",   // grey-500 — strong border
+  text0:       "#212121",   // text-primary — headings, labels
+  text1:       "#3D3D3D",   // text-secondary — body text
+  text2:       "#757575",   // grey-600 — secondary/meta
+  text3:       "#9E9E9E",   // grey-500 — placeholder, disabled
+  navBg:       "#1A2233",
+  navBorder:   "#2A3447",
+  navText:     "#C8D0DC",
+  navActive:   "#FFFFFF",
+  navActiveBg: "#2A3EB1",   // alpha/primary-700 — active nav item pill
+  blue:        "#3D4FD6",   // alpha/primary-500
+  blueHover:   "#2A3EB1",   // alpha/primary-700
+  blueBg:      "#EEF0FB",   // alpha/primary-50
+  blueBorder:  "#D5D9F5",   // alpha/primary-100
+  teal:        "#00796B",   // gamma/accent/cyan — inbound, info
+  tealBg:      "#E0F2F1",
+  tealBorder:  "#80CBC4",
+  amber:       "#C47D0A",   // gamma/accent/orange — warning, draft
+  amberBg:     "#FFF8E1",
+  amberBorder: "#FFE082",
+  red:         "#C62828",   // gamma/accent/red — error, failed
+  redBg:       "#FFEBEE",
+  redBorder:   "#EF9A9A",
+  green:       "#2E7D32",   // gamma/accent/green — active, success
+  greenBg:     "#E8F5E9",
+  greenBorder: "#A5D6A7",
+  purple:      "#6A1B9A",   // gamma/accent/purple — outbound
+  purpleBg:    "#F3E5F5",
+  purpleBorder:"#CE93D8",
 };
-const FONT = "'IBM Plex Sans','Segoe UI',system-ui,sans-serif";
-const MONO = "'IBM Plex Mono','Fira Code','Consolas',monospace";
+const FONT = "'Roboto', 'Segoe UI', system-ui, sans-serif";
+const MONO = "'Roboto Mono', 'Fira Code', 'Consolas', monospace";
 
 // ─── STATIC DATA ─────────────────────────────────────────────────────────────
 const PLANTS_OPTS = ["Houston Plant","Dallas Refinery","Austin Facility","Corpus Christi Terminal"];
