@@ -1,6 +1,37 @@
+/*
+ * Integration Manager Prototype — IntegrationManager.js
+ *
+ * This is the entire application in a single file.
+ * It runs in the browser with no build step (React and Babel load from CDN).
+ *
+ * What React does: React components describe what the screen should look like
+ * based on the current data. When data changes, React automatically updates
+ * only the parts of the screen that need to change.
+ *
+ * File structure (top to bottom):
+ *  1. Theme & fonts             — colors and typography used across the whole UI
+ *  2. Static / seed data        — dropdown options, field schemas, demo records
+ *  3. Helper functions          — small utilities (generate code, format text, etc.)
+ *  4. Primitive UI components   — buttons, inputs, labels, badges (reusable building blocks)
+ *  5. Complex UI components     — multi-select dropdown, auth form, AI action buttons
+ *  6. Feature surfaces          — Add/Edit System drawer, Add/Edit Integration drawer,
+ *                                 Mapping Workspace, Webhook Registry modal, DLQ inspect modal
+ *  7. Page components           — Systems list page, System Detail page
+ *  8. App root                  — navigation state, top-level data, renders the right page
+ */
+
+// Pull in the React hooks we need.
+// useState: holds data that can change (form values, open/closed drawers, etc.)
+// useMemo: caches expensive calculations so they don't re-run on every render
+// useEffect: runs side-effects when data changes (e.g. reset form when drawer opens)
+// useRef: holds a value that persists across renders without triggering a re-render
 const { useState, useMemo, useEffect, useRef } = React;
 
 // ─── THEME (v2 — Figma-aligned) ───────────────────────────────────────────────
+// All colors used in the UI are defined here as named tokens.
+// Instead of scattering hex codes through the code, every component references
+// these names (e.g. C.blue, C.red). Changing a token here updates it everywhere.
+// Colors are aligned with the Figma v2 design specification.
 const C = {
   pageBg:      "#F5F5F5",   // grey-100
   bg0:         "#FFFFFF",   // White — cards, modals, inputs
@@ -43,6 +74,8 @@ const FONT = "'Roboto', 'Segoe UI', system-ui, sans-serif";
 const MONO = "'Roboto Mono', 'Fira Code', 'Consolas', monospace";
 
 // ─── STATIC DATA ─────────────────────────────────────────────────────────────
+// These constants define the fixed options that appear in dropdowns throughout the UI.
+// Changing a value here updates every dropdown that uses it.
 const PLANTS_OPTS = ["Houston Plant","Dallas Refinery","Austin Facility","Corpus Christi Terminal"];
 const PLANTS_ALL  = ["All Plants",...PLANTS_OPTS];
 const CATEGORIES  = ["Historian","Analytics Platform","Process Safety","Consulting Integration","ERP","IoT Platform","CMMS","Other"];
@@ -54,6 +87,9 @@ const FREQ_OPTIONS    = ["Every 5 min","Every 15 min","Every 30 min","Every 1 ho
 const INCOMING_AUTH_TYPES = ["API Key (header)","HMAC Signature","No Authentication"];
 
 
+// Maps each Innovapptive product to the collection types (business objects) it supports.
+// When a user selects a product in the integration form, the Collections dropdown
+// is automatically populated from this list.
 const PRODUCT_OBJECTS = {
   "iMaintenance": ["Work Order","Notification","Operation","Component","Equipment","Functional Location","Measurement Point","Work Log","Attachment","Failure Reporting"],
   "mRounds":      ["Round","Round Plan","Asset","Location","Task","Issue","Action","Assignment"],
@@ -63,6 +99,25 @@ const PRODUCT_OBJECTS = {
 };
 const PRODUCTS = Object.keys(PRODUCT_OBJECTS);
 
+// Simulates the fields that come from an external system's API response.
+// This is the "source" side of the field mapping — it represents what the external
+// payload looks like (e.g. a sensor observation event from AVEVA PI).
+//
+// In a real product, this schema would be discovered automatically by pulling
+// a live sample from the endpoint. Here it is hardcoded to simulate that behavior.
+//
+// Each field has:
+//   src        — the dot-path where this value sits in the JSON payload
+//   srcType    — the data type (string, datetime, number, enum, url)
+//   required   — if true, this field MUST be mapped before the integration can be published
+//   refLookup  — if true, this field references another entity (shown with ⚠ in the workspace)
+//   nested     — true if the path contains a "." (e.g. "asset.id")
+//   arrayPath  — true if the path contains "[]" (e.g. "measurements[].value")
+//   target     — starts empty; filled in during the mapping step
+//   rowState   — "unmapped" initially; becomes "manual" or "auto-mapped" after mapping
+//
+// IMPORTANT: The "required" flag is fixed at initialization and must never be changed
+// when the user swaps the source field. This protects the publish gate from being bypassed.
 const SAMPLE_FIELDS = [
   { src:"id",                    srcType:"string",   required:true,  refLookup:false, nested:false, arrayPath:false, target:"", rowState:"unmapped" },
   { src:"timestamp",             srcType:"datetime", required:true,  refLookup:false, nested:false, arrayPath:false, target:"", rowState:"unmapped" },
@@ -78,7 +133,20 @@ const SAMPLE_FIELDS = [
   { src:"metadata.version",      srcType:"string",   required:false, refLookup:false, nested:true,  arrayPath:false, target:"", rowState:"unmapped" },
 ];
 
-// Nested target schema: product → collection → fields with dot-path notation
+// Defines the fields that Innovapptive products expect to receive — the "target" side of mapping.
+// Structure: Product name → Collection name → list of target fields
+//
+// When a user selects a product (e.g. iMaintenance) and one or more collections
+// (e.g. "Observation", "Work Order"), the Mapping Workspace uses this schema to
+// populate the target field dropdown for each row.
+//
+// Target field paths are displayed in the workspace as "Collection.fieldPath"
+// (e.g. "Observation.asset.id") so users know which collection each field belongs to.
+//
+// "required: true" means the Innovapptive product needs this field to create a valid record.
+//
+// Currently populated for: iMaintenance, EHS, mRounds
+// NOT YET populated for: mInventory, Platform — target dropdowns will be empty for those.
 const NESTED_TARGET_SCHEMA = {
   "iMaintenance": {
     "Observation": [
@@ -168,6 +236,18 @@ const NESTED_TARGET_SCHEMA = {
   },
 };
 
+// The rule set that powers the "Auto Map" AI-assistive feature in the Mapping Workspace.
+// Each entry says: "if the source field path is X, suggest target field path Y".
+//
+// When a user clicks "Auto Map", the system checks each unmapped source field against
+// these rules, then looks up whether the suggested target path actually exists in the
+// selected product's schema. If it does, the mapping is filled in automatically.
+//
+// In a real product, this would be replaced by an AI/ML model that reasons over
+// source and target schemas, plus prior mappings from similar integrations.
+// The current simulation uses this flat rule table as a stand-in.
+// The visual pattern (distinct button style, inline result, no silent auto-commit)
+// is intentionally designed to stay compatible with a real AI layer.
 const AUTO_MAP_RULES = {
   "id":"id",
   "timestamp":"observation_time",
@@ -184,7 +264,13 @@ const AUTO_MAP_RULES = {
 };
 
 // ─── SEED DATA ────────────────────────────────────────────────────────────────
-// Systems are lightweight identity containers — no connection/auth/test data
+// Pre-loaded demo data that appears when the prototype first loads.
+// This makes the prototype feel like a real product with existing content.
+// All data resets to these values on page refresh — nothing is saved to a server.
+
+// The five demo systems that appear on the Systems list page at startup.
+// Systems are lightweight identity records — name, category, plant, error email.
+// Connection details (URL, auth) live inside individual integrations, not here.
 const INIT_SYSTEMS = [
   { id:"sys_pi",        name:"AVEVA PI System",  category:"Historian",             code:"AVEVA-PI-001", plant:"Houston Plant",           errorEmail:"ops-alerts@company.com", status:"ready",           errorCount:0, description:"OSIsoft PI System historian for real-time sensor and process data." },
   { id:"sys_augury",    name:"Augury",           category:"Analytics Platform",    code:"AUGRY-001",    plant:"Houston Plant",           errorEmail:"augury-ops@company.com", status:"ready",           errorCount:0, description:"Predictive maintenance and machine health analytics." },
@@ -192,15 +278,21 @@ const INIT_SYSTEMS = [
   { id:"sys_hexion",    name:"Hexion PSI",        category:"Process Safety",        code:"HXPSI-001",    plant:"Corpus Christi Terminal", errorEmail:"safety@company.com",     status:"ready",           errorCount:0, description:"Process safety incident management and reporting." },
   { id:"sys_accenture", name:"Accenture",         category:"Consulting Integration",code:"ACCNT-001",    plant:"Austin Facility",         errorEmail:"",                       status:"draft",           errorCount:0, description:"Enterprise integration layer for Accenture-managed data pipelines." },
 ];
-// Integrations — no workflowAction, method:"polling" not "rest_api"
+// Three demo integrations pre-loaded under the AVEVA PI system.
+// These show different directions, methods, and statuses so reviewers can
+// see what active, draft, and ready-to-publish integrations look like.
 const INIT_INTEGRATIONS = [
   { id:"int_obs",    systemId:"sys_pi", name:"Observation Polling", status:"active",          direction:"inbound",  method:"polling", product:"iMaintenance", businessObjects:["Observation"], lastRunAt:"2025-04-14T08:30:00Z", frequency:"Every 15 min" },
   { id:"int_wo",     systemId:"sys_pi", name:"WO Dispatch",         status:"active",          direction:"outbound", method:"webhook", product:null,           businessObjects:[],              lastRunAt:"2025-04-14T07:15:00Z", frequency:null },
   { id:"int_alerts", systemId:"sys_pi", name:"Alert Intake",        status:"ready_to_publish",direction:"inbound",  method:"webhook", product:"EHS",          businessObjects:["Observation"], lastRunAt:null, frequency:null },
 ];
+// A pre-seeded webhook in the Webhook Registry so the outbound webhook flow
+// has something to select. Users can also create new webhooks inline.
 const DEMO_WEBHOOKS = [
   { id:"wh_001", name:"CMMS Work Order Sync", targetUrl:"https://cmms.company.com/webhooks/inno", signingSecret:"whsec_abc123", eventTypes:"work_order.created,work_order.updated" },
 ];
+// Static activity feed entries shown in the "User Activity" tab on System Detail.
+// In a real product, these would be live events from a backend log.
 const ACTIVITY = [
   { id:"a1", timestamp:"2025-04-14T08:30:00Z", status:"success", desc:"Observation Polling executed — 14 records pulled into iMaintenance" },
   { id:"a2", timestamp:"2025-04-14T07:15:00Z", status:"success", desc:"WO Dispatch triggered — event sent to external endpoint" },
@@ -208,15 +300,24 @@ const ACTIVITY = [
   { id:"a4", timestamp:"2025-04-13T09:10:00Z", status:"info",    desc:"Integration edited by admin@company.com" },
   { id:"a5", timestamp:"2025-04-10T14:22:00Z", status:"success", desc:"System created: AVEVA PI System" },
 ];
+// Dead-letter queue (DLQ) entries — records that failed to process and were held for review.
+// These appear in the "Review Queue" tab on System Detail for the SEEQ system.
+// A DLQ is a standard data-pipeline pattern: instead of silently dropping failed records,
+// they are held here so a user can inspect, replay, or discard them.
 const DLQ_ENTRIES = [
   { id:"dlq_001", systemId:"sys_seeq", integrationName:"Trend Sync", timestamp:"2025-04-14T07:12:00Z", retryCount:3, errorMessage:"Connection timeout after 30s — host unreachable", payload:'{"asset":"Pump-12","value":98.4,"timestamp":"2025-04-14T07:11:58Z"}' },
   { id:"dlq_002", systemId:"sys_seeq", integrationName:"Trend Sync", timestamp:"2025-04-13T23:44:00Z", retryCount:3, errorMessage:"HTTP 503 — Service Unavailable",                  payload:'{"asset":"Pump-07","value":102.1,"timestamp":"2025-04-13T23:43:50Z"}' },
 ];
+// Static audit log entries shown in the "Audit Log" tab on System Detail.
+// Each entry records who did what and when — for compliance and change tracking.
 const AUDIT_LOG = [
   { id:"au1", timestamp:"2025-04-10T14:22:00Z", userEmail:"admin@company.com",  action:"System created: AVEVA PI System (AVEVA-PI-001)" },
   { id:"au2", timestamp:"2025-04-10T15:05:00Z", userEmail:"admin@company.com",  action:"Integration created: Observation Polling under AVEVA PI System" },
   { id:"au3", timestamp:"2025-04-11T09:30:00Z", userEmail:"jsmith@company.com", action:"Integration published: WO Dispatch — status changed to Active" },
 ];
+// Maps each status key to its display label and color combination.
+// Every status badge, filter chip, and colored border in the UI reads from this object.
+// Adding a new status just means adding one entry here — nothing else needs to change.
 const STATUS_CONFIG = {
   ready:                 { label:"Ready",                color:C.green,  bg:C.greenBg,  border:C.greenBorder  },
   connection_incomplete: { label:"Connection Incomplete", color:C.amber,  bg:C.amberBg,  border:C.amberBorder  },
@@ -229,6 +330,13 @@ const STATUS_CONFIG = {
 };
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
+// Small utility functions used across multiple components.
+
+// Auto-generates a System Code when a user types a name and category in the Add System form.
+// Format: first 4 letters of name + first 3 letters of category + 3 random digits
+// Example: "AVEVA PI System" + "Historian" → "AVEV-HIS-423"
+// This code is used in audit logs, API references, and the system detail header.
+// It is generated once at creation and cannot be changed afterward.
 function generateCode(name, category) {
   if (!name && !category) return "";
   const n=(name||"SYS").replace(/[^A-Za-z0-9]/g,"").slice(0,4).toUpperCase().padEnd(4,"X");
@@ -241,7 +349,14 @@ function isValidUrl(v) {
   try { const u=new URL(v); return (u.protocol==="http:"||u.protocol==="https:")&&u.hostname.includes("."); } catch { return false; }
 }
 
-// Summary sentence for integration cards (Phase 2)
+// Generates the plain-English sentence shown at the top of each Integration Card.
+// Goal: a non-technical user should immediately understand what an integration does
+// without needing to decode the direction/method/product/collection fields manually.
+//
+// Examples:
+//   "Pulls Observation data from AVEVA PI into iMaintenance every 15 min."
+//   "Receives Observation events from SEEQ in real time."
+//   "Sends Innovapptive events to an external endpoint in real time."
 function summaryLine(integration, systemName) {
   const sys = systemName || "external system";
   if (integration.status==="draft") return "Not yet active — complete configuration to start data flow.";
@@ -265,10 +380,17 @@ function summaryLine(integration, systemName) {
   return direction==="inbound" ? `Pulls data from ${sys}.` : `Sends data to ${sys}.`;
 }
 
+// Returns a fresh, empty form object for the Add System drawer.
+// Called each time the drawer opens to ensure no previous input lingers.
 function blankAddSystemForm() {
   return { plant:"", name:"", category:"", code:"", description:"", errorEmail:"" };
 }
+// Returns one empty key-value row for the query parameters / headers table.
 function blankKV() { return [{ key:"", value:"" }]; }
+
+// Returns a fresh, empty form object for the Add Integration drawer.
+// Initializes fieldMappings by copying SAMPLE_FIELDS so each integration
+// gets its own independent set of mapping rows (not a shared reference).
 function blankIntegrationForm() {
   return {
     name:"", direction:"", method:"",
@@ -308,14 +430,22 @@ function blankIntegrationForm() {
 }
 
 // ─── SHARED PRIMITIVES ────────────────────────────────────────────────────────
+// Small, reusable building-block components used throughout the UI.
+// They accept props (inputs) and render a piece of the screen consistently.
+
+// A colored pill that shows the status of a system or integration.
+// The colored dot + text label gives both color-blind and sighted users the signal.
+// Reads colors from STATUS_CONFIG so the look stays consistent everywhere.
 function StatusBadge({ status, size="sm" }) {
   const cfg=STATUS_CONFIG[status]||{label:status,color:C.text2,bg:C.bg2,border:C.border0};
   return <span style={{display:"inline-flex",alignItems:"center",gap:5,background:cfg.bg,border:`1px solid ${cfg.border}`,padding:size==="lg"?"4px 10px":"2px 8px",fontFamily:FONT,fontSize:size==="lg"?12:11,fontWeight:600,color:cfg.color,whiteSpace:"nowrap"}}><span style={{width:6,height:6,borderRadius:"50%",background:cfg.color,flexShrink:0}}/>{cfg.label}</span>;
 }
+// Teal "↓ Inbound" or purple "↑ Outbound" pill shown on Integration Cards and drawers.
 function DirectionBadge({ direction }) {
   const isIn=direction==="inbound";
   return <span style={{display:"inline-flex",alignItems:"center",gap:4,background:isIn?C.tealBg:C.purpleBg,border:`1px solid ${isIn?C.tealBorder:C.purpleBorder}`,padding:"2px 8px",fontSize:11,fontFamily:FONT,fontWeight:600,color:isIn?C.teal:C.purple}}>{isIn?"↓ Inbound":"↑ Outbound"}</span>;
 }
+// Grey monospace badge showing the integration method: POLLING, WEBHOOK, etc.
 function MethodBadge({ method }) {
   const labels={polling:"POLLING",webhook:"WEBHOOK",file_import:"FILE IMPORT",file_export:"FILE EXPORT"};
   return <span style={{display:"inline-flex",alignItems:"center",background:C.bg2,border:`1px solid ${C.border1}`,padding:"2px 8px",fontSize:11,fontFamily:MONO,fontWeight:500,color:C.text1}}>{labels[method]||method?.toUpperCase()}</span>;
@@ -323,9 +453,14 @@ function MethodBadge({ method }) {
 function MonoText({ children, color, size=12 }) {
   return <span style={{fontFamily:MONO,fontSize:size,color:color||C.blue}}>{children}</span>;
 }
+// A horizontal divider with an uppercase section label on the left.
+// Used to visually separate sections inside drawers and forms.
 function SectionRule({ label }) {
   return <div style={{display:"flex",alignItems:"center",gap:10,margin:"0 0 14px"}}><span style={{fontFamily:FONT,fontSize:10,fontWeight:700,color:C.text3,letterSpacing:"0.1em",textTransform:"uppercase",whiteSpace:"nowrap"}}>{label}</span><div style={{flex:1,height:1,background:C.border0}}/></div>;
 }
+// The label block that sits above every form field.
+// Shows the field name, an optional sublabel (e.g. "Local time"), a red * for required fields,
+// and optional helper text below the label for extra guidance.
 function FieldLabel({ label, required, helper, sublabel }) {
   return (
     <div style={{marginBottom:5}}>
@@ -354,6 +489,9 @@ function FieldError({ msg }) {
   if (!msg) return null;
   return <div style={{fontFamily:FONT,fontSize:11,color:C.red,marginTop:4,display:"flex",alignItems:"center",gap:4}}><span>✕</span>{msg}</div>;
 }
+// A left-bordered info callout used to provide context or guidance inside forms.
+// Variants: "teal" (informational), "amber" (warning), "blue" (neutral), "green" (success).
+// Examples: whitelisting warning on polling, real-time note on webhook step 2.
 function InfoBox({ variant="teal", children }) {
   const cfg={teal:{bg:C.tealBg,border:C.tealBorder,accent:C.teal,icon:"ℹ"},amber:{bg:C.amberBg,border:C.amberBorder,accent:C.amber,icon:"▲"},blue:{bg:C.blueBg,border:C.blueBorder,accent:C.blue,icon:"ℹ"},green:{bg:C.greenBg,border:C.greenBorder,accent:C.green,icon:"✓"}}[variant];
   return <div style={{background:cfg.bg,border:`1px solid ${cfg.border}`,borderLeft:`3px solid ${cfg.accent}`,padding:"8px 10px",display:"flex",gap:7,alignItems:"flex-start",marginBottom:0}}><span style={{color:cfg.accent,fontSize:12,flexShrink:0,marginTop:1,fontWeight:700}}>{cfg.icon}</span><div style={{fontFamily:FONT,fontSize:12,color:C.text1,lineHeight:1.5}}>{children}</div></div>;
@@ -363,6 +501,9 @@ function Spinner({ size=14 }) {
 }
 
 // ─── KEY-VALUE TABLE (Postman-like params/headers) ────────────────────────────
+// A table of editable key-value pairs, similar to what you'd see in Postman.
+// Used for Query Parameters and Request Headers in the Inbound Polling config.
+// Rows can be added or removed. Always keeps at least one row visible.
 function KVTable({ rows, onChange, addLabel="Add row" }) {
   function updateRow(i,field,val) { const r=[...rows]; r[i]={...r[i],[field]:val}; onChange(r); }
   function addRow()  { onChange([...rows,{key:"",value:""}]); }
@@ -387,6 +528,11 @@ function KVTable({ rows, onChange, addLabel="Add row" }) {
 }
 
 // ─── AUTH CREDENTIALS SUB-FORM ────────────────────────────────────────────────
+// Renders the right credential fields based on which authentication type is selected.
+// The "prefix" parameter namespaces the field keys so the same component can be used
+// for both inbound webhook auth (prefix="incoming") and polling auth (prefix="polling")
+// without the two sets of credentials interfering with each other.
+// Shows nothing if auth type is unset or "No Authentication".
 function AuthCredentials({ authType, form, set, prefix="" }) {
   const k = key => prefix+key;
   if (!authType || authType==="— Select auth type —" || authType==="No Authentication") return null;
@@ -415,6 +561,17 @@ function AuthCredentials({ authType, form, set, prefix="" }) {
 }
 
 // ─── MULTI-SELECT DROPDOWN ───────────────────────────────────────────────────
+// A custom dropdown that lets users pick multiple items (collections) at once.
+// Standard HTML dropdowns don't support checkboxes, so this is built from scratch.
+//
+// How it works:
+//   - Trigger button shows a summary: empty → placeholder, 1 selected → item name,
+//     multiple selected → "N collections selected"
+//   - Clicking the button opens a panel below it with checkbox rows
+//   - Clicking outside the open panel automatically closes it (via a document click listener)
+//   - Selected items are shown as blue chip tags below (rendered by the parent, not here)
+//
+// Used in: Step 1 of Add Integration (Collections field)
 function MultiSelectDropdown({ options, value, onChange, placeholder, disabled, error }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -473,6 +630,18 @@ function MultiSelectDropdown({ options, value, onChange, placeholder, disabled, 
 }
 
 // ─── AI ACTION BUTTON ────────────────────────────────────────────────────────
+// The visually distinct button used for AI-assistive actions: "Auto Map" and "Validate".
+//
+// Design intent: the purple gradient background, dashed border, and ✦ icon signal
+// to users that this is an assistive action — it suggests or checks, it does NOT
+// commit changes on their behalf. The user stays in control.
+//
+// Behavior:
+//   - Idle: shows label + desc (e.g. "Auto Map" + "Match fields automatically")
+//   - Running: shows ⏳ + "Auto Map…" (disabled while running)
+//   - Done: shows ✦ + label + result (e.g. "8 fields mapped")
+//
+// This pattern is designed to be forward-compatible with a real AI model.
 function AIActionButton({ label, desc, running, result, onClick }) {
   return (
     <button onClick={onClick} disabled={running} style={{
@@ -492,6 +661,10 @@ function AIActionButton({ label, desc, running, result, onClick }) {
 }
 
 // ─── SELECTION CARD ───────────────────────────────────────────────────────────
+// The large clickable card used to choose Direction and Method in Step 1 of the Add Integration flow.
+// Each card has a radio dot, a main label, a sublabel (e.g. "Inbound"), and a short description.
+// This pattern helps users make informed choices without needing to know technical terms upfront.
+// Cards can be marked "Coming Soon" (disabled=true, tag="Coming Soon") for future methods.
 function SelectionCard({ label, sublabel, description, selected, onClick, disabled, tag }) {
   const [hov,setHov]=useState(false);
   return (
@@ -510,6 +683,9 @@ function SelectionCard({ label, sublabel, description, selected, onClick, disabl
   );
 }
 
+// The step progress bar at the top of the Add Integration drawer.
+// Shows numbered circles with labels. Completed steps show a checkmark.
+// Only shown for inbound integrations — outbound webhook is a single-step flow.
 function StepIndicator({ current, steps }) {
   return (
     <div style={{display:"flex",alignItems:"center",gap:0,padding:"0 22px",height:44,borderBottom:`1px solid ${C.border0}`,background:C.bg1,flexShrink:0}}>
@@ -531,7 +707,16 @@ function StepIndicator({ current, steps }) {
   );
 }
 
-// ─── WEBHOOK REGISTRY MODAL (Phase 1 — Outbound Webhook creation) ─────────────
+// ─── WEBHOOK REGISTRY MODAL ───────────────────────────────────────────────────
+// A centered modal for creating a new outbound webhook endpoint.
+// Opens when the user clicks "+ Create New Webhook" in the Outbound Webhook config section.
+//
+// Why a separate registry instead of configuring inline?
+// Webhooks are shared endpoints. Multiple integrations may deliver events to the
+// same external URL. Managing them in a central registry prevents duplicates and
+// makes it easy to update a URL in one place rather than hunting across integrations.
+//
+// After saving, the new webhook is auto-selected in the integration form.
 function WebhookRegistryModal({ open, onClose, onSave }) {
   const blank = {name:"",targetUrl:"",signingSecret:"",eventTypes:""};
   const [form,setForm] = useState(blank);
@@ -595,7 +780,27 @@ function WebhookRegistryModal({ open, onClose, onSave }) {
   );
 }
 
-// ─── MAPPING WORKSPACE (full-screen overlay for inbound integrations) ─────────
+// ─── MAPPING WORKSPACE ────────────────────────────────────────────────────────
+// The full-screen field mapping surface for inbound integrations (both webhook and polling).
+//
+// What it does: lets users connect incoming source fields (what the external system sends)
+// to Innovapptive target fields (what iMaintenance, EHS, mRounds, etc. expect to receive).
+//
+// Why full-screen instead of inside the drawer?
+// Field mapping needs a two-panel layout: source payload tree on the left, mapping table
+// on the right. A 580px drawer can't fit this without awkward horizontal scrolling.
+//
+// Layout:
+//   Left panel (320px): target collections + payload sample pull + collapsible field tree
+//   Right panel (flex):  AI toolbar + filter + 5-column mapping table
+//   Footer: status indicator + Back / Save as Draft / Publish Integration
+//
+// The Publish gate: the "Publish Integration" button stays disabled (greyed out) until
+// ALL required fields have a target mapped AND at least one field is mapped overall.
+// This prevents broken integrations from going live with missing critical data.
+//
+// The mapping is opened from Step 2 of the Add Integration drawer via "Open Mapping Workspace →".
+// When the user clicks "Back", they return to Step 2 with their mapping progress saved.
 function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
   const [autoMapRunning, setAutoMapRunning] = useState(false);
   const [autoMapResult, setAutoMapResult]   = useState(null);
@@ -618,9 +823,12 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
 
   const collections    = form.businessObjects || [];
   const product        = form.product || "";
-  const hasPullEndpoint = !!form.baseUrl;
+  const hasPullEndpoint = !!form.baseUrl; // true for polling integrations (has a URL to pull from)
 
-  // Target options: value = "Col::path", label = "Col.path"
+  // Build the list of available target fields from NESTED_TARGET_SCHEMA.
+  // Each option is formatted as: value = "Collection::path", label = "Collection.path"
+  // The "Collection." prefix in the label helps users know which Innovapptive object
+  // a field belongs to (e.g. "Observation.asset.id" vs "WorkOrder.asset.id").
   function allTargetOpts() {
     const all = [];
     collections.forEach(col=>{
@@ -635,7 +843,11 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
   // Source options from SAMPLE_FIELDS
   const srcOpts = SAMPLE_FIELDS.map(f=>f.src);
 
-  // Build payload field tree: root fields + groups
+  // Groups SAMPLE_FIELDS into a tree for the left panel.
+  // Fields like "id", "timestamp", "severity" are "roots" (no dot in path).
+  // Fields like "asset.id", "asset.name", "measurements[].value" are grouped by their
+  // prefix (e.g. all "asset.*" fields go under an "asset" collapsible group).
+  // This makes it easier to navigate a large payload without scrolling through all fields.
   function buildTree() {
     const groups = {}, roots = [];
     SAMPLE_FIELDS.forEach(f=>{
@@ -649,6 +861,9 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
 
   function toggleGrp(g){ setCollapsedGrps(s=>({...s,[g]:!s[g]})); }
 
+  // Updates a field in one mapping row (typically the "target" field).
+  // Tracks row state: "auto-mapped" if it was set by Auto Map, "manual" if user-set,
+  // "unmapped" if the target is cleared. The state controls the color and badge on each row.
   function updateMapping(idx, key, val) {
     setForm(f=>{
       const m=[...f.fieldMappings];
@@ -715,17 +930,26 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
     },1000);
   }
 
+  // How many required fields still don't have a target mapped?
   const unmappedRequired = form.fieldMappings.filter(m=>m.required&&!m.target).length;
+  // Are any two rows pointing to the same target field? (That would cause a data conflict.)
   const dupTargets = (()=>{ const mp=form.fieldMappings.filter(m=>m.target).map(m=>m.target); return mp.filter((t,i)=>mp.indexOf(t)!==i); })();
+  // How many rows have ANY target mapped (required or optional)?
   const mappedCount = form.fieldMappings.filter(m=>m.target).length;
+  // The publish gate: true only when all required fields are mapped AND at least one field total is mapped.
   const mappingComplete = unmappedRequired===0 && mappedCount>0;
 
+  // Drives the status label, color, and border shown in the header and footer.
+  // Three states: green (ready), red (nothing mapped yet), amber (partial — some required fields missing).
   const mappingStatus = mappingComplete
     ? {label:"Ready to publish", color:C.green, bg:C.greenBg, border:C.greenBorder}
     : mappedCount===0
       ? {label:"Mapping required", color:C.red, bg:C.redBg, border:C.redBorder}
       : {label:`Mapping incomplete — ${unmappedRequired} required field${unmappedRequired!==1?"s":""} unmapped`, color:C.amber, bg:C.amberBg, border:C.amberBorder};
 
+  // Apply the filter text from the search box in the toolbar.
+  // We attach the original index (_idx) before filtering so updates
+  // go back to the right row in the full fieldMappings array.
   const filteredRows = form.fieldMappings
     .map((m,i)=>({...m,_idx:i}))
     .filter(m=>!filterText.trim()||m.src.toLowerCase().includes(filterText.toLowerCase())||m.target.toLowerCase().includes(filterText.toLowerCase()));
@@ -923,6 +1147,22 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
 }
 
 // ─── ADD INTEGRATION DRAWER ───────────────────────────────────────────────────
+// The guided two-step drawer for creating a new integration under a system.
+//
+// Step 1 — Connection & Basics:
+//   User sets the name, direction (inbound/outbound), method (webhook/polling),
+//   product & collections (inbound only), and connection configuration.
+//   Section order: Name → Direction → Method → Product & Collections → Connection config → Behavior
+//
+// Step 2 — Mapping, Runtime & Publish:
+//   Data Mapping card (opens Mapping Workspace) → runtime schedule (polling only)
+//   → Readiness Checklist → Advanced settings → Summary → Publish
+//
+// Outbound webhooks skip Step 2 entirely — they publish directly from Step 1
+// because they don't require field mapping.
+//
+// Scroll resets to the top on every step transition (forward and back)
+// so users always start reading from the beginning of each step.
 function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, webhooks, onAddWebhook }) {
   const [step,setStep]       = useState(1);
   const [form,setForm]       = useState(blankIntegrationForm());
@@ -938,24 +1178,32 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
   const postTestTimer = useRef(null);
   const scrollRef     = useRef(null);
 
+  // Shorthand for updating one form field. e.g. set("name", "My Integration")
   const set   = (k,v) => setForm(f=>({...f,[k]:v}));
+  // Marks a field as "touched" so validation errors become visible on it.
+  // Errors are hidden until a field is touched — avoids showing red on fields the user hasn't seen yet.
   const touch = k     => setTouched(t=>({...t,[k]:true}));
 
+  // Reset all state when the drawer opens, ensuring no data lingers from a previous session.
   useEffect(()=>{
     if(open){ setStep(1);setForm(blankIntegrationForm());setErrors({});setTouched({});setAdvOpen(false);setValOpen(false);setFetch("idle");setPublished(null);setWbModal(false);setMappingOpen(false); }
   },[open]);
+  // Pre-fill the advanced error email from the parent system so the user doesn't have to re-enter it.
   useEffect(()=>{ if(system?.errorEmail) set("advErrorEmail",system.errorEmail); },[system]);
+  // Clean up any running timers when the component unmounts (prevents state updates after close).
   useEffect(()=>()=>{ clearTimeout(fetchTimer.current); clearTimeout(postTestTimer.current); },[]);
+  // Scroll to the top of the form content whenever the user moves between Step 1 and Step 2.
   useEffect(()=>{ if(scrollRef.current) scrollRef.current.scrollTop=0; },[step]);
   if(!open) return null;
 
+  // Convenience boolean flags to make the conditional rendering below easier to read.
   const isInbound        = form.direction==="inbound";
   const isOutbound       = form.direction==="outbound";
   const isWebhook        = form.method==="webhook";
   const isPolling        = form.method==="polling";
   const isInboundWebhook = isInbound && isWebhook;
   const isOutboundWebhook= isOutbound && isWebhook;
-  const showStepper      = !isOutboundWebhook;
+  const showStepper      = !isOutboundWebhook; // Outbound webhook publishes in one step — no stepper needed
 
   function validateStep1() {
     const e={};
@@ -1016,6 +1264,10 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
     },1800);
   }
 
+  // The pre-publish readiness checklist shown in Step 2.
+  // Each item shows a green ✓ or grey ○ depending on whether that condition is met.
+  // This gives users a clear, scannable summary of what's complete and what still needs attention.
+  // It does NOT block saving as draft — only the Publish button enforces the full gate.
   const readiness=[
     {label:"Integration name set", ok:!!form.name.trim()},
     {label:"Direction and method set", ok:!!form.direction&&!!form.method},
@@ -1548,7 +1800,17 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
   );
 }
 
-// ─── ADD SYSTEM DRAWER — simplified ──────────────────────────────────────────
+// ─── ADD SYSTEM DRAWER ───────────────────────────────────────────────────────
+// Drawer for registering a new external system — the parent container for integrations.
+//
+// A System is a lightweight identity record: name, category, plant, error email.
+// It does NOT store connection details (URL, auth credentials).
+// Those live inside each integration because one system can have multiple integrations
+// that connect to different endpoints with different authentication.
+//
+// "Save as Draft" skips email validation — useful when the user doesn't have the
+// error email address handy. They can complete it later via Edit System.
+// "Save System" requires full validation and navigates directly to the new system's detail page.
 function AddSystemDrawer({ open, onClose, onSave }) {
   const [form,setForm]     = useState(blankAddSystemForm());
   const [errors,setErrors] = useState({});
@@ -1624,6 +1886,10 @@ function AddSystemDrawer({ open, onClose, onSave }) {
 }
 
 // ─── EDIT SYSTEM DRAWER ───────────────────────────────────────────────────────
+// Allows editing a system's metadata after it was created.
+// The System Code field is read-only — it was assigned at creation and is referenced
+// in audit logs and API calls, so it must remain stable.
+// After saving, shows a green confirmation banner for 900ms then auto-closes.
 function EditSystemDrawer({ open, system, onClose, onSave }) {
   const [form,setForm]=useState(null); const [errors,setErrors]=useState({}); const [touched,setTouched]=useState({}); const [saved,setSaved]=useState(false);
   useEffect(()=>{if(open&&system){setForm({name:system.name,category:system.category,plant:system.plant,description:system.description||"",errorEmail:system.errorEmail||""});setErrors({});setTouched({});setSaved(false);}},[open,system]);
@@ -1665,6 +1931,15 @@ function EditSystemDrawer({ open, system, onClose, onSave }) {
 }
 
 // ─── EDIT INTEGRATION DRAWER ─────────────────────────────────────────────────
+// Allows editing certain fields of an existing integration.
+//
+// Direction and method are read-only after creation. Why?
+// They are architectural choices that determine the connection config, runtime behavior,
+// and mapping structure. Changing them post-creation would invalidate all existing settings.
+// If a user needs a different direction/method, they should create a new integration.
+//
+// Editable fields: name, product, collections, frequency, trigger, failure handling.
+// Not editable: direction, method, connection URL, authentication, field mappings.
 function EditIntegrationDrawer({ open, integration, system, onClose, onSave }) {
   const [form,setForm]=useState(null); const [errors,setErrors]=useState({}); const [touched,setTouched]=useState({}); const [saved,setSaved]=useState(false);
   useEffect(()=>{if(open&&integration){setForm({name:integration.name,product:integration.product||"",businessObjects:integration.businessObjects||[],triggerOn:"Always",failureBehavior:"Auto-retry 3x then DLQ",frequency:integration.frequency||"Every 15 min",startTime:"06:00"});setErrors({});setTouched({});setSaved(false);}},[open,integration]);
@@ -1733,7 +2008,10 @@ function EditIntegrationDrawer({ open, integration, system, onClose, onSave }) {
   );
 }
 
-// ─── NAV ──────────────────────────────────────────────────────────────────────
+// ─── NAVIGATION ──────────────────────────────────────────────────────────────
+// The fixed dark top bar that appears on every page.
+// "Workflows" and "My Approvals" are placeholder links — they render but don't navigate.
+// The nav bar is purely decorative in this prototype to simulate a real product shell.
 function TopNav() {
   return (
     <div style={{height:46,background:C.navBg,borderBottom:`1px solid ${C.navBorder}`,display:"flex",alignItems:"center",padding:"0 24px",position:"sticky",top:0,zIndex:100,flexShrink:0}}>
@@ -1756,6 +2034,16 @@ function NavLink({ label }) {
 }
 
 // ─── SYSTEM CARD ─────────────────────────────────────────────────────────────
+// A card on the Systems list page representing one external system.
+//
+// Shows: name, status badge, category, plant, description, integration count,
+// error notification email, and a red error badge if there are items in the Review Queue.
+//
+// Amber warning shown at the bottom if the system has no error email configured
+// (failure alerts would be undeliverable in that case).
+//
+// Clicking anywhere on the card opens the System Detail page.
+// The "View →" button also navigates but stops click propagation to prevent double-firing.
 function SystemCard({ system, integrations, onClick }) {
   const [hov,setHov]=useState(false);
   const liveCount  = integrations.filter(i=>i.systemId===system.id&&i.status!=="disabled").length;
@@ -1784,7 +2072,14 @@ function SystemCard({ system, integrations, onClick }) {
   );
 }
 
-// ─── SYSTEMS PAGE — Phase 2 copy + demo-readiness ────────────────────────────
+// ─── SYSTEMS PAGE ────────────────────────────────────────────────────────────
+// The main landing page. Shows all external systems as cards in a responsive grid.
+//
+// Filtering: search box (name or category) + plant select + status chip filters
+// all work together. The count "N of M systems" updates live as filters change.
+//
+// The page intro copy explains the System → Integration hierarchy at a glance
+// for users who may be new to the product.
 function SystemsPage({ systems, integrations, onViewSystem, onAddSystem }) {
   const [search,setSearch]=useState(""); const [plant,setPlant]=useState("All Plants"); const [statusF,setStatusF]=useState("all");
   const statusCounts=useMemo(()=>{const c={all:systems.length};systems.forEach(s=>{c[s.status]=(c[s.status]||0)+1;});return c;},[systems]);
@@ -1846,7 +2141,15 @@ function StatCard({ label, value, color, sub, mono }) {
   return <div style={{background:C.bg1,padding:"12px 16px",borderLeft:`2px solid ${C.border0}`}}><div style={{fontFamily:FONT,fontSize:10,color:C.text3,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:5}}>{label}</div><div style={{fontFamily:mono?MONO:FONT,fontSize:mono?13:20,fontWeight:mono?500:700,color:color||C.text0,lineHeight:1}}>{value}</div>{sub&&<div style={{fontFamily:FONT,fontSize:11,color:C.text3,marginTop:4}}>{sub}</div>}</div>;
 }
 
-// ─── FLOW STRIP (Phase 3) ─────────────────────────────────────────────────────
+// ─── FLOW STRIP ───────────────────────────────────────────────────────────────
+// A compact visual summary of what data is actively moving through this system.
+// Shows each active integration as a directional row: Source → data type → Destination
+//
+// Teal left border = inbound (data coming in from the external system).
+// Purple left border = outbound (data going out from Innovapptive to the external system).
+// Hidden entirely if there are no active or ready-to-publish integrations.
+//
+// Limited to 4 rows. If there are more, a "+N more" message appears at the bottom.
 function FlowStrip({ system, integrations }) {
   const intgs = integrations.filter(i=>i.systemId===system.id&&i.status!=="disabled"&&i.status!=="draft");
   if(intgs.length===0) return null;
@@ -1878,7 +2181,18 @@ function FlowStrip({ system, integrations }) {
   );
 }
 
-// ─── INTEGRATION CARD — Phase 2 summary sentence ─────────────────────────────
+// ─── INTEGRATION CARD ────────────────────────────────────────────────────────
+// Represents one integration in the Integrations tab of System Detail.
+//
+// The plain-English summary sentence at the top (from summaryLine()) is the
+// most important element — it tells a non-technical user what this integration does
+// without needing to decode the direction/method/product/collection fields.
+//
+// Status-specific callout banners guide users to the next action:
+//   Draft → "edit to complete configuration and publish"
+//   Ready to publish → "edit to review and activate data flow"
+//   Disabled → "no data will flow until re-enabled"
+//   Failed → "check the Review Queue for details"
 function IntegrationCard({ integration, systemName, onEdit, onDisable }) {
   const isDisabled=integration.status==="disabled";
   const runtimeLabel=integration.method==="polling"?"Scheduled":"Real-time";
@@ -1940,7 +2254,15 @@ function ActivityTab() {
   return <div style={{background:C.bg0,border:`1px solid ${C.border0}`}}>{ACTIVITY.map((a,idx)=><div key={a.id} style={{display:"flex",gap:12,padding:"10px 16px",borderBottom:idx<ACTIVITY.length-1?`1px solid ${C.border0}`:"none",background:idx%2===0?C.bg0:C.bg1,alignItems:"flex-start"}}><div style={{paddingTop:5,flexShrink:0}}><span style={{display:"block",width:8,height:8,borderRadius:"50%",background:DOT[a.status]||C.text3}}/></div><div style={{flex:1,fontFamily:FONT,fontSize:13,color:C.text0}}>{a.desc}</div><div style={{fontFamily:MONO,fontSize:11,color:C.text3,flexShrink:0}}>{new Date(a.timestamp).toLocaleString()}</div></div>)}</div>;
 }
 
-// ─── DLQ TAB — Phase 3: Review Queue ─────────────────────────────────────────
+// ─── DLQ TAB (Review Queue) ───────────────────────────────────────────────────
+// Shows dead-letter queue (DLQ) entries — records that failed to process after
+// the maximum number of retries and were held here instead of being silently dropped.
+//
+// "Dead-letter queue" is a standard data-pipeline safety mechanism: failures are
+// visible, inspectable, and recoverable. Users can view the raw record, then choose
+// to replay it (re-attempt processing) or discard it (mark as resolved and remove).
+//
+// Replay and Discard are currently rendered but not wired (Coming Soon).
 function DLQTab({ systemId, onInspect }) {
   const entries=DLQ_ENTRIES.filter(d=>d.systemId===systemId);
   return (
@@ -1976,6 +2298,9 @@ function DLQTab({ systemId, onInspect }) {
     </div>
   );
 }
+// The Audit Log tab: a chronological record of who did what and when.
+// Shows user email, timestamp, and the action taken (create, publish, edit).
+// In a real product, this would be a live query from a backend audit service.
 function AuditTab() {
   return (
     <div style={{background:C.bg0,border:`1px solid ${C.border0}`}}>
@@ -1985,7 +2310,19 @@ function AuditTab() {
   );
 }
 
-// ─── DLQ INSPECT MODAL — Phase 3: plain-English summary + collapsible raw ────
+// ─── DLQ INSPECT MODAL ───────────────────────────────────────────────────────
+// A modal for inspecting a single failed record from the Review Queue.
+//
+// Content (top to bottom):
+//   1. Plain-English summary: which integration failed, when, how many retries, what went wrong
+//   2. Metadata strip: integration name, exact failure timestamp, retry count
+//   3. "Raw event data" collapsible section (collapsed by default):
+//      - The raw JSON payload that failed to process (formatted for readability)
+//      - A parsed field table for quick inspection of top-level values
+//
+// The raw payload is hidden by default — most users need only the plain-English summary.
+// Support or engineering can expand it to diagnose the exact data that caused the failure.
+// "Copy payload" copies the raw JSON to clipboard for pasting into support tickets or debugging.
 function DLQInspectModal({ entry, onClose }) {
   const [rawOpen,setRawOpen] = useState(false);
   if(!entry) return null;
@@ -2053,6 +2390,17 @@ function DLQInspectModal({ entry, onClose }) {
 }
 
 // ─── SYSTEM DETAIL PAGE ───────────────────────────────────────────────────────
+// The detail view for a single external system. Accessed by clicking a System Card
+// on the Systems list, or immediately after creating a new system.
+//
+// Layout (top to bottom):
+//   - Header bar: system name, status, code, category, plant, Edit System + Add Integration buttons
+//   - Incomplete setup banner (shown if system is draft with no error email)
+//   - Flow Strip: visual summary of active data flows
+//   - Summary card + stats grid (2-column)
+//   - Connection details notice (explains connection config lives at integration level)
+//   - Tab bar: Integrations | User Activity | Review Queue | Audit Log
+//   - Tab content
 function SystemDetailPage({ system, integrations, onBack, onAddIntegration, onUpdateSystem, onUpdateIntegration, onDisableIntegration }) {
   const [activeTab,setTab]=useState("integrations");
   const [editSysOpen,setEditSys]=useState(false);
@@ -2121,6 +2469,19 @@ function SystemDetailPage({ system, integrations, onBack, onAddIntegration, onUp
 }
 
 // ─── ROOT ─────────────────────────────────────────────────────────────────────
+// The top-level component that holds all application data and renders the correct page.
+//
+// Navigation model: there are no URLs. A "page" variable determines what's shown.
+//   "systems" → Systems list page
+//   "detail"  → System Detail page for the system stored in "selectedId"
+// There is no browser history or back button support — this is a prototype.
+//
+// All data (systems, integrations, webhooks) lives here as React state arrays.
+// On page refresh, everything resets to the INIT_* seed data defined at the top of this file.
+// In a real product, this data would come from an API server.
+//
+// Mutation handlers keep state immutable — they always return new arrays, never
+// modify the existing ones. This is how React detects what changed and re-renders.
 function App() {
   const [systems,      setSystems]     = useState(INIT_SYSTEMS);
   const [integrations, setIntegrations]= useState(INIT_INTEGRATIONS);
