@@ -1027,7 +1027,10 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
   function handleValidate() {
     setValidateRunning(true); setValidateResult(null);
     setTimeout(()=>{
-      const mp=form.fieldMappings;
+      // Read latest state from ref — same pattern as handleAutoMap, avoids stale
+      // closure in the 1s timeout window if the user edits mappings while waiting.
+      const f = formRef.current;
+      const mp=f.fieldMappings;
       const mapped=mp.filter(m=>m.target).map(m=>m.target);
       const dups=mapped.filter((t,i)=>mapped.indexOf(t)!==i);
       // Real type-conflict check: compare each source field's type against the
@@ -1037,7 +1040,7 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
         if(!m.target) return false;
         const [col,...rest]=m.target.split("::");
         const targetPath=rest.join("::");
-        const tf=(NESTED_TARGET_SCHEMA[form.product]?.[col]||[]).find(f=>f.path===targetPath);
+        const tf=(NESTED_TARGET_SCHEMA[f.product]?.[col]||[]).find(fd=>fd.path===targetPath);
         if(!tf) return false;
         if(m.srcType==="url"&&tf.type==="string") return false;
         if(m.srcType==="datetime"&&tf.type==="date") return false;
