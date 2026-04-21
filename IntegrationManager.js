@@ -91,11 +91,11 @@ const INCOMING_AUTH_TYPES = ["API Key (header)","HMAC Signature","No Authenticat
 // When a user selects a product in the integration form, the Collections dropdown
 // is automatically populated from this list.
 const PRODUCT_OBJECTS = {
-  "iMaintenance": ["Work Order","Notification","Operation","Component","Equipment","Functional Location","Measurement Point","Work Log","Attachment","Failure Reporting"],
-  "mRounds":      ["Round","Round Plan","Asset","Location","Task","Issue","Action","Assignment"],
-  "mInventory":   ["Material","Plant","Storage Location","Storage Bin","Stock","Reservation","Goods Receipt","Goods Issue","Transfer Posting","Cycle Count","Label"],
-  "EHS":          ["Incident","Observation","Action","Permit","Risk Assessment","Audit","JHA"],
-  "Platform":     ["Transition Compound Object","External System","Audit"],
+  "iMaintenance": ["Observation","Work Order","Notification","Measurement Point","Work Log","Operation","Component","Equipment","Functional Location","Attachment","Failure Reporting"],
+  "mRounds":      ["Round","Issue","Task","Action","Round Plan","Asset","Location","Assignment"],
+  "mInventory":   ["Material","Goods Receipt","Goods Issue","Plant","Storage Location","Storage Bin","Stock","Reservation","Transfer Posting","Cycle Count","Label"],
+  "EHS":          ["Observation","Incident","Action","Permit","Risk Assessment","Audit","JHA"],
+  "Platform":     ["External System","Transition Compound Object","Audit"],
 };
 const PRODUCTS = Object.keys(PRODUCT_OBJECTS);
 
@@ -185,6 +185,25 @@ const NESTED_TARGET_SCHEMA = {
       { path:"priority",              type:"enum",     required:false },
       { path:"created_at",            type:"datetime", required:false },
     ],
+    "Measurement Point": [
+      { path:"id",                    type:"string",   required:true  },
+      { path:"asset.id",              type:"string",   required:true  },
+      { path:"characteristic",        type:"string",   required:true  },
+      { path:"value",                 type:"number",   required:true  },
+      { path:"unit",                  type:"string",   required:false },
+      { path:"measured_at",           type:"datetime", required:false },
+      { path:"source_system",         type:"string",   required:false },
+      { path:"status",                type:"enum",     required:false },
+    ],
+    "Work Log": [
+      { path:"id",                    type:"string",   required:true  },
+      { path:"work_order.id",         type:"string",   required:true  },
+      { path:"performed_at",          type:"datetime", required:false },
+      { path:"performed_by.id",       type:"string",   required:false },
+      { path:"duration_minutes",      type:"number",   required:false },
+      { path:"description",           type:"string",   required:false },
+      { path:"status",                type:"enum",     required:false },
+    ],
   },
   "EHS": {
     "Observation": [
@@ -215,6 +234,26 @@ const NESTED_TARGET_SCHEMA = {
       { path:"assignee.id",           type:"string",   required:false },
       { path:"status",                type:"enum",     required:false },
     ],
+    "Permit": [
+      { path:"id",                    type:"string",   required:true  },
+      { path:"type",                  type:"enum",     required:true  },
+      { path:"location.site",         type:"string",   required:true  },
+      { path:"issued_at",             type:"datetime", required:false },
+      { path:"expires_at",            type:"datetime", required:false },
+      { path:"issued_to.id",          type:"string",   required:false },
+      { path:"description",           type:"string",   required:false },
+      { path:"status",                type:"enum",     required:false },
+    ],
+    "Risk Assessment": [
+      { path:"id",                    type:"string",   required:true  },
+      { path:"title",                 type:"string",   required:true  },
+      { path:"location.site",         type:"string",   required:false },
+      { path:"assessed_at",           type:"datetime", required:false },
+      { path:"assessed_by.id",        type:"string",   required:false },
+      { path:"severity",              type:"enum",     required:false },
+      { path:"description",           type:"string",   required:false },
+      { path:"status",                type:"enum",     required:false },
+    ],
   },
   "mRounds": {
     "Round": [
@@ -230,6 +269,74 @@ const NESTED_TARGET_SCHEMA = {
       { path:"asset.id",              type:"string",   required:false },
       { path:"severity",              type:"enum",     required:false },
       { path:"description",           type:"string",   required:false },
+      { path:"created_at",            type:"datetime", required:false },
+      { path:"status",                type:"enum",     required:false },
+    ],
+    "Task": [
+      { path:"id",                    type:"string",   required:true  },
+      { path:"title",                 type:"string",   required:true  },
+      { path:"asset.id",              type:"string",   required:false },
+      { path:"due_at",                type:"datetime", required:false },
+      { path:"assignee.id",           type:"string",   required:false },
+      { path:"description",           type:"string",   required:false },
+      { path:"status",                type:"enum",     required:false },
+    ],
+    "Action": [
+      { path:"id",                    type:"string",   required:true  },
+      { path:"title",                 type:"string",   required:true  },
+      { path:"due_date",              type:"date",     required:false },
+      { path:"assignee.id",           type:"string",   required:false },
+      { path:"description",           type:"string",   required:false },
+      { path:"status",                type:"enum",     required:false },
+    ],
+  },
+  "mInventory": {
+    "Material": [
+      { path:"id",                    type:"string",   required:true  },
+      { path:"description",           type:"string",   required:true  },
+      { path:"plant.id",              type:"string",   required:true  },
+      { path:"material_type",         type:"enum",     required:false },
+      { path:"unit_of_measure",       type:"string",   required:false },
+      { path:"base_unit",             type:"string",   required:false },
+      { path:"source_system",         type:"string",   required:false },
+      { path:"status",                type:"enum",     required:false },
+    ],
+    "Goods Receipt": [
+      { path:"id",                    type:"string",   required:true  },
+      { path:"material.id",           type:"string",   required:true  },
+      { path:"plant.id",              type:"string",   required:true  },
+      { path:"quantity",              type:"number",   required:true  },
+      { path:"unit_of_measure",       type:"string",   required:false },
+      { path:"posting_date",          type:"datetime", required:false },
+      { path:"reference_document",    type:"string",   required:false },
+      { path:"status",                type:"enum",     required:false },
+    ],
+    "Goods Issue": [
+      { path:"id",                    type:"string",   required:true  },
+      { path:"material.id",           type:"string",   required:true  },
+      { path:"plant.id",              type:"string",   required:true  },
+      { path:"quantity",              type:"number",   required:true  },
+      { path:"unit_of_measure",       type:"string",   required:false },
+      { path:"posting_date",          type:"datetime", required:false },
+      { path:"cost_center",           type:"string",   required:false },
+      { path:"status",                type:"enum",     required:false },
+    ],
+  },
+  "Platform": {
+    "External System": [
+      { path:"id",                    type:"string",   required:true  },
+      { path:"name",                  type:"string",   required:true  },
+      { path:"type",                  type:"enum",     required:false },
+      { path:"endpoint_url",          type:"url",      required:false },
+      { path:"description",           type:"string",   required:false },
+      { path:"status",                type:"enum",     required:false },
+    ],
+    "Transition Compound Object": [
+      { path:"id",                    type:"string",   required:true  },
+      { path:"source_id",             type:"string",   required:true  },
+      { path:"source_system",         type:"string",   required:true  },
+      { path:"object_type",           type:"enum",     required:false },
+      { path:"payload",               type:"string",   required:false },
       { path:"created_at",            type:"datetime", required:false },
       { path:"status",                type:"enum",     required:false },
     ],
@@ -891,18 +998,23 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
   function handleAutoMap() {
     setAutoMapRunning(true); setAutoMapResult(null);
     setTimeout(()=>{
-      setForm(f=>({...f,fieldMappings:f.fieldMappings.map(m=>{
-        const rule = AUTO_MAP_RULES[m.src];
-        if(!rule||m.target) return m.target?{...m,rowState:"manual"}:m;
-        let matched = null;
-        for(const col of (f.businessObjects||[])){
-          const fields = NESTED_TARGET_SCHEMA[f.product]?.[col]||[];
-          if(fields.some(fd=>fd.path===rule)){ matched=`${col}::${rule}`; break; }
-        }
-        return matched ? {...m,target:matched,rowState:"auto-mapped"} : m;
-      })}));
-      const n = form.fieldMappings.filter(m=>AUTO_MAP_RULES[m.src]).length;
-      setAutoMapResult(`${n} field${n!==1?"s":""} mapped`);
+      // Count newly mapped inside the updater so we read fresh state, not the stale closure.
+      let newlyMapped = 0;
+      setForm(f=>{
+        const updated = f.fieldMappings.map(m=>{
+          const rule = AUTO_MAP_RULES[m.src];
+          if(!rule||m.target) return m.target?{...m,rowState:"manual"}:m;
+          let matched = null;
+          for(const col of (f.businessObjects||[])){
+            const fields = NESTED_TARGET_SCHEMA[f.product]?.[col]||[];
+            if(fields.some(fd=>fd.path===rule)){ matched=`${col}::${rule}`; break; }
+          }
+          if(matched){ newlyMapped++; return {...m,target:matched,rowState:"auto-mapped"}; }
+          return m;
+        });
+        return {...f,fieldMappings:updated};
+      });
+      setAutoMapResult(`${newlyMapped} field${newlyMapped!==1?"s":""} mapped`);
       setAutoMapRunning(false);
     },1200);
   }
@@ -913,11 +1025,24 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
       const mp=form.fieldMappings;
       const mapped=mp.filter(m=>m.target).map(m=>m.target);
       const dups=mapped.filter((t,i)=>mapped.indexOf(t)!==i);
+      // Real type-conflict check: compare each source field's type against the
+      // target field's declared type in NESTED_TARGET_SCHEMA.
+      // We allow compatible pairings (url→string, datetime→date) to avoid false alarms.
+      const typeConflicts=mp.filter(m=>{
+        if(!m.target) return false;
+        const [col,...rest]=m.target.split("::");
+        const targetPath=rest.join("::");
+        const tf=(NESTED_TARGET_SCHEMA[form.product]?.[col]||[]).find(f=>f.path===targetPath);
+        if(!tf) return false;
+        if(m.srcType==="url"&&tf.type==="string") return false;
+        if(m.srcType==="datetime"&&tf.type==="date") return false;
+        return m.srcType!==tf.type;
+      }).length;
       const result={
         requiredMapped:mp.filter(m=>m.required&&m.target).length,
         requiredTotal:mp.filter(m=>m.required).length,
         optionalSkipped:mp.filter(m=>!m.required&&!m.target).length,
-        typeConflicts:0,
+        typeConflicts,
         refLookups:mp.filter(m=>m.refLookup&&m.target).length,
         duplicateTargets:dups.length,
         unmappedRequired:mp.filter(m=>m.required&&!m.target).length,
@@ -925,7 +1050,7 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
       };
       setForm(f=>({...f,validationResult:result}));
       setValidateRunning(false);
-      const issues = result.unmappedRequired + result.duplicateTargets;
+      const issues = result.unmappedRequired + result.duplicateTargets + result.typeConflicts;
       setValidateResult(issues===0?"All checks passed":`${issues} issue${issues!==1?"s":""} found`);
     },1000);
   }
@@ -1130,7 +1255,6 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
 
         {/* Footer */}
         <div style={{height:64,display:"flex",alignItems:"center",padding:"0 24px",borderTop:`1px solid ${C.border0}`,background:C.bg1,flexShrink:0,gap:10}}>
-          <span style={{fontFamily:FONT,fontSize:12,fontWeight:700,color:mappingStatus.color,background:mappingStatus.bg,border:`1px solid ${mappingStatus.border}`,padding:"4px 12px"}}>{mappingStatus.label}</span>
           <div style={{flex:1}}/>
           <button onClick={onBack} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:13,fontWeight:600,padding:"8px 20px",cursor:"pointer"}}>Back</button>
           <button onClick={()=>onSave(false)} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:13,fontWeight:600,padding:"8px 20px",cursor:"pointer"}}>Save as Draft</button>
