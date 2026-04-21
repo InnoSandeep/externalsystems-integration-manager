@@ -686,7 +686,7 @@ Full-screen `position: fixed` overlay (z-index 211) that replaces the drawer for
 
 All state resets when `open` becomes false.
 
-**`formRef`:** A `useRef` that is set to `form` on every render (`formRef.current = form`). This gives `setTimeout` callbacks (Auto Map, Validate) access to the latest form state without a stale closure and without side effects inside state updater functions — necessary because React 18 with `createRoot` batches state updates asynchronously.
+**`formRef`:** A `useRef` that is set to `form` on every render (`formRef.current = form`). This gives the Auto Map `setTimeout` callback access to the latest form state without a stale closure and without side effects inside state updater functions — necessary because React 18 with `createRoot` batches state updates asynchronously. Validate uses the same pattern.
 
 **Computed values:**
 - `collections` = `form.businessObjects`
@@ -722,7 +722,7 @@ All state resets when `open` becomes false.
 
 **Toolbar:**
 - `AIActionButton` "Auto Map" — simulates 1.2s async mapping. Reads current form state from `formRef` (avoids stale closures and updater side effects). For each unmapped row, looks up `m.src` in `AUTO_MAP_RULES`, then checks if the suggested path exists in any selected collection's `NESTED_TARGET_SCHEMA`. Sets `target = "Col::target_path"` and `rowState = "auto-mapped"`. Reports only the count of rows newly mapped this run.
-- `AIActionButton` "Validate" — simulates 1s async validation. Checks: required fields mapped, duplicate targets, real type conflicts (compares `srcType` to the target field's `type` in `NESTED_TARGET_SCHEMA`; allows compatible pairings: `url→string`, `datetime→date`), and ref-lookup count. Stores result in `form.validationResult`. Issues count = unmapped required + duplicates + type conflicts. Supports Show/Hide toggle.
+- `AIActionButton` "Validate" — simulates 1s async validation. Reads current form state from `formRef` (avoids stale closure in the 1s timeout window). Checks: required fields mapped, duplicate targets, real type conflicts (compares `srcType` to the target field's `type` in `NESTED_TARGET_SCHEMA`; allows compatible pairings: `url→string`, `datetime→date`), and ref-lookup count. Stores result in `form.validationResult`. Issues count = unmapped required + duplicates + type conflicts. Supports Show/Hide toggle.
 - Duplicate target warning badge (amber) if any target appears on multiple rows
 - Filter input: filters rows by `src` or `target` text
 
@@ -954,7 +954,8 @@ No Step 2. No mapping required.
 
 | Area | Status |
 |---|---|
-| Multi-collection mapping — deduplication / grouping of targets across collections | Schema lookup works for all products, but cross-collection grouping in the table is not implemented |
+| `NESTED_TARGET_SCHEMA` — collections without target field definitions | Many collections in `PRODUCT_OBJECTS` have no schema entry yet; users selecting them get an empty target dropdown. Missing: iMaintenance (Operation, Component, Equipment, Functional Location, Attachment, Failure Reporting); mRounds (Round Plan, Asset, Location, Assignment); mInventory (Plant, Storage Location, Storage Bin, Stock, Reservation, Transfer Posting, Cycle Count, Label); EHS (Audit, JHA); Platform (Audit) |
+| Multi-collection mapping — cross-collection target grouping | Target dropdowns are populated correctly per-collection, but deduplication and visual grouping across multiple selected collections is not implemented |
 | Edit Mapping post-publish | Stubbed as "Coming Soon" on publish success screen |
 | Replay / Discard in DLQ | Buttons rendered but not wired |
 | Validation panel — richer diff-style review view | Currently shows a basic metrics row; a detailed diff view is planned |
