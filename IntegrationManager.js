@@ -38,7 +38,7 @@ const C = {
   bg0:         "#FFFFFF",   // $color-bg-default / White
   bg1:         "#EFF1F5",   // Grey-100 (same as pageBg in CWP 2.0)
   bg2:         "#E2E4E9",   // Grey-200 — disabled fills, dividers
-  bg3:         "#8F93A3",   // Grey-300 — stronger divider
+  bg3:         "rgba(143,147,163,0.25)",  // $color-bg-chip — light chip/badge surface (~#D7D8DD on white)
 
   // Borders
   border0:     "#E2E4E9",   // $color-border-default / Grey-200
@@ -797,7 +797,7 @@ function SelectionCard({ label, sublabel, description, selected, onClick, disabl
   return (
     <div onClick={disabled?undefined:onClick} onMouseEnter={()=>!disabled&&setHov(true)} onMouseLeave={()=>setHov(false)}
       style={{flex:1,padding:"14px 16px",cursor:disabled?"not-allowed":"pointer",border:`2px solid ${selected?C.blue:hov?C.border1:C.border0}`,background:selected?C.blueBg:disabled?"#FAFAFA":hov?C.bg1:C.bg0,opacity:disabled?0.55:1,position:"relative",transition:"border-color 0.12s,background 0.12s"}}>
-      {tag&&<span style={{position:"absolute",top:8,right:8,background:C.bg3,border:`1px solid ${C.border0}`,fontFamily:FONT,fontSize:10,fontWeight:700,color:C.text3,padding:"2px 6px",letterSpacing:"0.05em"}}>{tag}</span>}
+      {tag&&<span style={{position:"absolute",top:8,right:8,background:C.bg3,border:`1px solid ${C.border0}`,fontFamily:FONT,fontSize:10,fontWeight:700,color:C.text0,padding:"2px 6px",letterSpacing:"0.05em"}}>{tag}</span>}
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
         <div style={{width:16,height:16,border:`2px solid ${selected?C.blue:C.border1}`,borderRadius:9999,background:selected?C.blue:"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
           {selected&&<div style={{width:6,height:6,borderRadius:9999,background:"#fff"}}/>}

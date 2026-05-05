@@ -395,7 +395,7 @@ const C = {
                             // NOTE: same as pageBg in CWP 2.0. If surface layering
                             // collapses (hover invisible), use #F7F8FA as 1-step lift.
   bg2:         "#E2E4E9",   // $color-border-default / Grey-200 — disabled fills, dividers
-  bg3:         "#8F93A3",   // Grey-300 — stronger divider, placeholder
+  bg3:         "rgba(143,147,163,0.25)",  // $color-bg-chip — chip/badge surface (~#D7D8DD on white)
 
   // Borders
   border0:     "#E2E4E9",   // $color-border-default / Grey-200
@@ -482,6 +482,7 @@ const MONO = "'Roboto Mono', 'Fira Code', 'Consolas', monospace";
 | `purple` | `#6A1B9A` | `#8A6CFF` | Gamma/Purple-500 |
 | `purpleBg` | `#F3E5F5` | `#F3F0FF` | Purple-50 |
 | `purpleBorder` | `#CE93D8` | `#B19DFF` | Purple-300 |
+| `bg3` | `#8F93A3` | `rgba(143,147,163,0.25)` | $color-bg-chip — chip/badge surface; old solid value collided with text3 making chip labels invisible |
 
 ---
 
@@ -585,3 +586,4 @@ The prototype is a single-file React 18 app with inline styles. It cannot import
 |---|---|---|
 | 2026-05-05 | Full CWP 2.0 token population: color primitives (Alpha/Beta/Gamma), semantic tokens (text, bg, border, icon, status, focus ring), typography complete scale (t1-t7 bold/medium, b1-b5 regular), spacing (spacing-1 to spacing-16), border radius (none/sm/md/lg/xl/full), elevation (none/sm/md/lg/xl). All sections updated to CWP 2.0 — supersedes Figma v2 spec. | User-provided from CWP Storybook 2026 |
 | 2026-05-05 | Initial Storybook inventory captured (structure only — 47 entries, component list). | `index.json` auto-fetch |
+| 2026-05-05 | Fixed `bg3` token collision: changed from `#8F93A3` (solid Grey-300, same as `text3`) to `rgba(143,147,163,0.25)` ($color-bg-chip). Resolves invisible "Coming Soon" chip label on SelectionCard. SelectionCard tag text changed from `text3` to `text0` (#2A2B30) for ~9:1 contrast on chip surface. | P2 bug finding |
