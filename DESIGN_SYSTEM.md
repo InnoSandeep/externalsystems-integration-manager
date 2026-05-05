@@ -322,7 +322,7 @@ Use semantic tokens in all component code. They reference primitives by role.
 | `$color-status-warning-border` | Orange 500 | `#FFAB40` | Warning badge border |
 | `$color-status-warning-icon` | Orange 500 | `#FFAB40` | Warning icon |
 | `$color-status-error-text` | Red 700 | `#B42318` | Error text |
-| `$color-status-error-bg` | Red 25% | `rgba(255,92,92,0.25)` | Error badge background |
+| `$color-status-error-bg` | Red-500 25% | `rgba(217,45,32,0.25)` | Error badge background |
 | `$color-status-error-border` | Red 500 | `#D92D20` | Error badge border |
 | `$color-status-error-icon` | Red 500 | `#D92D20` | Error icon |
 
@@ -434,7 +434,7 @@ const C = {
 
   // Red — error, failed — Gamma/Red
   red:         "#B42318",   // Red-700 — $color-status-error-text
-  redBg:       "rgba(255,92,92,0.25)",   // $color-status-error-bg
+  redBg:       "rgba(217,45,32,0.25)",   // Red-500 (#D92D20) 25% — $color-status-error-bg
   redBorder:   "#D92D20",   // Red-500 — $color-status-error-border
 
   // Green — active, success — Gamma/Green
@@ -474,7 +474,7 @@ const MONO = "'Roboto Mono', 'Fira Code', 'Consolas', monospace";
 | `amberBg` | `#FFF8E1` | `rgba(255,171,64,0.25)` | Transparent per semantic token |
 | `amberBorder` | `#FFE082` | `#FFAB40` | Orange-500 |
 | `red` | `#C62828` | `#B42318` | Red-700 |
-| `redBg` | `#FFEBEE` | `rgba(255,92,92,0.25)` | Transparent per semantic token |
+| `redBg` | `#FFEBEE` | `rgba(217,45,32,0.25)` | Red-500 (#D92D20) 25% per semantic token |
 | `redBorder` | `#EF9A9A` | `#D92D20` | Red-500 |
 | `teal` | `#00796B` | `#009688` | Teal-500 |
 | `tealBg` | `#E0F2F1` | `#E6F5F3` | Teal-50 |

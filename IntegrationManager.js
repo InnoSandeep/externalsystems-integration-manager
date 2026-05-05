@@ -27,48 +27,68 @@
 // useRef: holds a value that persists across renders without triggering a re-render
 const { useState, useMemo, useEffect, useRef } = React;
 
-// ─── THEME (v2 — Figma-aligned) ───────────────────────────────────────────────
+// ─── THEME (CWP 2.0) ─────────────────────────────────────────────────────────
 // All colors used in the UI are defined here as named tokens.
 // Instead of scattering hex codes through the code, every component references
 // these names (e.g. C.blue, C.red). Changing a token here updates it everywhere.
-// Colors are aligned with the Figma v2 design specification.
+// Source: CWP Design System Storybook 2026 — see DESIGN_SYSTEM.md for full token reference.
 const C = {
-  pageBg:      "#F5F5F5",   // grey-100
-  bg0:         "#FFFFFF",   // White — cards, modals, inputs
-  bg1:         "#FAFAFA",   // slightly above pageBg — hover rows, sidebars, info blocks
-  bg2:         "#EEEEEE",   // grey-200 — disabled fill, divider bg
-  bg3:         "#E0E0E0",   // grey-300 — stronger divider
-  border0:     "#E0E0E0",   // grey-300 — default border
-  border1:     "#BDBDBD",   // grey-400 — medium emphasis border
-  border2:     "#9E9E9E",   // grey-500 — strong border
-  text0:       "#212121",   // text-primary — headings, labels
-  text1:       "#3D3D3D",   // text-secondary — body text
-  text2:       "#757575",   // grey-600 — secondary/meta
-  text3:       "#9E9E9E",   // grey-500 — placeholder, disabled
+  // Surfaces
+  pageBg:      "#EFF1F5",   // $color-bg-surface / Beta Grey-100
+  bg0:         "#FFFFFF",   // $color-bg-default / White
+  bg1:         "#EFF1F5",   // Grey-100 (same as pageBg in CWP 2.0)
+  bg2:         "#E2E4E9",   // Grey-200 — disabled fills, dividers
+  bg3:         "#8F93A3",   // Grey-300 — stronger divider
+
+  // Borders
+  border0:     "#E2E4E9",   // $color-border-default / Grey-200
+  border1:     "#8F93A3",   // Grey-300 — medium emphasis
+  border2:     "#666975",   // Grey-400 — strong border
+
+  // Text
+  text0:       "#2A2B30",   // $color-text-primary / Grey-600
+  text1:       "#525560",   // $color-text-secondary / Grey-500
+  text2:       "#8F93A3",   // $color-text-placeholder / Grey-300
+  text3:       "#8F93A3",   // $color-text-disabled / Grey-300
+
+  // Navigation — retain dark nav surface
   navBg:       "#1A2233",
   navBorder:   "#2A3447",
   navText:     "#C8D0DC",
   navActive:   "#FFFFFF",
-  navActiveBg: "#2A3EB1",   // alpha/primary-700 — active nav item pill
-  blue:        "#3D4FD6",   // alpha/primary-500
-  blueHover:   "#2A3EB1",   // alpha/primary-700
-  blueBg:      "#EEF0FB",   // alpha/primary-50
-  blueBorder:  "#D5D9F5",   // alpha/primary-100
-  teal:        "#00796B",   // gamma/accent/cyan — inbound, info
-  tealBg:      "#E0F2F1",
-  tealBorder:  "#80CBC4",
-  amber:       "#C47D0A",   // gamma/accent/orange — warning, draft
-  amberBg:     "#FFF8E1",
-  amberBorder: "#FFE082",
-  red:         "#C62828",   // gamma/accent/red — error, failed
-  redBg:       "#FFEBEE",
-  redBorder:   "#EF9A9A",
-  green:       "#2E7D32",   // gamma/accent/green — active, success
-  greenBg:     "#E8F5E9",
-  greenBorder: "#A5D6A7",
-  purple:      "#6A1B9A",   // gamma/accent/purple — outbound
-  purpleBg:    "#F3E5F5",
-  purpleBorder:"#CE93D8",
+  navActiveBg: "#2B40B4",   // Alpha/Primary-700
+
+  // Primary interactive — Alpha/Primary
+  blue:        "#3D5AFE",   // Alpha/Primary-500
+  blueHover:   "#2B40B4",   // Alpha/Primary-700
+  blueBg:      "#ECEFFF",   // Alpha/Primary-50
+  blueBorder:  "#C3CCFF",   // Alpha/Primary-100
+  blueFocus:   "#7D90FE",   // Alpha/Primary-300 — focused border
+
+  // Teal — inbound direction, info callouts
+  teal:        "#009688",   // Teal-500
+  tealBg:      "#E6F5F3",   // Teal-50
+  tealBorder:  "#54B9AF",   // Teal-300
+
+  // Amber / Warning — Gamma/Orange
+  amber:       "#B5792D",   // Orange-700 — warning text
+  amberBg:     "rgba(255,171,64,0.25)",  // Orange-500 25%
+  amberBorder: "#FFAB40",   // Orange-500
+
+  // Red — error, failed
+  red:         "#B42318",   // Red-700 — error text
+  redBg:       "rgba(217,45,32,0.25)",   // Red-500 (#D92D20) 25%
+  redBorder:   "#D92D20",   // Red-500
+
+  // Green — active, success
+  green:       "#1C8D4F",   // Green-700 — success text
+  greenBg:     "rgba(40,199,111,0.25)",  // Green-500 25%
+  greenBorder: "#28C76F",   // Green-500
+
+  // Purple — outbound direction
+  purple:      "#8A6CFF",   // Purple-500
+  purpleBg:    "#F3F0FF",   // Purple-50
+  purpleBorder:"#B19DFF",   // Purple-300
 };
 const FONT = "'Roboto', 'Segoe UI', system-ui, sans-serif";
 const MONO = "'Roboto Mono', 'Fira Code', 'Consolas', monospace";
@@ -545,17 +565,17 @@ function blankIntegrationForm() {
 // Reads colors from STATUS_CONFIG so the look stays consistent everywhere.
 function StatusBadge({ status, size="sm" }) {
   const cfg=STATUS_CONFIG[status]||{label:status,color:C.text2,bg:C.bg2,border:C.border0};
-  return <span style={{display:"inline-flex",alignItems:"center",gap:5,background:cfg.bg,border:`1px solid ${cfg.border}`,padding:size==="lg"?"4px 10px":"2px 8px",fontFamily:FONT,fontSize:size==="lg"?12:11,fontWeight:600,color:cfg.color,whiteSpace:"nowrap"}}><span style={{width:6,height:6,borderRadius:"50%",background:cfg.color,flexShrink:0}}/>{cfg.label}</span>;
+  return <span style={{display:"inline-flex",alignItems:"center",gap:5,background:cfg.bg,border:`1px solid ${cfg.border}`,padding:size==="lg"?"4px 10px":"2px 8px",fontFamily:FONT,fontSize:size==="lg"?12:11,fontWeight:600,color:cfg.color,whiteSpace:"nowrap"}}><span style={{width:6,height:6,borderRadius:9999,background:cfg.color,flexShrink:0}}/>{cfg.label}</span>;
 }
 // Teal "↓ Inbound" or purple "↑ Outbound" pill shown on Integration Cards and drawers.
 function DirectionBadge({ direction }) {
   const isIn=direction==="inbound";
-  return <span style={{display:"inline-flex",alignItems:"center",gap:4,background:isIn?C.tealBg:C.purpleBg,border:`1px solid ${isIn?C.tealBorder:C.purpleBorder}`,padding:"2px 8px",fontSize:11,fontFamily:FONT,fontWeight:600,color:isIn?C.teal:C.purple}}>{isIn?"↓ Inbound":"↑ Outbound"}</span>;
+  return <span style={{display:"inline-flex",alignItems:"center",gap:4,background:isIn?C.tealBg:C.purpleBg,border:`1px solid ${isIn?C.tealBorder:C.purpleBorder}`,padding:"2px 8px",fontSize:12,fontFamily:FONT,fontWeight:600,color:isIn?C.teal:C.purple}}>{isIn?"↓ Inbound":"↑ Outbound"}</span>;
 }
 // Grey monospace badge showing the integration method: POLLING, WEBHOOK, etc.
 function MethodBadge({ method }) {
   const labels={polling:"POLLING",webhook:"WEBHOOK",file_import:"FILE IMPORT",file_export:"FILE EXPORT"};
-  return <span style={{display:"inline-flex",alignItems:"center",background:C.bg2,border:`1px solid ${C.border1}`,padding:"2px 8px",fontSize:11,fontFamily:MONO,fontWeight:500,color:C.text1}}>{labels[method]||method?.toUpperCase()}</span>;
+  return <span style={{display:"inline-flex",alignItems:"center",background:C.bg2,border:`1px solid ${C.border1}`,padding:"2px 8px",fontSize:12,fontFamily:MONO,fontWeight:500,color:C.text1}}>{labels[method]||method?.toUpperCase()}</span>;
 }
 function MonoText({ children, color, size=12 }) {
   return <span style={{fontFamily:MONO,fontSize:size,color:color||C.blue}}>{children}</span>;
@@ -571,30 +591,30 @@ function SectionRule({ label }) {
 function FieldLabel({ label, required, helper, sublabel }) {
   return (
     <div style={{marginBottom:5}}>
-      <div style={{display:"flex",alignItems:"baseline",gap:6,flexWrap:"nowrap"}}>
+      <div style={{display:"flex",alignItems:"baseline",gap:8,flexWrap:"nowrap"}}>
         <span style={{fontFamily:FONT,fontSize:12,fontWeight:600,color:C.text1,whiteSpace:"nowrap"}}>{label}</span>
         {sublabel&&<span style={{fontFamily:FONT,fontSize:10,color:C.text3,letterSpacing:"0.04em",whiteSpace:"nowrap",flexShrink:0}}>{sublabel}</span>}
         {required&&<span style={{color:C.red,marginLeft:2,fontSize:12}}>*</span>}
       </div>
-      {helper&&<div style={{fontFamily:FONT,fontSize:11,color:C.text3,marginTop:2,lineHeight:1.4}}>{helper}</div>}
+      {helper&&<div style={{fontFamily:FONT,fontSize:12,color:C.text3,marginTop:2,lineHeight:1.4}}>{helper}</div>}
     </div>
   );
 }
 function FieldInput({ value, onChange, placeholder, error, disabled, mono, type="text", onBlur }) {
   const [f,setF]=useState(false);
-  return <input type={type} value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} disabled={disabled} onFocus={()=>setF(true)} onBlur={()=>{setF(false);onBlur&&onBlur();}} style={{width:"100%",boxSizing:"border-box",fontFamily:mono?MONO:FONT,fontSize:13,background:disabled?C.bg2:C.bg0,border:`1px solid ${error?C.red:f?C.blue:C.border1}`,color:disabled?C.text2:C.text0,padding:"7px 10px",outline:"none",cursor:disabled?"not-allowed":"text"}}/>;
+  return <input type={type} value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} disabled={disabled} onFocus={()=>setF(true)} onBlur={()=>{setF(false);onBlur&&onBlur();}} style={{width:"100%",boxSizing:"border-box",fontFamily:mono?MONO:FONT,fontSize:14,background:disabled?C.bg2:C.bg0,border:`1px solid ${error?C.red:f?C.blue:C.border1}`,color:disabled?C.text2:C.text0,padding:"7px 10px",outline:"none",cursor:disabled?"not-allowed":"text"}}/>;
 }
 function FieldSelect({ value, onChange, options, error, placeholder, disabled }) {
   const [f,setF]=useState(false);
-  return <select value={value} onChange={e=>onChange(e.target.value)} disabled={disabled} onFocus={()=>setF(true)} onBlur={()=>setF(false)} style={{width:"100%",boxSizing:"border-box",fontFamily:FONT,fontSize:13,background:disabled?C.bg2:C.bg0,border:`1px solid ${error?C.red:f?C.blue:C.border1}`,color:value?"":C.text3,padding:"7px 10px",outline:"none",cursor:disabled?"not-allowed":"pointer"}}>{placeholder&&<option value="">{placeholder}</option>}{options.map(o=><option key={o} value={o} style={{color:C.text0}}>{o}</option>)}</select>;
+  return <select value={value} onChange={e=>onChange(e.target.value)} disabled={disabled} onFocus={()=>setF(true)} onBlur={()=>setF(false)} style={{width:"100%",boxSizing:"border-box",fontFamily:FONT,fontSize:14,background:disabled?C.bg2:C.bg0,border:`1px solid ${error?C.red:f?C.blue:C.border1}`,color:value?"":C.text3,padding:"7px 10px",outline:"none",cursor:disabled?"not-allowed":"pointer"}}>{placeholder&&<option value="">{placeholder}</option>}{options.map(o=><option key={o} value={o} style={{color:C.text0}}>{o}</option>)}</select>;
 }
 function FieldTextarea({ value, onChange, placeholder, rows=3, mono }) {
   const [f,setF]=useState(false);
-  return <textarea value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} rows={rows} onFocus={()=>setF(true)} onBlur={()=>setF(false)} style={{width:"100%",boxSizing:"border-box",resize:"vertical",fontFamily:mono?MONO:FONT,fontSize:13,background:C.bg0,border:`1px solid ${f?C.blue:C.border1}`,color:C.text0,padding:"7px 10px",outline:"none"}}/>;
+  return <textarea value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} rows={rows} onFocus={()=>setF(true)} onBlur={()=>setF(false)} style={{width:"100%",boxSizing:"border-box",resize:"vertical",fontFamily:mono?MONO:FONT,fontSize:14,background:C.bg0,border:`1px solid ${f?C.blue:C.border1}`,color:C.text0,padding:"7px 10px",outline:"none"}}/>;
 }
 function FieldError({ msg }) {
   if (!msg) return null;
-  return <div style={{fontFamily:FONT,fontSize:11,color:C.red,marginTop:4,display:"flex",alignItems:"center",gap:4}}><span>✕</span>{msg}</div>;
+  return <div style={{fontFamily:FONT,fontSize:12,color:C.red,marginTop:4,display:"flex",alignItems:"center",gap:4}}><span>✕</span>{msg}</div>;
 }
 // A left-bordered info callout used to provide context or guidance inside forms.
 // Variants: "teal" (informational), "amber" (warning), "blue" (neutral), "green" (success).
@@ -604,7 +624,7 @@ function InfoBox({ variant="teal", children }) {
   return <div style={{background:cfg.bg,border:`1px solid ${cfg.border}`,borderLeft:`3px solid ${cfg.accent}`,padding:"8px 10px",display:"flex",gap:7,alignItems:"flex-start",marginBottom:0}}><span style={{color:cfg.accent,fontSize:12,flexShrink:0,marginTop:1,fontWeight:700}}>{cfg.icon}</span><div style={{fontFamily:FONT,fontSize:12,color:C.text1,lineHeight:1.5}}>{children}</div></div>;
 }
 function Spinner({ size=14 }) {
-  return <span style={{display:"inline-block",width:size,height:size,border:`2px solid ${C.border0}`,borderTop:`2px solid ${C.blue}`,borderRadius:"50%",animation:"imSpin 0.7s linear infinite",flexShrink:0}}><style>{`@keyframes imSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style></span>;
+  return <span style={{display:"inline-block",width:size,height:size,border:`2px solid ${C.border0}`,borderTop:`2px solid ${C.blue}`,borderRadius:9999,animation:"imSpin 0.7s linear infinite",flexShrink:0}}><style>{`@keyframes imSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style></span>;
 }
 
 // ─── KEY-VALUE TABLE (Postman-like params/headers) ────────────────────────────
@@ -629,7 +649,7 @@ function KVTable({ rows, onChange, addLabel="Add row" }) {
           </div>
         ))}
       </div>
-      <button onClick={addRow} style={{marginTop:5,background:"none",border:`1px solid ${C.border1}`,color:C.blue,fontFamily:FONT,fontSize:11,fontWeight:600,padding:"3px 10px",cursor:"pointer"}}>+ {addLabel}</button>
+      <button onClick={addRow} style={{marginTop:5,background:"none",border:`1px solid ${C.border1}`,color:C.blue,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"3px 10px",cursor:"pointer"}}>+ {addLabel}</button>
     </div>
   );
 }
@@ -694,7 +714,7 @@ function MultiSelectDropdown({ options, value, onChange, placeholder, disabled, 
   return (
     <div ref={ref} style={{position:"relative"}}>
       <button onClick={()=>!disabled&&setOpen(o=>!o)} disabled={disabled} style={{
-        width:"100%",boxSizing:"border-box",fontFamily:FONT,fontSize:13,
+        width:"100%",boxSizing:"border-box",fontFamily:FONT,fontSize:14,
         background:disabled?C.bg2:C.bg0,
         border:`1px solid ${error?C.red:open?C.blue:C.border1}`,
         color:selected.length?C.text0:C.text3,
@@ -708,7 +728,7 @@ function MultiSelectDropdown({ options, value, onChange, placeholder, disabled, 
         <div style={{
           position:"absolute",top:"100%",left:0,right:0,zIndex:20,
           background:C.bg0,border:`1px solid ${C.blue}`,borderTop:"none",
-          maxHeight:230,overflowY:"auto",boxShadow:"0 4px 16px rgba(0,0,0,0.10)",
+          maxHeight:230,overflowY:"auto",boxShadow:"2px 2px 12px rgba(0,0,0,0.12)",
         }}>
           {options.map(opt=>{
             const checked=selected.includes(opt);
@@ -724,7 +744,7 @@ function MultiSelectDropdown({ options, value, onChange, placeholder, disabled, 
                   background:checked?C.blue:"transparent",
                   display:"flex",alignItems:"center",justifyContent:"center",
                 }}>
-                  {checked&&<span style={{color:"#fff",fontSize:9,fontWeight:900,lineHeight:1}}>✓</span>}
+                  {checked&&<span style={{color:"#fff",fontSize:10,fontWeight:900,lineHeight:1}}>✓</span>}
                 </div>
                 <span style={{fontFamily:FONT,fontSize:12,color:C.text0}}>{opt}</span>
               </div>
@@ -753,12 +773,12 @@ function AIActionButton({ label, desc, running, result, onClick }) {
   return (
     <button onClick={onClick} disabled={running} style={{
       display:"flex",flexDirection:"column",alignItems:"flex-start",
-      background:"linear-gradient(135deg,#F3E5F5 0%,#EEF0FB 100%)",
+      background:`linear-gradient(135deg,${C.purpleBg} 0%,${C.blueBg} 100%)`,
       border:`1px dashed ${C.purpleBorder}`,padding:"7px 14px",
       cursor:running?"wait":"pointer",minWidth:170,textAlign:"left",
     }}>
       <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:2}}>
-        <span style={{fontSize:11,color:C.purple}}>{running?"⏳":"✦"}</span>
+        <span style={{fontSize:12,color:C.purple}}>{running?"⏳":"✦"}</span>
         <span style={{fontFamily:FONT,fontSize:12,fontWeight:700,color:C.purple}}>{running?`${label}…`:label}</span>
       </div>
       {!result&&!running&&<span style={{fontFamily:FONT,fontSize:10,color:C.text3,lineHeight:1.3}}>{desc}</span>}
@@ -779,10 +799,10 @@ function SelectionCard({ label, sublabel, description, selected, onClick, disabl
       style={{flex:1,padding:"14px 16px",cursor:disabled?"not-allowed":"pointer",border:`2px solid ${selected?C.blue:hov?C.border1:C.border0}`,background:selected?C.blueBg:disabled?"#FAFAFA":hov?C.bg1:C.bg0,opacity:disabled?0.55:1,position:"relative",transition:"border-color 0.12s,background 0.12s"}}>
       {tag&&<span style={{position:"absolute",top:8,right:8,background:C.bg3,border:`1px solid ${C.border0}`,fontFamily:FONT,fontSize:10,fontWeight:700,color:C.text3,padding:"2px 6px",letterSpacing:"0.05em"}}>{tag}</span>}
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
-        <div style={{width:16,height:16,border:`2px solid ${selected?C.blue:C.border1}`,borderRadius:"50%",background:selected?C.blue:"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-          {selected&&<div style={{width:6,height:6,borderRadius:"50%",background:"#fff"}}/>}
+        <div style={{width:16,height:16,border:`2px solid ${selected?C.blue:C.border1}`,borderRadius:9999,background:selected?C.blue:"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+          {selected&&<div style={{width:6,height:6,borderRadius:9999,background:"#fff"}}/>}
         </div>
-        <span style={{fontFamily:FONT,fontSize:13,fontWeight:700,color:disabled?C.text3:selected?C.blue:C.text0}}>{label}</span>
+        <span style={{fontFamily:FONT,fontSize:14,fontWeight:700,color:disabled?C.text3:selected?C.blue:C.text0}}>{label}</span>
         {sublabel&&<span style={{fontFamily:FONT,fontSize:10,color:selected?C.blue:C.text3,marginLeft:2,letterSpacing:"0.04em"}}>{sublabel}</span>}
       </div>
       <div style={{fontFamily:FONT,fontSize:12,color:C.text2,lineHeight:1.5,paddingLeft:24}}>{description}</div>
@@ -801,8 +821,8 @@ function StepIndicator({ current, steps }) {
         return (
           <div key={s} style={{display:"flex",alignItems:"center",gap:0}}>
             <div style={{display:"flex",alignItems:"center",gap:7}}>
-              <div style={{width:22,height:22,borderRadius:"50%",border:`2px solid ${done||active?C.blue:C.border1}`,background:done?C.blue:active?C.blueBg:"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                {done?<span style={{color:"#fff",fontSize:11,fontWeight:700}}>✓</span>:<span style={{fontFamily:MONO,fontSize:11,color:active?C.blue:C.text3,fontWeight:700}}>{i+1}</span>}
+              <div style={{width:22,height:22,borderRadius:9999,border:`2px solid ${done||active?C.blue:C.border1}`,background:done?C.blue:active?C.blueBg:"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                {done?<span style={{color:"#fff",fontSize:12,fontWeight:700}}>✓</span>:<span style={{fontFamily:MONO,fontSize:12,color:active?C.blue:C.text3,fontWeight:700}}>{i+1}</span>}
               </div>
               <span style={{fontFamily:FONT,fontSize:12,fontWeight:active?700:400,color:active?C.text0:done?C.text1:C.text3}}>{s}</span>
             </div>
@@ -849,11 +869,11 @@ function WebhookRegistryModal({ open, onClose, onSave }) {
   return (
     <>
       <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(15,25,35,0.5)",zIndex:300}}/>
-      <div style={{position:"fixed",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:520,background:C.bg0,border:`1px solid ${C.border0}`,zIndex:301,display:"flex",flexDirection:"column",boxShadow:"0 8px 32px rgba(0,0,0,0.18)"}}>
+      <div style={{position:"fixed",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:520,background:C.bg0,border:`1px solid ${C.border0}`,zIndex:301,display:"flex",flexDirection:"column",boxShadow:"0px 4px 24px rgba(0,0,0,0.16)"}}>
         <div style={{padding:"0 20px",height:54,display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:`1px solid ${C.border0}`,background:C.bg1,flexShrink:0}}>
           <div>
-            <div style={{fontFamily:FONT,fontWeight:700,fontSize:15,color:C.text0}}>Webhook Registry</div>
-            <div style={{fontFamily:FONT,fontSize:11,color:C.text3}}>Register a new outbound webhook endpoint</div>
+            <div style={{fontFamily:FONT,fontWeight:700,fontSize:14,color:C.text0}}>Webhook Registry</div>
+            <div style={{fontFamily:FONT,fontSize:12,color:C.text3}}>Register a new outbound webhook endpoint</div>
           </div>
           <button onClick={onClose} style={{background:"none",border:`1px solid ${C.border1}`,color:C.text2,width:28,height:28,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>×</button>
         </div>
@@ -879,8 +899,8 @@ function WebhookRegistryModal({ open, onClose, onSave }) {
           </div>
         </div>
         <div style={{borderTop:`1px solid ${C.border0}`,padding:"10px 20px",background:C.bg1,display:"flex",gap:8,justifyContent:"flex-end",flexShrink:0}}>
-          <button onClick={onClose} style={{background:"none",border:`1px solid ${C.border0}`,color:C.text2,fontFamily:FONT,fontSize:13,padding:"6px 14px",cursor:"pointer"}}>Cancel</button>
-          <button onClick={handleSave} style={{background:C.blue,border:`1px solid ${C.blueHover}`,color:"#fff",fontFamily:FONT,fontSize:13,fontWeight:700,padding:"6px 16px",cursor:"pointer"}}>Create Webhook</button>
+          <button onClick={onClose} style={{background:"none",border:`1px solid ${C.border0}`,color:C.text2,fontFamily:FONT,fontSize:14,padding:"6px 14px",cursor:"pointer"}}>Cancel</button>
+          <button onClick={handleSave} style={{background:C.blue,border:`1px solid ${C.blueHover}`,color:"#fff",fontFamily:FONT,fontSize:14,fontWeight:700,padding:"6px 16px",cursor:"pointer"}}>Create Webhook</button>
         </div>
       </div>
     </>
@@ -1090,12 +1110,12 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
   function FieldTreeRow({ f, indent }) {
     const typeColors={string:C.text2,datetime:C.teal,number:C.blue,enum:C.purple,url:C.amber};
     return (
-      <div style={{display:"flex",alignItems:"center",gap:6,padding:`5px ${indent?28:14}px 5px ${indent?28:14}px`,borderBottom:`1px solid ${C.border0}`,background:C.bg0}}>
-        <MonoText size={11} color={C.text0}>{f.src}</MonoText>
-        {f.arrayPath&&<span style={{fontSize:8,fontWeight:700,color:C.purple,background:C.purpleBg,border:`1px solid ${C.purpleBorder}`,padding:"0 3px"}}>array</span>}
-        {f.refLookup&&<span style={{color:C.amber,fontSize:11}}>⚠</span>}
+      <div style={{display:"flex",alignItems:"center",gap:8,padding:`5px ${indent?28:14}px 5px ${indent?28:14}px`,borderBottom:`1px solid ${C.border0}`,background:C.bg0}}>
+        <MonoText size={12} color={C.text0}>{f.src}</MonoText>
+        {f.arrayPath&&<span style={{fontSize:10,fontWeight:700,color:C.purple,background:C.purpleBg,border:`1px solid ${C.purpleBorder}`,padding:"0 3px"}}>array</span>}
+        {f.refLookup&&<span style={{color:C.amber,fontSize:12}}>⚠</span>}
         <span style={{marginLeft:"auto",fontFamily:MONO,fontSize:10,color:typeColors[f.srcType]||C.text3}}>{f.srcType}</span>
-        {f.required&&<span style={{fontSize:9,fontWeight:700,color:C.red}}>req</span>}
+        {f.required&&<span style={{fontSize:10,fontWeight:700,color:C.red}}>req</span>}
       </div>
     );
   }
@@ -1107,14 +1127,14 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
         {/* Header */}
         <div style={{height:56,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 24px",borderBottom:`1px solid ${C.border0}`,background:C.bg1,flexShrink:0}}>
           <div style={{display:"flex",alignItems:"center",gap:16}}>
-            <button onClick={onBack} style={{display:"flex",alignItems:"center",gap:6,background:"none",border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"5px 12px",cursor:"pointer"}}>← Back</button>
+            <button onClick={onBack} style={{display:"flex",alignItems:"center",gap:8,background:"none",border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"5px 12px",cursor:"pointer"}}>← Back</button>
             <div>
-              <span style={{fontFamily:FONT,fontWeight:700,fontSize:15,color:C.text0}}>Data Mapping</span>
-              {system&&<span style={{fontFamily:FONT,fontSize:11,color:C.text3,marginLeft:8}}>· {system.name}</span>}
+              <span style={{fontFamily:FONT,fontWeight:700,fontSize:14,color:C.text0}}>Data Mapping</span>
+              {system&&<span style={{fontFamily:FONT,fontSize:12,color:C.text3,marginLeft:8}}>· {system.name}</span>}
             </div>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
-            <span style={{fontFamily:FONT,fontSize:11,fontWeight:700,color:mappingStatus.color,background:mappingStatus.bg,border:`1px solid ${mappingStatus.border}`,padding:"3px 10px"}}>{mappingStatus.label}</span>
+            <span style={{fontFamily:FONT,fontSize:12,fontWeight:700,color:mappingStatus.color,background:mappingStatus.bg,border:`1px solid ${mappingStatus.border}`,padding:"3px 10px"}}>{mappingStatus.label}</span>
             <span style={{fontFamily:FONT,fontSize:12,color:C.text3}}>{mappedCount}/{form.fieldMappings.length} mapped</span>
           </div>
         </div>
@@ -1129,7 +1149,7 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
               <div style={{fontFamily:FONT,fontSize:10,fontWeight:700,color:C.text2,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>Target Collections</div>
               <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
                 {collections.map(col=>(
-                  <span key={col} style={{background:C.blueBg,border:`1px solid ${C.blueBorder}`,fontFamily:FONT,fontSize:11,fontWeight:700,color:C.blue,padding:"2px 8px"}}>{col}</span>
+                  <span key={col} style={{background:C.blueBg,border:`1px solid ${C.blueBorder}`,fontFamily:FONT,fontSize:12,fontWeight:700,color:C.blue,padding:"2px 8px"}}>{col}</span>
                 ))}
               </div>
             </div>
@@ -1140,10 +1160,10 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
               <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
                 {hasPullEndpoint?(
                   fetchState==="idle"?<button onClick={handleFetchSample} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.blue,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"4px 10px",cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>▶ Pull sample</button>:
-                  fetchState==="loading"?<button disabled style={{background:C.bg0,border:`1px solid ${C.border0}`,color:C.text3,fontFamily:FONT,fontSize:12,padding:"4px 10px",display:"flex",alignItems:"center",gap:5}}><Spinner size={11}/> Pulling…</button>:
+                  fetchState==="loading"?<button disabled style={{background:C.bg0,border:`1px solid ${C.border0}`,color:C.text3,fontFamily:FONT,fontSize:12,padding:"4px 10px",display:"flex",alignItems:"center",gap:5}}><Spinner size={12}/> Pulling…</button>:
                   <button onClick={handleFetchSample} style={{background:C.greenBg,border:`1px solid ${C.greenBorder}`,color:C.green,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"4px 10px",cursor:"pointer"}}>✓ Re-pull</button>
                 ):(
-                  <span style={{fontFamily:FONT,fontSize:11,color:C.text3}}>Paste JSON in mapping row to inspect values</span>
+                  <span style={{fontFamily:FONT,fontSize:12,color:C.text3}}>Paste JSON in mapping row to inspect values</span>
                 )}
               </div>
               {form.schemaSummary&&(
@@ -1163,9 +1183,9 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
               {roots.map(f=><FieldTreeRow key={f.src} f={f} indent={false}/>)}
               {Object.entries(groups).map(([grp,fields])=>(
                 <div key={grp}>
-                  <div onClick={()=>toggleGrp(grp)} style={{display:"flex",alignItems:"center",gap:6,padding:"6px 14px",background:C.bg1,borderBottom:`1px solid ${C.border0}`,cursor:"pointer",userSelect:"none"}}>
-                    <span style={{fontSize:9,color:C.text3}}>{collapsedGrps[grp]?"▶":"▼"}</span>
-                    <MonoText size={11} color={C.text1}>{grp}</MonoText>
+                  <div onClick={()=>toggleGrp(grp)} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 14px",background:C.bg1,borderBottom:`1px solid ${C.border0}`,cursor:"pointer",userSelect:"none"}}>
+                    <span style={{fontSize:10,color:C.text3}}>{collapsedGrps[grp]?"▶":"▼"}</span>
+                    <MonoText size={12} color={C.text1}>{grp}</MonoText>
                     <span style={{marginLeft:"auto",fontFamily:FONT,fontSize:10,color:C.text3}}>{fields.length} fields</span>
                   </div>
                   {!collapsedGrps[grp]&&fields.map(f=><FieldTreeRow key={f.src} f={f} indent={true}/>)}
@@ -1181,7 +1201,7 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
               <AIActionButton label="Auto Map" desc="Match source fields to target paths automatically" running={autoMapRunning} result={autoMapResult} onClick={handleAutoMap}/>
               <AIActionButton label="Validate" desc="Check required fields, types, and duplicates" running={validateRunning} result={validateResult} onClick={handleValidate}/>
               <div style={{flex:1}}/>
-              {dupTargets.length>0&&<span style={{background:C.amberBg,border:`1px solid ${C.amberBorder}`,fontFamily:FONT,fontSize:11,fontWeight:700,color:C.amber,padding:"3px 8px"}}>Duplicate target</span>}
+              {dupTargets.length>0&&<span style={{background:C.amberBg,border:`1px solid ${C.amberBorder}`,fontFamily:FONT,fontSize:12,fontWeight:700,color:C.amber,padding:"3px 8px"}}>Duplicate target</span>}
               {form.validationResult&&<button onClick={()=>setValOpen(o=>!o)} style={{background:"none",border:`1px solid ${C.border0}`,fontFamily:FONT,fontSize:12,fontWeight:600,color:C.text1,padding:"4px 10px",cursor:"pointer"}}>{valOpen?"Hide":"Show"} validation</button>}
               <div style={{display:"flex",alignItems:"center",gap:0,border:`1px solid ${C.border1}`,background:C.bg0}}>
                 <span style={{padding:"0 8px",color:C.text3,fontSize:12,lineHeight:"30px"}}>⌕</span>
@@ -1191,14 +1211,14 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
                   placeholder="Filter fields…"
                   style={{fontFamily:FONT,fontSize:12,border:"none",outline:"none",padding:"5px 8px 5px 0",width:160,color:C.text0,background:"transparent"}}
                 />
-                {filterText&&<button onClick={()=>setFilterText("")} style={{background:"none",border:"none",color:C.text3,fontSize:13,cursor:"pointer",padding:"0 6px",lineHeight:"30px"}}>×</button>}
+                {filterText&&<button onClick={()=>setFilterText("")} style={{background:"none",border:"none",color:C.text3,fontSize:14,cursor:"pointer",padding:"0 6px",lineHeight:"30px"}}>×</button>}
               </div>
             </div>
 
             {/* Validation panel */}
             {valOpen&&form.validationResult&&(
               <div style={{padding:"8px 20px",background:C.bg1,borderBottom:`1px solid ${C.border0}`,flexShrink:0}}>
-                <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
                   {[
                     {label:"Required mapped",ok:form.validationResult.unmappedRequired===0,detail:`${form.validationResult.requiredMapped}/${form.validationResult.requiredTotal}`},
                     {label:"Optional skipped",ok:true,detail:`${form.validationResult.optionalSkipped}`},
@@ -1207,9 +1227,9 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
                     {label:"Ref lookups",ok:true,detail:`${form.validationResult.refLookups}`},
                   ].map(row=>(
                     <div key={row.label} style={{background:row.ok?C.greenBg:C.amberBg,border:`1px solid ${row.ok?C.greenBorder:C.amberBorder}`,padding:"3px 8px",display:"flex",alignItems:"center",gap:5}}>
-                      <span style={{color:row.ok?C.green:C.amber,fontWeight:700,fontSize:11}}>{row.ok?"✓":"!"}</span>
-                      <span style={{fontFamily:FONT,fontSize:11,color:C.text1}}>{row.label}:</span>
-                      <span style={{fontFamily:FONT,fontSize:11,fontWeight:700,color:row.ok?C.text0:C.amber}}>{row.detail}</span>
+                      <span style={{color:row.ok?C.green:C.amber,fontWeight:700,fontSize:12}}>{row.ok?"✓":"!"}</span>
+                      <span style={{fontFamily:FONT,fontSize:12,color:C.text1}}>{row.label}:</span>
+                      <span style={{fontFamily:FONT,fontSize:12,fontWeight:700,color:row.ok?C.text0:C.amber}}>{row.detail}</span>
                     </div>
                   ))}
                 </div>
@@ -1239,7 +1259,7 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
                     <select
                       value={m.src}
                       onChange={e=>updateSrc(idx,e.target.value)}
-                      style={{fontFamily:MONO,fontSize:11,background:"transparent",border:`1px solid ${C.border0}`,color:C.text0,padding:"3px 5px",outline:"none",cursor:"pointer",width:"100%"}}
+                      style={{fontFamily:MONO,fontSize:12,background:"transparent",border:`1px solid ${C.border0}`,color:C.text0,padding:"3px 5px",outline:"none",cursor:"pointer",width:"100%"}}
                     >
                       {srcOpts.map(s=><option key={s} value={s}>{s}</option>)}
                     </select>
@@ -1264,13 +1284,13 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
         {/* Footer */}
         <div style={{height:64,display:"flex",alignItems:"center",padding:"0 24px",borderTop:`1px solid ${C.border0}`,background:C.bg1,flexShrink:0,gap:10}}>
           <div style={{flex:1}}/>
-          <button onClick={onBack} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:13,fontWeight:600,padding:"8px 20px",cursor:"pointer"}}>Back</button>
-          <button onClick={()=>onSave(false)} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:13,fontWeight:600,padding:"8px 20px",cursor:"pointer"}}>Save as Draft</button>
+          <button onClick={onBack} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:14,fontWeight:600,padding:"8px 20px",cursor:"pointer"}}>Back</button>
+          <button onClick={()=>onSave(false)} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:14,fontWeight:600,padding:"8px 20px",cursor:"pointer"}}>Save as Draft</button>
           <button
             onClick={()=>onSave(true)}
             disabled={!mappingComplete}
             title={!mappingComplete?mappingStatus.label:""}
-            style={{background:mappingComplete?C.blue:C.bg2,border:`1px solid ${mappingComplete?C.blueHover:C.border1}`,color:mappingComplete?"#fff":C.text3,fontFamily:FONT,fontSize:13,fontWeight:700,padding:"8px 24px",cursor:mappingComplete?"pointer":"not-allowed"}}
+            style={{background:mappingComplete?C.blue:C.bg2,border:`1px solid ${mappingComplete?C.blueHover:C.border1}`,color:mappingComplete?"#fff":C.text3,fontFamily:FONT,fontSize:14,fontWeight:700,padding:"8px 24px",cursor:mappingComplete?"pointer":"not-allowed"}}
           >Publish Integration</button>
         </div>
       </div>
@@ -1427,14 +1447,14 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
   if(published) return (
     <>
       <div onClick={resetAndClose} style={{position:"fixed",inset:0,background:"rgba(15,25,35,0.30)",zIndex:200}}/>
-      <div style={{position:"fixed",top:0,right:0,bottom:0,width:560,background:C.bg0,borderLeft:`1px solid ${C.border0}`,zIndex:201,display:"flex",flexDirection:"column",boxShadow:"-4px 0 20px rgba(0,0,0,0.09)"}}>
+      <div style={{position:"fixed",top:0,right:0,bottom:0,width:560,background:C.bg0,borderLeft:`1px solid ${C.border0}`,zIndex:201,display:"flex",flexDirection:"column",boxShadow:"0px 4px 24px rgba(0,0,0,0.16)"}}>
         <div style={{padding:"0 22px",height:56,display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:`1px solid ${C.border0}`,background:C.bg1,flexShrink:0}}>
-          <span style={{fontFamily:FONT,fontWeight:700,fontSize:15,color:C.text0}}>Integration Published</span>
+          <span style={{fontFamily:FONT,fontWeight:700,fontSize:14,color:C.text0}}>Integration Published</span>
           <button onClick={resetAndClose} style={{background:"none",border:`1px solid ${C.border1}`,color:C.text2,width:28,height:28,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>×</button>
         </div>
         <div style={{flex:1,overflowY:"auto",padding:"32px 22px"}}>
           <div style={{background:C.greenBg,border:`1px solid ${C.greenBorder}`,borderLeft:`4px solid ${C.green}`,padding:"16px 18px",marginBottom:24,display:"flex",alignItems:"flex-start",gap:12}}>
-            <span style={{color:C.green,fontSize:22,lineHeight:1}}>✓</span>
+            <span style={{color:C.green,fontSize:18,lineHeight:1}}>✓</span>
             <div><div style={{fontFamily:FONT,fontWeight:700,fontSize:14,color:C.green,marginBottom:3}}>Integration is now active</div><div style={{fontFamily:FONT,fontSize:12,color:C.text1}}>Data will begin flowing according to the configured runtime settings.</div></div>
           </div>
           <div style={{background:C.bg1,border:`1px solid ${C.border0}`,padding:"16px 18px",marginBottom:20}}>
@@ -1454,8 +1474,8 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
             <div style={{marginTop:10}}><StatusBadge status="active" size="lg"/></div>
           </div>
           <div style={{display:"flex",gap:8}}>
-            <span title="Edit Mapping will be available in a future release" style={{display:"inline-flex",alignItems:"center",gap:6,background:C.bg2,border:`1px solid ${C.border0}`,fontFamily:FONT,fontSize:13,fontWeight:600,padding:"8px 16px",color:C.text3,cursor:"not-allowed"}}>Edit Mapping <span style={{fontSize:9,fontWeight:700,letterSpacing:"0.05em"}}>COMING SOON</span></span>
-            <button onClick={()=>{resetAndClose();onGoToSystem&&onGoToSystem();}} style={{background:C.blue,border:`1px solid ${C.blueHover}`,color:"#fff",fontFamily:FONT,fontSize:13,fontWeight:700,padding:"8px 16px",cursor:"pointer"}}>Done</button>
+            <span title="Edit Mapping will be available in a future release" style={{display:"inline-flex",alignItems:"center",gap:8,background:C.bg2,border:`1px solid ${C.border0}`,fontFamily:FONT,fontSize:14,fontWeight:600,padding:"8px 16px",color:C.text3,cursor:"not-allowed"}}>Edit Mapping <span style={{fontSize:10,fontWeight:700,letterSpacing:"0.05em"}}>COMING SOON</span></span>
+            <button onClick={()=>{resetAndClose();onGoToSystem&&onGoToSystem();}} style={{background:C.blue,border:`1px solid ${C.blueHover}`,color:"#fff",fontFamily:FONT,fontSize:14,fontWeight:700,padding:"8px 16px",cursor:"pointer"}}>Done</button>
           </div>
         </div>
       </div>
@@ -1478,11 +1498,11 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
     <>
       <WebhookRegistryModal open={wbModal} onClose={()=>setWbModal(false)} onSave={wh=>{onAddWebhook(wh);set("selectedWebhookId",wh.id);setWbModal(false);}}/>
       <div onClick={resetAndClose} style={{position:"fixed",inset:0,background:"rgba(15,25,35,0.30)",zIndex:200}}/>
-      <div style={{position:"fixed",top:0,right:0,bottom:0,width:580,background:C.bg0,borderLeft:`1px solid ${C.border0}`,zIndex:201,display:"flex",flexDirection:"column",boxShadow:"-4px 0 20px rgba(0,0,0,0.09)"}}>
+      <div style={{position:"fixed",top:0,right:0,bottom:0,width:580,background:C.bg0,borderLeft:`1px solid ${C.border0}`,zIndex:201,display:"flex",flexDirection:"column",boxShadow:"0px 4px 24px rgba(0,0,0,0.16)"}}>
         <div style={{padding:"0 22px",height:56,display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:`1px solid ${C.border0}`,background:C.bg1,flexShrink:0}}>
           <div>
-            <div style={{fontFamily:FONT,fontWeight:700,fontSize:15,color:C.text0}}>Add Integration</div>
-            {system&&<div style={{fontFamily:FONT,fontSize:11,color:C.text3}}>under <MonoText size={11} color={C.blue}>{system.name}</MonoText></div>}
+            <div style={{fontFamily:FONT,fontWeight:700,fontSize:14,color:C.text0}}>Add Integration</div>
+            {system&&<div style={{fontFamily:FONT,fontSize:12,color:C.text3}}>under <MonoText size={12} color={C.blue}>{system.name}</MonoText></div>}
           </div>
           <button onClick={resetAndClose} style={{background:"none",border:`1px solid ${C.border1}`,color:C.text2,width:28,height:28,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>×</button>
         </div>
@@ -1501,7 +1521,7 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
               {/* Direction — Phase 2: two-layer labels */}
               <div style={{marginBottom:22}}>
                 <SectionRule label="Direction"/>
-                <div style={{fontFamily:FONT,fontSize:11,color:C.text2,marginBottom:10}}>Where does data originate, and where does it go?</div>
+                <div style={{fontFamily:FONT,fontSize:12,color:C.text2,marginBottom:10}}>Where does data originate, and where does it go?</div>
                 <div style={{display:"flex",gap:10}}>
                   <SelectionCard label="Bring data into Innovapptive" sublabel="Inbound" description="Data originates in the external system and is pulled or pushed into Innovapptive." selected={form.direction==="inbound"} onClick={()=>{set("direction","inbound");set("method","");}}/>
                   <SelectionCard label="Send data from Innovapptive" sublabel="Outbound" description="Data originates in Innovapptive and is delivered to an external system." selected={form.direction==="outbound"} onClick={()=>{set("direction","outbound");set("method","");}}/>
@@ -1555,7 +1575,7 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
                       {(form.businessObjects||[]).length>0&&(
                         <div style={{marginTop:8,display:"flex",flexWrap:"wrap",gap:5}}>
                           {form.businessObjects.map(col=>(
-                            <span key={col} style={{background:C.blueBg,border:`1px solid ${C.blueBorder}`,fontFamily:FONT,fontSize:11,fontWeight:600,color:C.blue,padding:"2px 9px"}}>{col}</span>
+                            <span key={col} style={{background:C.blueBg,border:`1px solid ${C.blueBorder}`,fontFamily:FONT,fontSize:12,fontWeight:600,color:C.blue,padding:"2px 9px"}}>{col}</span>
                           ))}
                         </div>
                       )}
@@ -1642,7 +1662,7 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
                       {form.postTestState==="error"&&(
                         <div style={{marginTop:8,display:"flex",alignItems:"flex-start",gap:8}}>
                           <div style={{flex:1}}><InfoBox variant="amber">Request failed — {form.postTestError||"check your Base URL, authentication, and request body before continuing."}</InfoBox></div>
-                          <button onClick={()=>set("postTestState","idle")} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:11,fontWeight:600,padding:"5px 10px",cursor:"pointer",flexShrink:0,marginTop:1}}>Retry</button>
+                          <button onClick={()=>set("postTestState","idle")} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"5px 10px",cursor:"pointer",flexShrink:0,marginTop:1}}>Retry</button>
                         </div>
                       )}
                     </div>
@@ -1668,15 +1688,15 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
                     {form.selectedWebhookId&&(()=>{
                       const wh=webhooks.find(w=>w.id===form.selectedWebhookId);
                       return wh?<div style={{marginTop:6,padding:"7px 10px",background:C.bg1,border:`1px solid ${C.border0}`}}>
-                        <div style={{fontFamily:FONT,fontSize:11,color:C.text3,marginBottom:2}}>Target URL</div>
-                        <MonoText size={11} color={C.text1}>{wh.targetUrl}</MonoText>
-                        {wh.eventTypes&&<div style={{marginTop:4,fontFamily:FONT,fontSize:11,color:C.text3}}>Events: {wh.eventTypes}</div>}
+                        <div style={{fontFamily:FONT,fontSize:12,color:C.text3,marginBottom:2}}>Target URL</div>
+                        <MonoText size={12} color={C.text1}>{wh.targetUrl}</MonoText>
+                        {wh.eventTypes&&<div style={{marginTop:4,fontFamily:FONT,fontSize:12,color:C.text3}}>Events: {wh.eventTypes}</div>}
                       </div>:null;
                     })()}
                   </div>
                   <div>
-                    <button onClick={()=>setWbModal(true)} style={{background:C.blueBg,border:`1px solid ${C.blueBorder}`,color:C.blue,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"7px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>+ Create New Webhook</button>
-                    <div style={{fontFamily:FONT,fontSize:11,color:C.text3,marginTop:5}}>Opens Webhook Registry to define a new delivery endpoint</div>
+                    <button onClick={()=>setWbModal(true)} style={{background:C.blueBg,border:`1px solid ${C.blueBorder}`,color:C.blue,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"7px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:8}}>+ Create New Webhook</button>
+                    <div style={{fontFamily:FONT,fontSize:12,color:C.text3,marginTop:5}}>Opens Webhook Registry to define a new delivery endpoint</div>
                   </div>
                 </div>
               )}
@@ -1728,8 +1748,8 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
                           {label:"Product",        value:form.product||"—"},
                         ].map(row=>(
                           <div key={row.label}>
-                            <div style={{fontFamily:FONT,fontSize:10,color:C.text3,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:2}}>{row.label}{row.sublabel&&<span style={{fontFamily:FONT,fontSize:9,color:C.text3,marginLeft:4,letterSpacing:"0.04em"}}>{row.sublabel}</span>}</div>
-                            {row.mono?<MonoText size={11} color={C.text1}>{row.value}</MonoText>:<div style={{fontFamily:FONT,fontSize:12,fontWeight:600,color:C.text0}}>{row.value}</div>}
+                            <div style={{fontFamily:FONT,fontSize:10,color:C.text3,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:2}}>{row.label}{row.sublabel&&<span style={{fontFamily:FONT,fontSize:10,color:C.text3,marginLeft:4,letterSpacing:"0.04em"}}>{row.sublabel}</span>}</div>
+                            {row.mono?<MonoText size={12} color={C.text1}>{row.value}</MonoText>:<div style={{fontFamily:FONT,fontSize:12,fontWeight:600,color:C.text0}}>{row.value}</div>}
                           </div>
                         ))}
                       </div>
@@ -1749,8 +1769,8 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
                         <div style={{background:C.bg1,border:`1px solid ${statusBorder}`,borderLeft:`3px solid ${statusColor}`,padding:"14px 16px",display:"flex",alignItems:"center",gap:14}}>
                           <div style={{flex:1}}>
                             <div style={{fontFamily:FONT,fontSize:12,fontWeight:700,color:statusColor,marginBottom:3}}>{statusLabel}</div>
-                            {mapped>0&&<div style={{fontFamily:FONT,fontSize:11,color:C.text2}}>{mapped} of {form.fieldMappings.length} fields mapped</div>}
-                            {mapped===0&&<div style={{fontFamily:FONT,fontSize:11,color:C.text2}}>Open the mapping workspace to connect incoming payload fields to target collections.</div>}
+                            {mapped>0&&<div style={{fontFamily:FONT,fontSize:12,color:C.text2}}>{mapped} of {form.fieldMappings.length} fields mapped</div>}
+                            {mapped===0&&<div style={{fontFamily:FONT,fontSize:12,color:C.text2}}>Open the mapping workspace to connect incoming payload fields to target collections.</div>}
                           </div>
                           <button onClick={()=>setMappingOpen(true)} style={{background:C.blue,border:`1px solid ${C.blueHover}`,color:"#fff",fontFamily:FONT,fontSize:12,fontWeight:700,padding:"7px 16px",cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>
                             Open Mapping Workspace →
@@ -1774,8 +1794,8 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
                     <SectionRule label="Request Context"/>
                     <div style={{background:C.bg1,border:`1px solid ${C.border0}`,borderLeft:`3px solid ${C.border1}`,padding:"12px 14px"}}>
                       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-                        <span style={{fontFamily:FONT,fontSize:11,fontWeight:700,color:C.text2,textTransform:"uppercase",letterSpacing:"0.09em"}}>From Step 1</span>
-                        <button onClick={()=>setStep(1)} style={{background:"none",border:`1px solid ${C.border1}`,color:C.blue,fontFamily:FONT,fontSize:11,fontWeight:600,padding:"3px 10px",cursor:"pointer"}}>Edit</button>
+                        <span style={{fontFamily:FONT,fontSize:12,fontWeight:700,color:C.text2,textTransform:"uppercase",letterSpacing:"0.09em"}}>From Step 1</span>
+                        <button onClick={()=>setStep(1)} style={{background:"none",border:`1px solid ${C.border1}`,color:C.blue,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"3px 10px",cursor:"pointer"}}>Edit</button>
                       </div>
                       <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:"6px 20px"}}>
                         {[
@@ -1787,7 +1807,7 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
                         ].map(row=>(
                           <div key={row.label}>
                             <div style={{fontFamily:FONT,fontSize:10,color:C.text3,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:2}}>{row.label}</div>
-                            {row.mono?<MonoText size={11} color={C.text1}>{row.value}</MonoText>:<div style={{fontFamily:FONT,fontSize:12,color:C.text0}}>{row.value}</div>}
+                            {row.mono?<MonoText size={12} color={C.text1}>{row.value}</MonoText>:<div style={{fontFamily:FONT,fontSize:12,color:C.text0}}>{row.value}</div>}
                           </div>
                         ))}
                       </div>
@@ -1809,8 +1829,8 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
                         <div style={{background:C.bg1,border:`1px solid ${statusBorder}`,borderLeft:`3px solid ${statusColor}`,padding:"14px 16px",display:"flex",alignItems:"center",gap:14}}>
                           <div style={{flex:1}}>
                             <div style={{fontFamily:FONT,fontSize:12,fontWeight:700,color:statusColor,marginBottom:3}}>{statusLabel}</div>
-                            {mapped>0&&<div style={{fontFamily:FONT,fontSize:11,color:C.text2}}>{mapped} of {form.fieldMappings.length} fields mapped</div>}
-                            {mapped===0&&<div style={{fontFamily:FONT,fontSize:11,color:C.text2}}>Open the mapping workspace to connect source fields to target paths.</div>}
+                            {mapped>0&&<div style={{fontFamily:FONT,fontSize:12,color:C.text2}}>{mapped} of {form.fieldMappings.length} fields mapped</div>}
+                            {mapped===0&&<div style={{fontFamily:FONT,fontSize:12,color:C.text2}}>Open the mapping workspace to connect source fields to target paths.</div>}
                           </div>
                           <button onClick={()=>setMappingOpen(true)} style={{background:C.blue,border:`1px solid ${C.blueHover}`,color:"#fff",fontFamily:FONT,fontSize:12,fontWeight:700,padding:"7px 16px",cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>
                             Open Mapping Workspace →
@@ -1826,7 +1846,7 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
                     <div style={{marginBottom:10,padding:"8px 12px",background:C.bg2,border:`1px solid ${C.border0}`,display:"flex",alignItems:"center",gap:10}}>
                       <span style={{fontFamily:FONT,fontSize:12,color:C.text2}}>Execution mode:</span>
                       <span style={{fontFamily:FONT,fontSize:12,fontWeight:700,color:C.text0}}>Scheduled</span>
-                      <span style={{fontFamily:FONT,fontSize:11,color:C.text3}}>(Polling integrations always run on a schedule)</span>
+                      <span style={{fontFamily:FONT,fontSize:12,color:C.text3}}>(Polling integrations always run on a schedule)</span>
                     </div>
                     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px 14px"}}>
                       <div><FieldLabel label="Frequency" required/><FieldSelect value={form.frequency} onChange={v=>set("frequency",v)} options={FREQ_OPTIONS}/></div>
@@ -1842,7 +1862,7 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
                 <div style={{border:`1px solid ${C.border0}`,background:C.bg1}}>
                   {readiness.map((r,i)=>(
                     <div key={r.label} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 12px",borderBottom:i<readiness.length-1?`1px solid ${C.border0}`:"none"}}>
-                      <span style={{color:r.ok?C.green:C.text3,fontSize:15,fontWeight:700,width:18,textAlign:"center"}}>{r.ok?"✓":"○"}</span>
+                      <span style={{color:r.ok?C.green:C.text3,fontSize:14,fontWeight:700,width:18,textAlign:"center"}}>{r.ok?"✓":"○"}</span>
                       <span style={{fontFamily:FONT,fontSize:12,color:r.ok?C.text0:C.text2}}>{r.label}</span>
                     </div>
                   ))}
@@ -1851,8 +1871,8 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
 
               {/* Advanced */}
               <div style={{marginBottom:20}}>
-                <button onClick={()=>setAdvOpen(o=>!o)} style={{display:"flex",alignItems:"center",gap:6,background:"none",border:`1px solid ${C.border0}`,width:"100%",padding:"8px 12px",cursor:"pointer",fontFamily:FONT,fontSize:12,fontWeight:600,color:C.text1}}>
-                  <span style={{color:C.text3,fontSize:11}}>{advOpen?"▼":"▶"}</span> Advanced runtime settings <span style={{fontFamily:FONT,fontSize:11,color:C.text3,fontWeight:400,marginLeft:4}}>— optional</span>
+                <button onClick={()=>setAdvOpen(o=>!o)} style={{display:"flex",alignItems:"center",gap:8,background:"none",border:`1px solid ${C.border0}`,width:"100%",padding:"8px 12px",cursor:"pointer",fontFamily:FONT,fontSize:12,fontWeight:600,color:C.text1}}>
+                  <span style={{color:C.text3,fontSize:12}}>{advOpen?"▼":"▶"}</span> Advanced runtime settings <span style={{fontFamily:FONT,fontSize:12,color:C.text3,fontWeight:400,marginLeft:4}}>— optional</span>
                 </button>
                 {advOpen&&(
                   <div style={{border:`1px solid ${C.border0}`,borderTop:"none",padding:"14px 14px 6px",background:C.bg1}}>
@@ -1890,39 +1910,39 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
 
         {/* Footer */}
         <div style={{borderTop:`1px solid ${C.border0}`,padding:"12px 22px",background:C.bg1,flexShrink:0,display:"flex",alignItems:"center",gap:8}}>
-          <button onClick={resetAndClose} style={{background:"none",border:`1px solid ${C.border0}`,color:C.text2,fontFamily:FONT,fontSize:13,padding:"7px 16px",cursor:"pointer"}}>Cancel</button>
+          <button onClick={resetAndClose} style={{background:"none",border:`1px solid ${C.border0}`,color:C.text2,fontFamily:FONT,fontSize:14,padding:"7px 16px",cursor:"pointer"}}>Cancel</button>
           <div style={{flex:1}}/>
           {step===1&&!isOutboundWebhook&&(
             <>
-              <button onClick={()=>handleSave(false)} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:13,fontWeight:600,padding:"7px 16px",cursor:"pointer"}}>Save as Draft</button>
-              <button onClick={handleNext} style={{background:C.blue,border:`1px solid ${C.blueHover}`,color:"#fff",fontFamily:FONT,fontSize:13,fontWeight:700,padding:"7px 18px",cursor:"pointer"}}>Next: Mapping & Runtime →</button>
+              <button onClick={()=>handleSave(false)} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:14,fontWeight:600,padding:"7px 16px",cursor:"pointer"}}>Save as Draft</button>
+              <button onClick={handleNext} style={{background:C.blue,border:`1px solid ${C.blueHover}`,color:"#fff",fontFamily:FONT,fontSize:14,fontWeight:700,padding:"7px 18px",cursor:"pointer"}}>Next: Mapping & Runtime →</button>
             </>
           )}
           {step===1&&isOutboundWebhook&&(
             <>
-              <button onClick={()=>handleSave(false)} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:13,fontWeight:600,padding:"7px 16px",cursor:"pointer"}}>Save as Draft</button>
-              <button onClick={()=>handleSave(true)} disabled={!form.selectedWebhookId} title={!form.selectedWebhookId?"Select or create a webhook above":""} style={{background:form.selectedWebhookId?C.blue:C.bg2,border:`1px solid ${form.selectedWebhookId?C.blueHover:C.border0}`,color:form.selectedWebhookId?"#fff":C.text3,fontFamily:FONT,fontSize:13,fontWeight:700,padding:"7px 18px",cursor:form.selectedWebhookId?"pointer":"not-allowed"}}>Publish Integration</button>
+              <button onClick={()=>handleSave(false)} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:14,fontWeight:600,padding:"7px 16px",cursor:"pointer"}}>Save as Draft</button>
+              <button onClick={()=>handleSave(true)} disabled={!form.selectedWebhookId} title={!form.selectedWebhookId?"Select or create a webhook above":""} style={{background:form.selectedWebhookId?C.blue:C.bg2,border:`1px solid ${form.selectedWebhookId?C.blueHover:C.border0}`,color:form.selectedWebhookId?"#fff":C.text3,fontFamily:FONT,fontSize:14,fontWeight:700,padding:"7px 18px",cursor:form.selectedWebhookId?"pointer":"not-allowed"}}>Publish Integration</button>
             </>
           )}
           {step===2&&isPolling&&(
             <>
-              <button onClick={()=>setStep(1)} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:13,fontWeight:600,padding:"7px 14px",cursor:"pointer"}}>← Back</button>
-              <button onClick={()=>handleSave(false)} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:13,fontWeight:600,padding:"7px 16px",cursor:"pointer"}}>Save as Draft</button>
+              <button onClick={()=>setStep(1)} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:14,fontWeight:600,padding:"7px 14px",cursor:"pointer"}}>← Back</button>
+              <button onClick={()=>handleSave(false)} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:14,fontWeight:600,padding:"7px 16px",cursor:"pointer"}}>Save as Draft</button>
               {unmappedRequired>0||form.fieldMappings.every(m=>!m.target)?(
-                <button onClick={()=>setMappingOpen(true)} style={{background:C.blue,border:`1px solid ${C.blueHover}`,color:"#fff",fontFamily:FONT,fontSize:13,fontWeight:700,padding:"7px 18px",cursor:"pointer"}}>Continue →</button>
+                <button onClick={()=>setMappingOpen(true)} style={{background:C.blue,border:`1px solid ${C.blueHover}`,color:"#fff",fontFamily:FONT,fontSize:14,fontWeight:700,padding:"7px 18px",cursor:"pointer"}}>Continue →</button>
               ):(
-                <button onClick={()=>handleSave(true)} style={{background:C.blue,border:`1px solid ${C.blueHover}`,color:"#fff",fontFamily:FONT,fontSize:13,fontWeight:700,padding:"7px 18px",cursor:"pointer"}}>Publish Integration</button>
+                <button onClick={()=>handleSave(true)} style={{background:C.blue,border:`1px solid ${C.blueHover}`,color:"#fff",fontFamily:FONT,fontSize:14,fontWeight:700,padding:"7px 18px",cursor:"pointer"}}>Publish Integration</button>
               )}
             </>
           )}
           {step===2&&isInboundWebhook&&(
             <>
-              <button onClick={()=>setStep(1)} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:13,fontWeight:600,padding:"7px 14px",cursor:"pointer"}}>← Back</button>
-              <button onClick={()=>handleSave(false)} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:13,fontWeight:600,padding:"7px 16px",cursor:"pointer"}}>Save as Draft</button>
+              <button onClick={()=>setStep(1)} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:14,fontWeight:600,padding:"7px 14px",cursor:"pointer"}}>← Back</button>
+              <button onClick={()=>handleSave(false)} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:14,fontWeight:600,padding:"7px 16px",cursor:"pointer"}}>Save as Draft</button>
               {unmappedRequired>0||form.fieldMappings.every(m=>!m.target)?(
-                <button onClick={()=>setMappingOpen(true)} style={{background:C.blue,border:`1px solid ${C.blueHover}`,color:"#fff",fontFamily:FONT,fontSize:13,fontWeight:700,padding:"7px 18px",cursor:"pointer"}}>Continue →</button>
+                <button onClick={()=>setMappingOpen(true)} style={{background:C.blue,border:`1px solid ${C.blueHover}`,color:"#fff",fontFamily:FONT,fontSize:14,fontWeight:700,padding:"7px 18px",cursor:"pointer"}}>Continue →</button>
               ):(
-                <button onClick={()=>handleSave(true)} style={{background:C.blue,border:`1px solid ${C.blueHover}`,color:"#fff",fontFamily:FONT,fontSize:13,fontWeight:700,padding:"7px 18px",cursor:"pointer"}}>Publish Integration</button>
+                <button onClick={()=>handleSave(true)} style={{background:C.blue,border:`1px solid ${C.blueHover}`,color:"#fff",fontFamily:FONT,fontSize:14,fontWeight:700,padding:"7px 18px",cursor:"pointer"}}>Publish Integration</button>
               )}
             </>
           )}
@@ -1982,11 +2002,11 @@ function AddSystemDrawer({ open, onClose, onSave }) {
   return (
     <>
       <div onClick={resetAndClose} style={{position:"fixed",inset:0,background:"rgba(15,25,35,0.30)",zIndex:200}}/>
-      <div style={{position:"fixed",top:0,right:0,bottom:0,width:500,background:C.bg0,borderLeft:`1px solid ${C.border0}`,zIndex:201,display:"flex",flexDirection:"column",boxShadow:"-4px 0 20px rgba(0,0,0,0.09)"}}>
+      <div style={{position:"fixed",top:0,right:0,bottom:0,width:500,background:C.bg0,borderLeft:`1px solid ${C.border0}`,zIndex:201,display:"flex",flexDirection:"column",boxShadow:"0px 4px 24px rgba(0,0,0,0.16)"}}>
         <div style={{padding:"0 22px",height:56,display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:`1px solid ${C.border0}`,background:C.bg1,flexShrink:0}}>
           <div>
-            <div style={{fontFamily:FONT,fontWeight:700,fontSize:15,color:C.text0}}>Add System</div>
-            <div style={{fontFamily:FONT,fontSize:11,color:C.text3}}>Give this platform an identity. Connection details are configured when you create integrations under it.</div>
+            <div style={{fontFamily:FONT,fontWeight:700,fontSize:14,color:C.text0}}>Add System</div>
+            <div style={{fontFamily:FONT,fontSize:12,color:C.text3}}>Give this platform an identity. Connection details are configured when you create integrations under it.</div>
           </div>
           <button onClick={resetAndClose} style={{background:"none",border:`1px solid ${C.border1}`,color:C.text2,width:28,height:28,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}}>×</button>
         </div>
@@ -1997,20 +2017,20 @@ function AddSystemDrawer({ open, onClose, onSave }) {
             <div><FieldLabel label="Category" required/><FieldSelect value={form.category} onChange={v=>{set("category",v);touch("category");}} options={CATEGORIES} placeholder="Select category" error={touched.category&&errors.category}/><FieldError msg={touched.category&&errors.category}/></div>
             <div>
               <FieldLabel label="System Code"/>
-              <div style={{width:"100%",boxSizing:"border-box",padding:"7px 10px",background:C.bg2,border:`1px solid ${C.border1}`,fontFamily:MONO,fontSize:13,color:form.code?C.blue:C.text3,cursor:"not-allowed"}}>
-                {form.code||<span style={{fontFamily:FONT,fontSize:13,color:C.text3}}>Generated from name + category</span>}
+              <div style={{width:"100%",boxSizing:"border-box",padding:"7px 10px",background:C.bg2,border:`1px solid ${C.border1}`,fontFamily:MONO,fontSize:14,color:form.code?C.blue:C.text3,cursor:"not-allowed"}}>
+                {form.code||<span style={{fontFamily:FONT,fontSize:14,color:C.text3}}>Generated from name + category</span>}
               </div>
-              <div style={{fontFamily:FONT,fontSize:11,color:C.text3,marginTop:4}}>Auto-generated — used in audit logs and API references</div>
+              <div style={{fontFamily:FONT,fontSize:12,color:C.text3,marginTop:4}}>Auto-generated — used in audit logs and API references</div>
             </div>
           </div>
           <div style={{marginBottom:18}}><FieldLabel label="Description"/><FieldTextarea value={form.description} onChange={v=>set("description",v)} placeholder="Briefly describe what this system does." rows={2}/></div>
           <div><FieldLabel label="Error Notification Email" required helper="Failure alerts for integrations under this system will be sent here"/><FieldInput value={form.errorEmail} onChange={v=>{set("errorEmail",v);touch("errorEmail");}} placeholder="ops-alerts@company.com" error={touched.errorEmail&&errors.errorEmail}/><FieldError msg={touched.errorEmail&&errors.errorEmail}/></div>
         </div>
         <div style={{borderTop:`1px solid ${C.border0}`,padding:"12px 22px",background:C.bg1,flexShrink:0,display:"flex",gap:8}}>
-          <button onClick={resetAndClose} style={{background:"none",border:`1px solid ${C.border0}`,color:C.text2,fontFamily:FONT,fontSize:13,padding:"7px 16px",cursor:"pointer"}}>Cancel</button>
+          <button onClick={resetAndClose} style={{background:"none",border:`1px solid ${C.border0}`,color:C.text2,fontFamily:FONT,fontSize:14,padding:"7px 16px",cursor:"pointer"}}>Cancel</button>
           <div style={{flex:1}}/>
-          <button onClick={()=>handleSave(true)} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:13,fontWeight:600,padding:"7px 16px",cursor:"pointer"}}>Save as Draft</button>
-          <button onClick={()=>handleSave(false)} style={{background:C.blue,border:`1px solid ${C.blueHover}`,color:"#fff",fontFamily:FONT,fontSize:13,fontWeight:700,padding:"7px 18px",cursor:"pointer"}}>Save System</button>
+          <button onClick={()=>handleSave(true)} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:14,fontWeight:600,padding:"7px 16px",cursor:"pointer"}}>Save as Draft</button>
+          <button onClick={()=>handleSave(false)} style={{background:C.blue,border:`1px solid ${C.blueHover}`,color:"#fff",fontFamily:FONT,fontSize:14,fontWeight:700,padding:"7px 18px",cursor:"pointer"}}>Save System</button>
         </div>
       </div>
     </>
@@ -2032,30 +2052,30 @@ function EditSystemDrawer({ open, system, onClose, onSave }) {
   return (
     <>
       <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(15,25,35,0.30)",zIndex:200}}/>
-      <div style={{position:"fixed",top:0,right:0,bottom:0,width:500,background:C.bg0,borderLeft:`1px solid ${C.border0}`,zIndex:201,display:"flex",flexDirection:"column",boxShadow:"-4px 0 20px rgba(0,0,0,0.09)"}}>
+      <div style={{position:"fixed",top:0,right:0,bottom:0,width:500,background:C.bg0,borderLeft:`1px solid ${C.border0}`,zIndex:201,display:"flex",flexDirection:"column",boxShadow:"0px 4px 24px rgba(0,0,0,0.16)"}}>
         <div style={{padding:"0 22px",height:56,display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:`1px solid ${C.border0}`,background:C.bg1,flexShrink:0}}>
-          <div><div style={{fontFamily:FONT,fontWeight:700,fontSize:15,color:C.text0}}>Edit System</div><div style={{fontFamily:FONT,fontSize:11,color:C.text3}}>{system.name} <MonoText size={11} color={C.blue}>{system.code}</MonoText></div></div>
+          <div><div style={{fontFamily:FONT,fontWeight:700,fontSize:14,color:C.text0}}>Edit System</div><div style={{fontFamily:FONT,fontSize:12,color:C.text3}}>{system.name} <MonoText size={12} color={C.blue}>{system.code}</MonoText></div></div>
           <button onClick={onClose} style={{background:"none",border:`1px solid ${C.border1}`,color:C.text2,width:28,height:28,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>×</button>
         </div>
         <div style={{flex:1,overflowY:"auto",padding:"22px 22px 8px"}}>
-          {saved&&<div style={{marginBottom:14,background:C.greenBg,border:`1px solid ${C.greenBorder}`,borderLeft:`3px solid ${C.green}`,padding:"8px 12px",fontFamily:FONT,fontSize:12,color:C.green,display:"flex",alignItems:"center",gap:6}}><span>✓</span>System updated</div>}
+          {saved&&<div style={{marginBottom:14,background:C.greenBg,border:`1px solid ${C.greenBorder}`,borderLeft:`3px solid ${C.green}`,padding:"8px 12px",fontFamily:FONT,fontSize:12,color:C.green,display:"flex",alignItems:"center",gap:8}}><span>✓</span>System updated</div>}
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px 16px",marginBottom:14}}>
             <div><FieldLabel label="Plant" required/><FieldSelect value={form.plant} onChange={v=>{set("plant",v);touch("plant");}} options={PLANTS_OPTS} placeholder="Select plant" error={touched.plant&&errors.plant}/><FieldError msg={touched.plant&&errors.plant}/></div>
             <div><FieldLabel label="System Name" required/><FieldInput value={form.name} onChange={v=>{set("name",v);touch("name");}} placeholder="System name" error={touched.name&&errors.name}/><FieldError msg={touched.name&&errors.name}/></div>
             <div><FieldLabel label="Category" required/><FieldSelect value={form.category} onChange={v=>{set("category",v);touch("category");}} options={CATEGORIES} placeholder="Select category" error={touched.category&&errors.category}/><FieldError msg={touched.category&&errors.category}/></div>
             <div>
               <FieldLabel label="System Code"/>
-              <div style={{width:"100%",boxSizing:"border-box",padding:"7px 10px",background:C.bg2,border:`1px solid ${C.border1}`,fontFamily:MONO,fontSize:13,color:C.blue,cursor:"not-allowed"}}>{system.code}</div>
-              <div style={{fontFamily:FONT,fontSize:11,color:C.text3,marginTop:4}}>Read-only — set at creation</div>
+              <div style={{width:"100%",boxSizing:"border-box",padding:"7px 10px",background:C.bg2,border:`1px solid ${C.border1}`,fontFamily:MONO,fontSize:14,color:C.blue,cursor:"not-allowed"}}>{system.code}</div>
+              <div style={{fontFamily:FONT,fontSize:12,color:C.text3,marginTop:4}}>Read-only — set at creation</div>
             </div>
           </div>
           <div style={{marginBottom:14}}><FieldLabel label="Description"/><FieldTextarea value={form.description} onChange={v=>set("description",v)} placeholder="Briefly describe this system." rows={2}/></div>
           <div><FieldLabel label="Error Notification Email" required/><FieldInput value={form.errorEmail} onChange={v=>{set("errorEmail",v);touch("errorEmail");}} placeholder="ops@company.com" error={touched.errorEmail&&errors.errorEmail}/><FieldError msg={touched.errorEmail&&errors.errorEmail}/></div>
         </div>
         <div style={{borderTop:`1px solid ${C.border0}`,padding:"12px 22px",background:C.bg1,flexShrink:0,display:"flex",gap:8}}>
-          <button onClick={onClose} style={{background:"none",border:`1px solid ${C.border0}`,color:C.text2,fontFamily:FONT,fontSize:13,padding:"7px 16px",cursor:"pointer"}}>Cancel</button>
+          <button onClick={onClose} style={{background:"none",border:`1px solid ${C.border0}`,color:C.text2,fontFamily:FONT,fontSize:14,padding:"7px 16px",cursor:"pointer"}}>Cancel</button>
           <div style={{flex:1}}/>
-          <button onClick={handleSave} style={{background:C.blue,border:`1px solid ${C.blueHover}`,color:"#fff",fontFamily:FONT,fontSize:13,fontWeight:700,padding:"7px 18px",cursor:"pointer"}}>Save Changes</button>
+          <button onClick={handleSave} style={{background:C.blue,border:`1px solid ${C.blueHover}`,color:"#fff",fontFamily:FONT,fontSize:14,fontWeight:700,padding:"7px 18px",cursor:"pointer"}}>Save Changes</button>
         </div>
       </div>
     </>
@@ -2084,31 +2104,31 @@ function EditIntegrationDrawer({ open, integration, system, onClose, onSave }) {
   return (
     <>
       <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(15,25,35,0.30)",zIndex:200}}/>
-      <div style={{position:"fixed",top:0,right:0,bottom:0,width:520,background:C.bg0,borderLeft:`1px solid ${C.border0}`,zIndex:201,display:"flex",flexDirection:"column",boxShadow:"-4px 0 20px rgba(0,0,0,0.09)"}}>
+      <div style={{position:"fixed",top:0,right:0,bottom:0,width:520,background:C.bg0,borderLeft:`1px solid ${C.border0}`,zIndex:201,display:"flex",flexDirection:"column",boxShadow:"0px 4px 24px rgba(0,0,0,0.16)"}}>
         <div style={{padding:"0 22px",height:56,display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:`1px solid ${C.border0}`,background:C.bg1,flexShrink:0}}>
-          <div><div style={{fontFamily:FONT,fontWeight:700,fontSize:15,color:C.text0}}>Edit Integration</div>{system&&<div style={{fontFamily:FONT,fontSize:11,color:C.text3}}>under <MonoText size={11} color={C.blue}>{system.name}</MonoText></div>}</div>
+          <div><div style={{fontFamily:FONT,fontWeight:700,fontSize:14,color:C.text0}}>Edit Integration</div>{system&&<div style={{fontFamily:FONT,fontSize:12,color:C.text3}}>under <MonoText size={12} color={C.blue}>{system.name}</MonoText></div>}</div>
           <button onClick={onClose} style={{background:"none",border:`1px solid ${C.border1}`,color:C.text2,width:28,height:28,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>×</button>
         </div>
         <div style={{flex:1,overflowY:"auto",padding:"22px 22px 8px"}}>
-          {saved&&<div style={{marginBottom:14,background:C.greenBg,border:`1px solid ${C.greenBorder}`,borderLeft:`3px solid ${C.green}`,padding:"8px 12px",fontFamily:FONT,fontSize:12,color:C.green,display:"flex",alignItems:"center",gap:6}}><span>✓</span>Integration updated</div>}
+          {saved&&<div style={{marginBottom:14,background:C.greenBg,border:`1px solid ${C.greenBorder}`,borderLeft:`3px solid ${C.green}`,padding:"8px 12px",fontFamily:FONT,fontSize:12,color:C.green,display:"flex",alignItems:"center",gap:8}}><span>✓</span>Integration updated</div>}
           <div style={{marginBottom:18,padding:"10px 14px",background:C.bg1,border:`1px solid ${C.border0}`}}>
-            <div style={{fontFamily:FONT,fontSize:11,fontWeight:700,color:C.text2,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>Context — read only</div>
+            <div style={{fontFamily:FONT,fontSize:12,fontWeight:700,color:C.text2,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>Context — read only</div>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"6px 20px"}}>
               {[{label:"Direction",value:integration.direction==="inbound"?"↓ Inbound":"↑ Outbound"},{label:"Method",value:integration.method==="polling"?"Polling":"Webhook"},{label:"Status",node:<StatusBadge status={integration.status}/>}].map(row=>(
                 <div key={row.label}><div style={{fontFamily:FONT,fontSize:10,color:C.text3,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:2}}>{row.label}</div>{row.node||<span style={{fontFamily:FONT,fontSize:12,fontWeight:600,color:C.text0}}>{row.value}</span>}</div>
               ))}
             </div>
-            <div style={{marginTop:8,fontFamily:FONT,fontSize:11,color:C.text3}}>Direction and method cannot be changed after creation.</div>
+            <div style={{marginTop:8,fontFamily:FONT,fontSize:12,color:C.text3}}>Direction and method cannot be changed after creation.</div>
           </div>
           <div style={{marginBottom:14}}><FieldLabel label="Integration Name" required/><FieldInput value={form.name} onChange={v=>{set("name",v);touch("name");}} placeholder="Integration name" error={touched.name&&errors.name}/><FieldError msg={touched.name&&errors.name}/></div>
           {isInbound&&<div style={{marginBottom:14}}>
             <div style={{marginBottom:10}}><FieldLabel label="Product" required/><FieldSelect value={form.product} onChange={v=>{set("product",v);set("businessObjects",[]);touch("product");}} options={PRODUCTS} placeholder="— Select product —" error={touched.product&&errors.product}/><FieldError msg={touched.product&&errors.product}/></div>
             {form.product&&<div>
               <FieldLabel label="Collections" required helper="Select all object types in this integration"/>
-              <div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:4}}>
+              <div style={{display:"flex",flexWrap:"wrap",gap:8,marginTop:4}}>
                 {(PRODUCT_OBJECTS[form.product]||[]).map(col=>{
                   const active=(form.businessObjects||[]).includes(col);
-                  return <button key={col} onClick={()=>toggleBO(col)} style={{padding:"4px 10px",fontFamily:FONT,fontSize:12,fontWeight:active?700:400,cursor:"pointer",border:`1px solid ${active?C.blue:C.border1}`,background:active?C.blueBg:C.bg0,color:active?C.blue:C.text1,display:"flex",alignItems:"center",gap:4}}>{active&&<span style={{fontSize:9,fontWeight:900}}>✓</span>}{col}</button>;
+                  return <button key={col} onClick={()=>toggleBO(col)} style={{padding:"4px 10px",fontFamily:FONT,fontSize:12,fontWeight:active?700:400,cursor:"pointer",border:`1px solid ${active?C.blue:C.border1}`,background:active?C.blueBg:C.bg0,color:active?C.blue:C.text1,display:"flex",alignItems:"center",gap:4}}>{active&&<span style={{fontSize:10,fontWeight:900}}>✓</span>}{col}</button>;
                 })}
               </div>
               {touched.businessObjects&&errors.businessObjects&&<FieldError msg={errors.businessObjects}/>}
@@ -2131,9 +2151,9 @@ function EditIntegrationDrawer({ open, integration, system, onClose, onSave }) {
           </div>
         </div>
         <div style={{borderTop:`1px solid ${C.border0}`,padding:"12px 22px",background:C.bg1,flexShrink:0,display:"flex",gap:8}}>
-          <button onClick={onClose} style={{background:"none",border:`1px solid ${C.border0}`,color:C.text2,fontFamily:FONT,fontSize:13,padding:"7px 16px",cursor:"pointer"}}>Cancel</button>
+          <button onClick={onClose} style={{background:"none",border:`1px solid ${C.border0}`,color:C.text2,fontFamily:FONT,fontSize:14,padding:"7px 16px",cursor:"pointer"}}>Cancel</button>
           <div style={{flex:1}}/>
-          <button onClick={handleSave} style={{background:C.blue,border:`1px solid ${C.blueHover}`,color:"#fff",fontFamily:FONT,fontSize:13,fontWeight:700,padding:"7px 18px",cursor:"pointer"}}>Save Changes</button>
+          <button onClick={handleSave} style={{background:C.blue,border:`1px solid ${C.blueHover}`,color:"#fff",fontFamily:FONT,fontSize:14,fontWeight:700,padding:"7px 18px",cursor:"pointer"}}>Save Changes</button>
         </div>
       </div>
     </>
@@ -2149,7 +2169,7 @@ function TopNav() {
     <div style={{height:46,background:C.navBg,borderBottom:`1px solid ${C.navBorder}`,display:"flex",alignItems:"center",padding:"0 24px",position:"sticky",top:0,zIndex:100,flexShrink:0}}>
       <div style={{display:"flex",alignItems:"center",gap:8}}>
         <div style={{width:20,height:20,background:C.blue,display:"flex",alignItems:"center",justifyContent:"center"}}><div style={{width:8,height:8,background:"#fff"}}/></div>
-        <span style={{fontFamily:FONT,fontWeight:700,fontSize:13,color:C.navActive,letterSpacing:"0.08em"}}>INTEGRATION MANAGER</span>
+        <span style={{fontFamily:FONT,fontWeight:700,fontSize:14,color:C.navActive,letterSpacing:"0.08em"}}>INTEGRATION MANAGER</span>
       </div>
       <div style={{width:1,height:18,background:C.navBorder,margin:"0 20px"}}/>
       {["Workflows","My Approvals"].map(l=><NavLink key={l} label={l}/>)}
@@ -2159,8 +2179,8 @@ function TopNav() {
 }
 function NavLink({ label }) {
   return (
-    <div style={{display:"inline-flex",alignItems:"center",gap:6,padding:"0 12px",height:46,opacity:0.7,cursor:"default"}}>
-      <span style={{fontFamily:FONT,fontSize:13,fontWeight:500,color:C.navText}}>{label}</span>
+    <div style={{display:"inline-flex",alignItems:"center",gap:8,padding:"0 12px",height:46,opacity:0.7,cursor:"default"}}>
+      <span style={{fontFamily:FONT,fontSize:14,fontWeight:500,color:C.navText}}>{label}</span>
     </div>
   );
 }
@@ -2189,17 +2209,17 @@ function SystemCard({ system, integrations, onClick }) {
         </div>
         <button onClick={e=>{e.stopPropagation();onClick(system.id);}} style={{background:"none",border:`1px solid ${C.border1}`,color:C.blue,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"4px 12px",cursor:"pointer",flexShrink:0}}>View →</button>
       </div>
-      <div style={{background:C.bg1,border:`1px solid ${C.border0}`,padding:"5px 8px",marginBottom:10,fontFamily:FONT,fontSize:11,color:C.text2,lineHeight:1.4}}>
+      <div style={{background:C.bg1,border:`1px solid ${C.border0}`,padding:"5px 8px",marginBottom:10,fontFamily:FONT,fontSize:12,color:C.text2,lineHeight:1.4}}>
         {system.description||<span style={{color:C.text3,fontStyle:"italic"}}>No description</span>}
       </div>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <div style={{display:"flex",alignItems:"center",gap:16}}>
-          <div style={{fontFamily:FONT,fontSize:12,color:C.text2}}><span style={{color:C.text0,fontWeight:700}}>{liveCount}</span> integration{liveCount!==1?"s":""}{liveCount>0&&activeCount!==liveCount&&<span style={{color:C.text3,fontSize:11}}> · {activeCount} active</span>}</div>
-          {system.errorEmail&&<div style={{fontFamily:FONT,fontSize:11,color:C.text2}}>Alerts: <MonoText size={11} color={C.text1}>{system.errorEmail}</MonoText></div>}
+          <div style={{fontFamily:FONT,fontSize:12,color:C.text2}}><span style={{color:C.text0,fontWeight:700}}>{liveCount}</span> integration{liveCount!==1?"s":""}{liveCount>0&&activeCount!==liveCount&&<span style={{color:C.text3,fontSize:12}}> · {activeCount} active</span>}</div>
+          {system.errorEmail&&<div style={{fontFamily:FONT,fontSize:12,color:C.text2}}>Alerts: <MonoText size={12} color={C.text1}>{system.errorEmail}</MonoText></div>}
         </div>
-        {system.errorBadge&&<span style={{background:C.redBg,border:`1px solid ${C.redBorder}`,padding:"2px 8px",fontSize:11,fontFamily:FONT,fontWeight:600,color:C.red}}>{system.errorBadge}</span>}
+        {system.errorBadge&&<span style={{background:C.redBg,border:`1px solid ${C.redBorder}`,padding:"2px 8px",fontSize:12,fontFamily:FONT,fontWeight:600,color:C.red}}>{system.errorBadge}</span>}
       </div>
-      {!system.errorEmail&&system.status!=="draft"&&<div style={{marginTop:10,background:C.amberBg,border:`1px solid ${C.amberBorder}`,borderLeft:`3px solid ${C.amber}`,padding:"5px 10px",fontFamily:FONT,fontSize:11,color:C.amber,display:"flex",alignItems:"center",gap:6}}><span>▲</span>Error notification email not configured.</div>}
+      {!system.errorEmail&&system.status!=="draft"&&<div style={{marginTop:10,background:C.amberBg,border:`1px solid ${C.amberBorder}`,borderLeft:`3px solid ${C.amber}`,padding:"5px 10px",fontFamily:FONT,fontSize:12,color:C.amber,display:"flex",alignItems:"center",gap:8}}><span>▲</span>Error notification email not configured.</div>}
     </div>
   );
 }
@@ -2217,18 +2237,18 @@ function SystemsPage({ systems, integrations, onViewSystem, onAddSystem }) {
   const statusCounts=useMemo(()=>{const c={all:systems.length};systems.forEach(s=>{c[s.status]=(c[s.status]||0)+1;});return c;},[systems]);
   const chips=[{key:"all",label:"All"},{key:"ready",label:"Ready"},{key:"draft",label:"Draft"},{key:"needs_attention",label:"Needs Attention"}];
   const filtered=useMemo(()=>systems.filter(s=>{const q=search.toLowerCase();return(s.name.toLowerCase().includes(q)||s.category.toLowerCase().includes(q))&&(plant==="All Plants"||s.plant===plant)&&(statusF==="all"||s.status===statusF);}),[systems,search,plant,statusF]);
-  const inp={background:C.bg0,border:`1px solid ${C.border1}`,color:C.text0,fontFamily:FONT,fontSize:13,padding:"6px 10px",outline:"none",boxSizing:"border-box"};
+  const inp={background:C.bg0,border:`1px solid ${C.border1}`,color:C.text0,fontFamily:FONT,fontSize:14,padding:"6px 10px",outline:"none",boxSizing:"border-box"};
   return (
     <div style={{padding:"24px 32px",maxWidth:1200,margin:"0 auto"}}>
       <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:6}}>
         <div>
-          <h1 style={{fontFamily:FONT,fontSize:20,fontWeight:700,color:C.text0,margin:"0 0 4px"}}>External Systems</h1>
-          <p style={{fontFamily:FONT,fontSize:13,color:C.text2,margin:0,lineHeight:1.5}}>
+          <h1 style={{fontFamily:FONT,fontSize:24,fontWeight:700,color:C.text0,margin:"0 0 4px"}}>External Systems</h1>
+          <p style={{fontFamily:FONT,fontSize:14,color:C.text2,margin:0,lineHeight:1.5}}>
             A <strong style={{color:C.text0}}>System</strong> is an external platform you've connected.{" "}
             Each <strong style={{color:C.text0}}>Integration</strong> under it defines one specific data flow — what data moves, how it moves, and when.
           </p>
         </div>
-        <button onClick={onAddSystem} style={{background:C.blue,border:`1px solid ${C.blueHover}`,color:"#fff",fontFamily:FONT,fontWeight:700,fontSize:13,padding:"8px 18px",cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",gap:6}}>+ Add System</button>
+        <button onClick={onAddSystem} style={{background:C.blue,border:`1px solid ${C.blueHover}`,color:"#fff",fontFamily:FONT,fontWeight:700,fontSize:14,padding:"8px 18px",cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",gap:8}}>+ Add System</button>
       </div>
       <div style={{display:"flex",gap:8,alignItems:"center",padding:"10px 12px",background:C.bg0,border:`1px solid ${C.border0}`,marginBottom:12,marginTop:16}}>
         <div style={{position:"relative",flex:"0 0 240px"}}><span style={{position:"absolute",left:8,top:"50%",transform:"translateY(-50%)",color:C.text3,fontSize:14,pointerEvents:"none"}}>⌕</span><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search by name or category…" style={{...inp,width:"100%",paddingLeft:26}}/></div>
@@ -2237,7 +2257,7 @@ function SystemsPage({ systems, integrations, onViewSystem, onAddSystem }) {
         <div style={{flex:1}}/><span style={{fontFamily:FONT,fontSize:12,color:C.text3}}>{filtered.length} of {systems.length} systems</span>
       </div>
       <div style={{display:"flex",gap:4,marginBottom:16,flexWrap:"wrap"}}>
-        {chips.map(chip=>{const active=statusF===chip.key,cfg=STATUS_CONFIG[chip.key]||{};return <button key={chip.key} onClick={()=>setStatusF(chip.key)} style={{background:active?(cfg.bg||C.bg2):C.bg0,border:`1px solid ${active?(cfg.border||C.border1):C.border0}`,color:active?(cfg.color||C.text0):C.text1,fontFamily:FONT,fontSize:12,fontWeight:active?700:400,padding:"5px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>{active&&cfg.color&&<span style={{width:6,height:6,borderRadius:"50%",background:cfg.color}}/>}{chip.label}<span style={{background:active?"rgba(0,0,0,0.07)":C.bg2,border:`1px solid ${C.border0}`,color:active?(cfg.color||C.text1):C.text3,fontSize:11,padding:"0 5px",fontWeight:700}}>{statusCounts[chip.key]||0}</span></button>;})}
+        {chips.map(chip=>{const active=statusF===chip.key,cfg=STATUS_CONFIG[chip.key]||{};return <button key={chip.key} onClick={()=>setStatusF(chip.key)} style={{background:active?(cfg.bg||C.bg2):C.bg0,border:`1px solid ${active?(cfg.border||C.border1):C.border0}`,color:active?(cfg.color||C.text0):C.text1,fontFamily:FONT,fontSize:12,fontWeight:active?700:400,padding:"5px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:8}}>{active&&cfg.color&&<span style={{width:6,height:6,borderRadius:9999,background:cfg.color}}/>}{chip.label}<span style={{background:active?"rgba(0,0,0,0.07)":C.bg2,border:`1px solid ${C.border0}`,color:active?(cfg.color||C.text1):C.text3,fontSize:12,padding:"0 5px",fontWeight:700}}>{statusCounts[chip.key]||0}</span></button>;})}
       </div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(400px, 1fr))",gap:8}}>
         {filtered.map(s=><SystemCard key={s.id} system={s} integrations={integrations} onClick={onViewSystem}/>)}
@@ -2262,7 +2282,7 @@ function SummaryCard({ system }) {
         ].map(row=>(
           <div key={row.label} style={row.wide?{gridColumn:"1/-1"}:{}}>
             <div style={{fontFamily:FONT,fontSize:10,color:C.text3,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:2}}>{row.label}</div>
-            {row.mono?<MonoText size={12} color={row.color||C.blue}>{row.value}</MonoText>:<div style={{fontFamily:FONT,fontSize:13,color:row.muted?C.text3:C.text0}}>{row.value}</div>}
+            {row.mono?<MonoText size={12} color={row.color||C.blue}>{row.value}</MonoText>:<div style={{fontFamily:FONT,fontSize:14,color:row.muted?C.text3:C.text0}}>{row.value}</div>}
           </div>
         ))}
       </div>
@@ -2270,7 +2290,7 @@ function SummaryCard({ system }) {
   );
 }
 function StatCard({ label, value, color, sub, mono }) {
-  return <div style={{background:C.bg1,padding:"12px 16px",borderLeft:`2px solid ${C.border0}`}}><div style={{fontFamily:FONT,fontSize:10,color:C.text3,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:5}}>{label}</div><div style={{fontFamily:mono?MONO:FONT,fontSize:mono?13:20,fontWeight:mono?500:700,color:color||C.text0,lineHeight:1}}>{value}</div>{sub&&<div style={{fontFamily:FONT,fontSize:11,color:C.text3,marginTop:4}}>{sub}</div>}</div>;
+  return <div style={{background:C.bg1,padding:"12px 16px",borderLeft:`2px solid ${C.border0}`}}><div style={{fontFamily:FONT,fontSize:10,color:C.text3,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:5}}>{label}</div><div style={{fontFamily:mono?MONO:FONT,fontSize:mono?13:20,fontWeight:mono?500:700,color:color||C.text0,lineHeight:1}}>{value}</div>{sub&&<div style={{fontFamily:FONT,fontSize:12,color:C.text3,marginTop:4}}>{sub}</div>}</div>;
 }
 
 // ─── FLOW STRIP ───────────────────────────────────────────────────────────────
@@ -2297,9 +2317,9 @@ function FlowStrip({ system, integrations }) {
         return (
           <div key={intg.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 14px",borderBottom:i<shown.length-1?`1px solid ${C.border0}`:"none",borderLeft:`3px solid ${isIn?C.teal:C.purple}`}}>
             <span style={{fontFamily:FONT,fontSize:12,fontWeight:700,color:C.text0,minWidth:120,flexShrink:0}}>{src}</span>
-            <span style={{color:C.text3,fontSize:13}}>→</span>
+            <span style={{color:C.text3,fontSize:14}}>→</span>
             <span style={{fontFamily:FONT,fontSize:12,color:C.text1,flex:1}}>{obj}</span>
-            <span style={{color:C.text3,fontSize:13}}>→</span>
+            <span style={{color:C.text3,fontSize:14}}>→</span>
             <span style={{fontFamily:FONT,fontSize:12,fontWeight:700,color:C.text0,minWidth:120,flexShrink:0,textAlign:"right"}}>{dst}</span>
             <div style={{marginLeft:8,display:"flex",gap:5,flexShrink:0}}>
               <MethodBadge method={intg.method}/>
@@ -2308,7 +2328,7 @@ function FlowStrip({ system, integrations }) {
           </div>
         );
       })}
-      {intgs.length>4&&<div style={{padding:"6px 14px",fontFamily:FONT,fontSize:11,color:C.text3}}>+{intgs.length-4} more integrations</div>}
+      {intgs.length>4&&<div style={{padding:"6px 14px",fontFamily:FONT,fontSize:12,color:C.text3}}>+{intgs.length-4} more integrations</div>}
     </div>
   );
 }
@@ -2336,16 +2356,16 @@ function IntegrationCard({ integration, systemName, onEdit, onDisable }) {
         <div style={{flex:1}}>
           {/* Phase 2: summary sentence */}
           <div style={{fontFamily:FONT,fontSize:12,color:C.text2,marginBottom:6,lineHeight:1.5}}>{summary}</div>
-          <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
+          <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
             <span style={{fontFamily:FONT,fontSize:14,fontWeight:700,color:isDisabled?C.text2:C.text0,marginRight:4}}>{integration.name}</span>
             <StatusBadge status={integration.status}/>
             <DirectionBadge direction={integration.direction}/>
             <MethodBadge method={integration.method}/>
           </div>
         </div>
-        <div style={{display:"flex",gap:6,flexShrink:0,marginLeft:10}}>
-          <button onClick={()=>onEdit&&onEdit(integration)} style={{background:C.bg1,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:11,fontWeight:600,padding:"4px 10px",cursor:"pointer"}}>Edit</button>
-          <button onClick={()=>onDisable&&onDisable(integration.id)} style={{background:isDisabled?C.greenBg:C.bg1,border:`1px solid ${isDisabled?C.greenBorder:C.border1}`,color:isDisabled?C.green:C.text1,fontFamily:FONT,fontSize:11,fontWeight:600,padding:"4px 10px",cursor:"pointer"}}>{isDisabled?"Enable":"Disable"}</button>
+        <div style={{display:"flex",gap:8,flexShrink:0,marginLeft:10}}>
+          <button onClick={()=>onEdit&&onEdit(integration)} style={{background:C.bg1,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"4px 10px",cursor:"pointer"}}>Edit</button>
+          <button onClick={()=>onDisable&&onDisable(integration.id)} style={{background:isDisabled?C.greenBg:C.bg1,border:`1px solid ${isDisabled?C.greenBorder:C.border1}`,color:isDisabled?C.green:C.text1,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"4px 10px",cursor:"pointer"}}>{isDisabled?"Enable":"Disable"}</button>
         </div>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",background:C.bg1,border:`1px solid ${C.border0}`,padding:"8px 0"}}>
@@ -2361,10 +2381,10 @@ function IntegrationCard({ integration, systemName, onEdit, onDisable }) {
           </div>
         ))}
       </div>
-      {integration.status==="draft"&&<div style={{marginTop:8,background:C.amberBg,border:`1px solid ${C.amberBorder}`,borderLeft:`3px solid ${C.amber}`,padding:"6px 10px",fontFamily:FONT,fontSize:11,color:C.amber}}>Draft — edit to complete configuration and publish.</div>}
-      {integration.status==="ready_to_publish"&&<div style={{marginTop:8,background:C.blueBg,border:`1px solid ${C.blueBorder}`,borderLeft:`3px solid ${C.blue}`,padding:"6px 10px",fontFamily:FONT,fontSize:11,color:C.blue}}>Ready to publish — edit to review and activate data flow.</div>}
-      {isDisabled&&<div style={{marginTop:8,background:C.bg2,border:`1px solid ${C.border0}`,borderLeft:`3px solid ${C.border1}`,padding:"6px 10px",fontFamily:FONT,fontSize:11,color:C.text2}}>Disabled — no data will flow until re-enabled.</div>}
-      {integration.status==="failed"&&<div style={{marginTop:8,background:C.redBg,border:`1px solid ${C.redBorder}`,borderLeft:`3px solid ${C.red}`,padding:"6px 10px",fontFamily:FONT,fontSize:11,color:C.red}}>Failed — check the Review Queue for details.</div>}
+      {integration.status==="draft"&&<div style={{marginTop:8,background:C.amberBg,border:`1px solid ${C.amberBorder}`,borderLeft:`3px solid ${C.amber}`,padding:"6px 10px",fontFamily:FONT,fontSize:12,color:C.amber}}>Draft — edit to complete configuration and publish.</div>}
+      {integration.status==="ready_to_publish"&&<div style={{marginTop:8,background:C.blueBg,border:`1px solid ${C.blueBorder}`,borderLeft:`3px solid ${C.blue}`,padding:"6px 10px",fontFamily:FONT,fontSize:12,color:C.blue}}>Ready to publish — edit to review and activate data flow.</div>}
+      {isDisabled&&<div style={{marginTop:8,background:C.bg2,border:`1px solid ${C.border0}`,borderLeft:`3px solid ${C.border1}`,padding:"6px 10px",fontFamily:FONT,fontSize:12,color:C.text2}}>Disabled — no data will flow until re-enabled.</div>}
+      {integration.status==="failed"&&<div style={{marginTop:8,background:C.redBg,border:`1px solid ${C.redBorder}`,borderLeft:`3px solid ${C.red}`,padding:"6px 10px",fontFamily:FONT,fontSize:12,color:C.red}}>Failed — check the Review Queue for details.</div>}
     </div>
   );
 }
@@ -2372,18 +2392,18 @@ function IntegrationsTab({ system, integrations, onAddIntegration, onEditIntegra
   const intgs=integrations.filter(i=>i.systemId===system.id);
   if(intgs.length===0) return (
     <div style={{background:C.bg0,border:`1px solid ${C.border0}`,padding:"44px 32px",textAlign:"center"}}>
-      <div style={{width:40,height:40,border:`2px solid ${C.border1}`,margin:"0 auto 16px",display:"flex",alignItems:"center",justifyContent:"center",color:C.text3,fontSize:20}}>⇄</div>
+      <div style={{width:40,height:40,border:`2px solid ${C.border1}`,margin:"0 auto 16px",display:"flex",alignItems:"center",justifyContent:"center",color:C.text3,fontSize:24}}>⇄</div>
       <div style={{fontFamily:FONT,fontSize:14,fontWeight:700,color:C.text0,marginBottom:6}}>No integrations yet</div>
-      <div style={{fontFamily:FONT,fontSize:13,color:C.text2,maxWidth:460,margin:"0 auto 6px",lineHeight:1.6}}>An Integration defines one specific data flow under this system — its direction, method, connection, and runtime.</div>
+      <div style={{fontFamily:FONT,fontSize:14,color:C.text2,maxWidth:460,margin:"0 auto 6px",lineHeight:1.6}}>An Integration defines one specific data flow under this system — its direction, method, connection, and runtime.</div>
       <div style={{fontFamily:FONT,fontSize:12,color:C.text3,maxWidth:400,margin:"0 auto 20px"}}>Example: pull sensor readings from {system.name} every 15 minutes, or receive real-time alerts as they happen.</div>
-      <button onClick={onAddIntegration} style={{background:C.blue,border:`1px solid ${C.blueHover}`,color:"#fff",fontFamily:FONT,fontWeight:700,fontSize:13,padding:"8px 18px",cursor:"pointer"}}>+ Add Integration</button>
+      <button onClick={onAddIntegration} style={{background:C.blue,border:`1px solid ${C.blueHover}`,color:"#fff",fontFamily:FONT,fontWeight:700,fontSize:14,padding:"8px 18px",cursor:"pointer"}}>+ Add Integration</button>
     </div>
   );
   return <div style={{display:"flex",flexDirection:"column",gap:8}}>{intgs.map(i=><IntegrationCard key={i.id} integration={i} systemName={system.name} onEdit={onEditIntegration} onDisable={onDisableIntegration}/>)}</div>;
 }
 function ActivityTab() {
   const DOT={success:C.green,warning:C.amber,info:C.blue,error:C.red};
-  return <div style={{background:C.bg0,border:`1px solid ${C.border0}`}}>{ACTIVITY.map((a,idx)=><div key={a.id} style={{display:"flex",gap:12,padding:"10px 16px",borderBottom:idx<ACTIVITY.length-1?`1px solid ${C.border0}`:"none",background:idx%2===0?C.bg0:C.bg1,alignItems:"flex-start"}}><div style={{paddingTop:5,flexShrink:0}}><span style={{display:"block",width:8,height:8,borderRadius:"50%",background:DOT[a.status]||C.text3}}/></div><div style={{flex:1,fontFamily:FONT,fontSize:13,color:C.text0}}>{a.desc}</div><div style={{fontFamily:MONO,fontSize:11,color:C.text3,flexShrink:0}}>{new Date(a.timestamp).toLocaleString()}</div></div>)}</div>;
+  return <div style={{background:C.bg0,border:`1px solid ${C.border0}`}}>{ACTIVITY.map((a,idx)=><div key={a.id} style={{display:"flex",gap:12,padding:"10px 16px",borderBottom:idx<ACTIVITY.length-1?`1px solid ${C.border0}`:"none",background:idx%2===0?C.bg0:C.bg1,alignItems:"flex-start"}}><div style={{paddingTop:5,flexShrink:0}}><span style={{display:"block",width:8,height:8,borderRadius:9999,background:DOT[a.status]||C.text3}}/></div><div style={{flex:1,fontFamily:FONT,fontSize:14,color:C.text0}}>{a.desc}</div><div style={{fontFamily:MONO,fontSize:12,color:C.text3,flexShrink:0}}>{new Date(a.timestamp).toLocaleString()}</div></div>)}</div>;
 }
 
 // ─── DLQ TAB (Review Queue) ───────────────────────────────────────────────────
@@ -2402,7 +2422,7 @@ function DLQTab({ systemId, onInspect }) {
       <div style={{background:C.amberBg,border:`1px solid ${C.amberBorder}`,borderLeft:`3px solid ${C.amber}`,padding:"10px 14px",marginBottom:10,fontFamily:FONT,fontSize:12,color:C.text1,lineHeight:1.6}}>
         <strong style={{color:C.amber}}>▲ These records couldn't be processed and were held for review.</strong>{" "}Inspect each one to understand what went wrong before replaying or discarding.
       </div>
-      {entries.length===0?<div style={{background:C.bg0,border:`1px solid ${C.border0}`,padding:"32px",textAlign:"center",fontFamily:FONT,fontSize:13,color:C.text3}}>No items in the review queue for this system.</div>:(
+      {entries.length===0?<div style={{background:C.bg0,border:`1px solid ${C.border0}`,padding:"32px",textAlign:"center",fontFamily:FONT,fontSize:14,color:C.text3}}>No items in the review queue for this system.</div>:(
         <div style={{display:"flex",flexDirection:"column",gap:8}}>
           {entries.map(e=>{
             // Plain-English what happened (Phase 3)
@@ -2410,16 +2430,16 @@ function DLQTab({ systemId, onInspect }) {
             const when=ago<24?`${ago}h ago`:new Date(e.timestamp).toLocaleDateString();
             return (
               <div key={e.id} style={{background:C.bg0,border:`1px solid ${C.border0}`,borderLeft:`3px solid ${C.red}`,padding:"12px 16px"}}>
-                <div style={{fontFamily:FONT,fontSize:13,color:C.text0,marginBottom:6,lineHeight:1.5}}>
+                <div style={{fontFamily:FONT,fontSize:14,color:C.text0,marginBottom:6,lineHeight:1.5}}>
                   A record from <strong>{e.integrationName}</strong> failed {when} after {e.retryCount} attempts.
                 </div>
                 <div style={{fontFamily:FONT,fontSize:12,color:C.red,marginBottom:8,padding:"5px 8px",background:C.redBg,border:`1px solid ${C.redBorder}`}}>{e.errorMessage}</div>
                 <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                  <div style={{display:"flex",alignItems:"center",gap:8}}><MonoText color={C.text3} size={11}>{e.id.toUpperCase()}</MonoText><span style={{background:C.redBg,border:`1px solid ${C.redBorder}`,padding:"1px 8px",fontFamily:FONT,fontSize:11,fontWeight:600,color:C.red}}>{e.retryCount} retries</span></div>
-                  <div style={{display:"flex",gap:6}}>
-                    <button onClick={()=>onInspect&&onInspect(e)} style={{background:C.bg1,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:11,fontWeight:600,padding:"4px 10px",cursor:"pointer"}}>View record detail</button>
-                    <span title="Replay coming soon" style={{display:"inline-flex",alignItems:"center",background:C.bg2,border:`1px solid ${C.border0}`,fontFamily:FONT,fontSize:11,fontWeight:600,padding:"4px 10px",color:C.text3,cursor:"not-allowed"}}>Replay</span>
-                    <span title="Discard coming soon" style={{display:"inline-flex",alignItems:"center",background:C.bg2,border:`1px solid ${C.border0}`,fontFamily:FONT,fontSize:11,fontWeight:600,padding:"4px 10px",color:C.text3,cursor:"not-allowed"}}>Discard</span>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}><MonoText color={C.text3} size={12}>{e.id.toUpperCase()}</MonoText><span style={{background:C.redBg,border:`1px solid ${C.redBorder}`,padding:"1px 8px",fontFamily:FONT,fontSize:12,fontWeight:600,color:C.red}}>{e.retryCount} retries</span></div>
+                  <div style={{display:"flex",gap:8}}>
+                    <button onClick={()=>onInspect&&onInspect(e)} style={{background:C.bg1,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"4px 10px",cursor:"pointer"}}>View record detail</button>
+                    <span title="Replay coming soon" style={{display:"inline-flex",alignItems:"center",background:C.bg2,border:`1px solid ${C.border0}`,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"4px 10px",color:C.text3,cursor:"not-allowed"}}>Replay</span>
+                    <span title="Discard coming soon" style={{display:"inline-flex",alignItems:"center",background:C.bg2,border:`1px solid ${C.border0}`,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"4px 10px",color:C.text3,cursor:"not-allowed"}}>Discard</span>
                   </div>
                 </div>
               </div>
@@ -2437,7 +2457,7 @@ function AuditTab() {
   return (
     <div style={{background:C.bg0,border:`1px solid ${C.border0}`}}>
       <div style={{display:"grid",gridTemplateColumns:"190px 210px 1fr",padding:"7px 16px",borderBottom:`1px solid ${C.border0}`,background:C.bg2,fontFamily:FONT,fontSize:10,fontWeight:700,color:C.text2,textTransform:"uppercase",letterSpacing:"0.08em"}}><span>Timestamp</span><span>User</span><span>Action</span></div>
-      {AUDIT_LOG.map((a,idx)=><div key={a.id} style={{display:"grid",gridTemplateColumns:"190px 210px 1fr",padding:"9px 16px",borderBottom:idx<AUDIT_LOG.length-1?`1px solid ${C.border0}`:"none",background:idx%2===0?C.bg0:C.bg1,alignItems:"center"}}><span style={{fontFamily:MONO,fontSize:11,color:C.text3}}>{new Date(a.timestamp).toLocaleString()}</span><span style={{fontFamily:MONO,fontSize:11,color:C.blue}}>{a.userEmail}</span><span style={{fontFamily:FONT,fontSize:13,color:C.text0}}>{a.action}</span></div>)}
+      {AUDIT_LOG.map((a,idx)=><div key={a.id} style={{display:"grid",gridTemplateColumns:"190px 210px 1fr",padding:"9px 16px",borderBottom:idx<AUDIT_LOG.length-1?`1px solid ${C.border0}`:"none",background:idx%2===0?C.bg0:C.bg1,alignItems:"center"}}><span style={{fontFamily:MONO,fontSize:12,color:C.text3}}>{new Date(a.timestamp).toLocaleString()}</span><span style={{fontFamily:MONO,fontSize:12,color:C.blue}}>{a.userEmail}</span><span style={{fontFamily:FONT,fontSize:14,color:C.text0}}>{a.action}</span></div>)}
     </div>
   );
 }
@@ -2467,18 +2487,18 @@ function DLQInspectModal({ entry, onClose }) {
   return (
     <>
       <div onClick={onClose} style={{position:"fixed",inset:0,background:"rgba(15,25,35,0.45)",zIndex:300}}/>
-      <div style={{position:"fixed",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:620,maxHeight:"82vh",background:C.bg0,border:`1px solid ${C.border0}`,zIndex:301,display:"flex",flexDirection:"column",boxShadow:"0 8px 32px rgba(0,0,0,0.18)"}}>
+      <div style={{position:"fixed",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:620,maxHeight:"82vh",background:C.bg0,border:`1px solid ${C.border0}`,zIndex:301,display:"flex",flexDirection:"column",boxShadow:"0px 4px 24px rgba(0,0,0,0.16)"}}>
         <div style={{padding:"0 20px",height:50,display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:`1px solid ${C.border0}`,background:C.bg1,flexShrink:0}}>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
             <span style={{fontFamily:FONT,fontSize:14,fontWeight:700,color:C.text0}}>Failed record detail</span>
-            <MonoText color={C.text3} size={11}>{entry.id.toUpperCase()}</MonoText>
+            <MonoText color={C.text3} size={12}>{entry.id.toUpperCase()}</MonoText>
           </div>
           <button onClick={onClose} style={{background:"none",border:`1px solid ${C.border1}`,color:C.text2,width:28,height:28,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16}}>×</button>
         </div>
         <div style={{flex:1,overflowY:"auto",padding:"16px 20px"}}>
           {/* Plain-English summary (Phase 3) */}
           <div style={{background:C.bg1,border:`1px solid ${C.border0}`,borderLeft:`3px solid ${C.red}`,padding:"12px 14px",marginBottom:16}}>
-            <div style={{fontFamily:FONT,fontSize:13,color:C.text0,marginBottom:8,lineHeight:1.6}}>
+            <div style={{fontFamily:FONT,fontSize:14,color:C.text0,marginBottom:8,lineHeight:1.6}}>
               A record from <strong>{entry.integrationName}</strong> could not be processed {when} and has been held here for review.
               {" "}It has been retried <strong>{entry.retryCount} times</strong>.
             </div>
@@ -2492,8 +2512,8 @@ function DLQInspectModal({ entry, onClose }) {
             ))}
           </div>
           {/* Collapsible raw payload (Phase 3) */}
-          <button onClick={()=>setRawOpen(o=>!o)} style={{display:"flex",alignItems:"center",gap:6,background:"none",border:`1px solid ${C.border0}`,width:"100%",padding:"7px 10px",cursor:"pointer",fontFamily:FONT,fontSize:12,fontWeight:600,color:C.text1,marginBottom:rawOpen?0:8}}>
-            <span style={{color:C.text3,fontSize:11}}>{rawOpen?"▼":"▶"}</span> Raw event data <span style={{fontFamily:FONT,fontSize:11,color:C.text3,fontWeight:400,marginLeft:4}}>— technical payload</span>
+          <button onClick={()=>setRawOpen(o=>!o)} style={{display:"flex",alignItems:"center",gap:8,background:"none",border:`1px solid ${C.border0}`,width:"100%",padding:"7px 10px",cursor:"pointer",fontFamily:FONT,fontSize:12,fontWeight:600,color:C.text1,marginBottom:rawOpen?0:8}}>
+            <span style={{color:C.text3,fontSize:12}}>{rawOpen?"▼":"▶"}</span> Raw event data <span style={{fontFamily:FONT,fontSize:12,color:C.text3,fontWeight:400,marginLeft:4}}>— technical payload</span>
           </button>
           {rawOpen&&(
             <>
@@ -2502,7 +2522,7 @@ function DLQInspectModal({ entry, onClose }) {
                 <div style={{border:`1px solid ${C.border0}`,marginBottom:8}}>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 80px 1fr",padding:"5px 10px",background:C.bg2,borderBottom:`1px solid ${C.border0}`}}>{["Field","Type","Value"].map(h=><div key={h} style={{fontFamily:FONT,fontSize:10,fontWeight:700,color:C.text2,textTransform:"uppercase",letterSpacing:"0.07em"}}>{h}</div>)}</div>
                   {Object.entries(parsed).map(([k,v],i,arr)=>(
-                    <div key={k} style={{display:"grid",gridTemplateColumns:"1fr 80px 1fr",padding:"6px 10px",borderBottom:i<arr.length-1?`1px solid ${C.border0}`:"none",background:i%2===0?C.bg0:C.bg1,alignItems:"center"}}><MonoText size={11} color={C.text0}>{k}</MonoText><span style={{fontFamily:MONO,fontSize:10,color:C.text2}}>{typeof v}</span><span style={{fontFamily:MONO,fontSize:11,color:C.text1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{typeof v==="object"?"{…}":String(v)}</span></div>
+                    <div key={k} style={{display:"grid",gridTemplateColumns:"1fr 80px 1fr",padding:"6px 10px",borderBottom:i<arr.length-1?`1px solid ${C.border0}`:"none",background:i%2===0?C.bg0:C.bg1,alignItems:"center"}}><MonoText size={12} color={C.text0}>{k}</MonoText><span style={{fontFamily:MONO,fontSize:10,color:C.text2}}>{typeof v}</span><span style={{fontFamily:MONO,fontSize:12,color:C.text1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{typeof v==="object"?"{…}":String(v)}</span></div>
                   ))}
                 </div>
               )}
@@ -2510,11 +2530,11 @@ function DLQInspectModal({ entry, onClose }) {
           )}
         </div>
         <div style={{borderTop:`1px solid ${C.border0}`,padding:"10px 20px",background:C.bg1,display:"flex",gap:8,alignItems:"center",flexShrink:0}}>
-          <button onClick={onClose} style={{background:"none",border:`1px solid ${C.border0}`,color:C.text2,fontFamily:FONT,fontSize:13,padding:"6px 14px",cursor:"pointer"}}>Close</button>
+          <button onClick={onClose} style={{background:"none",border:`1px solid ${C.border0}`,color:C.text2,fontFamily:FONT,fontSize:14,padding:"6px 14px",cursor:"pointer"}}>Close</button>
           <div style={{flex:1}}/>
           <button onClick={()=>navigator.clipboard?.writeText(entry.payload)} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"6px 12px",cursor:"pointer"}}>Copy payload</button>
-          <span title="Replay coming soon" style={{display:"inline-flex",alignItems:"center",gap:5,background:C.bg2,border:`1px solid ${C.border0}`,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"6px 14px",color:C.text3,cursor:"not-allowed"}}>Replay <span style={{fontSize:9,fontWeight:700,letterSpacing:"0.05em"}}>COMING SOON</span></span>
-          <span title="Discard coming soon" style={{display:"inline-flex",alignItems:"center",gap:5,background:C.bg2,border:`1px solid ${C.border0}`,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"6px 12px",color:C.text3,cursor:"not-allowed"}}>Discard <span style={{fontSize:9,fontWeight:700,letterSpacing:"0.05em"}}>COMING SOON</span></span>
+          <span title="Replay coming soon" style={{display:"inline-flex",alignItems:"center",gap:5,background:C.bg2,border:`1px solid ${C.border0}`,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"6px 14px",color:C.text3,cursor:"not-allowed"}}>Replay <span style={{fontSize:10,fontWeight:700,letterSpacing:"0.05em"}}>COMING SOON</span></span>
+          <span title="Discard coming soon" style={{display:"inline-flex",alignItems:"center",gap:5,background:C.bg2,border:`1px solid ${C.border0}`,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"6px 12px",color:C.text3,cursor:"not-allowed"}}>Discard <span style={{fontSize:10,fontWeight:700,letterSpacing:"0.05em"}}>COMING SOON</span></span>
         </div>
       </div>
     </>
@@ -2545,7 +2565,7 @@ function SystemDetailPage({ system, integrations, onBack, onAddIntegration, onUp
   const isIncomplete=system.status==="draft"&&!system.errorEmail;
   return (
     <div style={{padding:"22px 32px",maxWidth:1200,margin:"0 auto"}}>
-      <button onClick={onBack} style={{background:"none",border:"none",color:C.blue,fontFamily:FONT,fontSize:13,fontWeight:600,cursor:"pointer",padding:"0 0 14px",display:"flex",alignItems:"center",gap:4}}>← Back to Systems</button>
+      <button onClick={onBack} style={{background:"none",border:"none",color:C.blue,fontFamily:FONT,fontSize:14,fontWeight:600,cursor:"pointer",padding:"0 0 14px",display:"flex",alignItems:"center",gap:4}}>← Back to Systems</button>
       <div style={{background:C.bg0,border:`1px solid ${C.border0}`,borderTop:`3px solid ${C.blue}`,padding:"18px 22px",marginBottom:10}}>
         <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between"}}>
           <div>
@@ -2554,14 +2574,14 @@ function SystemDetailPage({ system, integrations, onBack, onAddIntegration, onUp
               {[{label:"System Code",value:system.code,mono:true},{label:"Category",value:system.category},{label:"Plant",value:system.plant}].map((item,i,arr)=>(
                 <div key={item.label} style={{paddingRight:20,marginRight:20,borderRight:i<arr.length-1?`1px solid ${C.border0}`:"none"}}>
                   <div style={{fontFamily:FONT,fontSize:10,color:C.text3,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:1}}>{item.label}</div>
-                  {item.mono?<MonoText size={12} color={C.blue}>{item.value}</MonoText>:<span style={{fontFamily:FONT,fontSize:13,color:C.text1}}>{item.value}</span>}
+                  {item.mono?<MonoText size={12} color={C.blue}>{item.value}</MonoText>:<span style={{fontFamily:FONT,fontSize:14,color:C.text1}}>{item.value}</span>}
                 </div>
               ))}
             </div>
           </div>
           <div style={{display:"flex",gap:8,flexShrink:0}}>
-            <button onClick={()=>setEditSys(true)} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text0,fontFamily:FONT,fontSize:13,fontWeight:600,padding:"7px 16px",cursor:"pointer"}}>Edit System</button>
-            <button onClick={onAddIntegration} style={{background:C.blue,border:`1px solid ${C.blueHover}`,color:"#fff",fontFamily:FONT,fontSize:13,fontWeight:700,padding:"7px 16px",cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>+ Add Integration</button>
+            <button onClick={()=>setEditSys(true)} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text0,fontFamily:FONT,fontSize:14,fontWeight:600,padding:"7px 16px",cursor:"pointer"}}>Edit System</button>
+            <button onClick={onAddIntegration} style={{background:C.blue,border:`1px solid ${C.blueHover}`,color:"#fff",fontFamily:FONT,fontSize:14,fontWeight:700,padding:"7px 16px",cursor:"pointer",display:"flex",alignItems:"center",gap:8}}>+ Add Integration</button>
           </div>
         </div>
       </div>
@@ -2581,11 +2601,11 @@ function SystemDetailPage({ system, integrations, onBack, onAddIntegration, onUp
           </div>
         </div>
       </div>
-      <div style={{fontFamily:FONT,fontSize:11,color:C.text2,marginBottom:8,padding:"7px 12px",background:C.tealBg,border:`1px solid ${C.tealBorder}`,borderLeft:`3px solid ${C.teal}`}}>
+      <div style={{fontFamily:FONT,fontSize:12,color:C.text2,marginBottom:8,padding:"7px 12px",background:C.tealBg,border:`1px solid ${C.tealBorder}`,borderLeft:`3px solid ${C.teal}`}}>
         <strong style={{color:C.teal}}>Connection details live at the integration level.</strong>{" "}Each integration manages its own endpoint, authentication, and runtime settings independently.
       </div>
       <div style={{display:"flex",borderBottom:`1px solid ${C.border0}`,background:C.bg0}}>
-        {TABS.map(tab=>{const active=activeTab===tab.key;return <button key={tab.key} onClick={()=>setTab(tab.key)} style={{background:active?C.bg1:"none",border:"none",borderBottom:active?`2px solid ${C.blue}`:"2px solid transparent",borderRight:`1px solid ${active?C.border0:"transparent"}`,color:active?C.text0:C.text2,fontFamily:FONT,fontSize:13,fontWeight:active?700:400,padding:"9px 20px",cursor:"pointer",marginBottom:active?-1:0}}>{tab.label}{tab.key==="dlq"&&system.errorCount>0&&<span style={{marginLeft:6,background:C.redBg,border:`1px solid ${C.redBorder}`,fontSize:10,color:C.red,padding:"1px 6px",fontWeight:700}}>{system.errorCount}</span>}</button>;})}
+        {TABS.map(tab=>{const active=activeTab===tab.key;return <button key={tab.key} onClick={()=>setTab(tab.key)} style={{background:active?C.bg1:"none",border:"none",borderBottom:active?`2px solid ${C.blue}`:"2px solid transparent",borderRight:`1px solid ${active?C.border0:"transparent"}`,color:active?C.text0:C.text2,fontFamily:FONT,fontSize:14,fontWeight:active?700:400,padding:"9px 20px",cursor:"pointer",marginBottom:active?-1:0}}>{tab.label}{tab.key==="dlq"&&system.errorCount>0&&<span style={{marginLeft:6,background:C.redBg,border:`1px solid ${C.redBorder}`,fontSize:10,color:C.red,padding:"1px 6px",fontWeight:700}}>{system.errorCount}</span>}</button>;})}
       </div>
       <div style={{paddingTop:14}}>
         {activeTab==="integrations"&&<IntegrationsTab system={system} integrations={integrations} onAddIntegration={onAddIntegration} onEditIntegration={i=>setEditIntg(i)} onDisableIntegration={id=>onDisableIntegration&&onDisableIntegration(id)}/>}
