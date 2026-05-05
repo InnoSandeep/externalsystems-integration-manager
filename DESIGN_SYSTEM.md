@@ -1,7 +1,11 @@
 # Integration Manager — Design System
-**Version:** 1.1 · April 2026  
-**Based on:** Figma export · Color Guide · Typography Guidelines · Core Styles · Stepper · Icon Library  
-**Applies to:** IntegrationManager.jsx and all future screens
+**Version:** 1.2 · May 2026  
+**Based on:** Figma export · CWP Design System Storybook · Color Guide · Typography Guidelines · Core Styles · Stepper · Icon Library  
+**Storybook URL:** https://cwp-design-system-storybook-2026.netlify.app  
+**Applies to:** IntegrationManager.js and all future screens
+
+> **Usage rule:** This file is authoritative. All UI changes to this prototype must reference the
+> token values defined here. When the Storybook updates, update this file and commit on `develop`.
 
 ---
 
@@ -355,3 +359,146 @@ These rules from the product spec remain **fully preserved**:
 - Placeholder pattern: `bg2` fill + `text3` text + `COMING SOON` 9px uppercase
 - Footer action order: Cancel · Save as Draft · Primary
 - Light industrial enterprise character — functional, dense, not decorative
+
+---
+
+## 13. CWP Design System Storybook Reference
+
+**URL:** https://cwp-design-system-storybook-2026.netlify.app  
+**Last checked:** 2026-05-05  
+**Storybook version:** 8.6.18  
+**Framework:** Angular · TypeScript · Webpack5  
+**Addons:** Essentials, Interactions, A11y, side-nav-module-editor
+
+> The Storybook is a client-side SPA — its token values (hex colors, px sizes, shadow strings)
+> live inside compiled JS bundles and cannot be fetched automatically. Token sections below are
+> pre-structured; populate them by opening the linked page in a browser, copying the values,
+> and committing the update.
+>
+> This section supersedes sections 1–11 wherever it conflicts. Until a section is populated,
+> sections 1–11 remain authoritative.
+
+### 13.1 Storybook Content Inventory
+
+| Category | Doc page | Stories |
+|---|---|---|
+| Setup → Developer Setup | `?path=/docs/setup-guide-developer-setup--docs` | — |
+| Setup → Introduction | `?path=/docs/setup-guide-introduction--docs` | — |
+| Foundation → Colors | `?path=/docs/foundation-colors--docs` | — |
+| Foundation → Typography | `?path=/docs/foundation-typography--docs` | — |
+| Foundation → Spacing | `?path=/docs/foundation-spacing--docs` | — |
+| Foundation → Border Radius | `?path=/docs/foundation-border-radius--docs` | — |
+| Foundation → Elevation | `?path=/docs/foundation-elevation--docs` | — |
+| Button | `?path=/docs/button--docs` | 25 stories |
+| Icon Button | `?path=/docs/icon-button--docs` | 9 stories |
+| Split Button | `?path=/docs/split-button--docs` | 5 stories |
+| Side Navigation | `?path=/docs/side-navigation--docs` | 4 stories |
+
+### 13.2 Colors — CWP Storybook
+
+> **[POPULATE FROM BROWSER]** Open `?path=/docs/foundation-colors--docs` and paste all token rows below.
+
+| Token | Hex | Semantic usage |
+|---|---|---|
+| — | — | — |
+
+*Until populated, use section 2 (Figma color system) as the reference.*
+
+### 13.3 Typography — CWP Storybook
+
+> **[POPULATE FROM BROWSER]** Open `?path=/docs/foundation-typography--docs` and paste all rows below.
+
+| Token | Size | Weight | Line height | Usage |
+|---|---|---|---|---|
+| — | — | — | — | — |
+
+*Until populated, use section 1 (Figma type scale) as the reference.*
+
+### 13.4 Spacing — CWP Storybook
+
+> **[POPULATE FROM BROWSER]** Open `?path=/docs/foundation-spacing--docs` and paste all rows below.
+
+| Token | px | rem | Usage |
+|---|---|---|---|
+| — | — | — | — |
+
+*Until populated, use section 3 (4px base grid) as the reference.*
+
+### 13.5 Border Radius — CWP Storybook
+
+> **[POPULATE FROM BROWSER]** Open `?path=/docs/foundation-border-radius--docs` and paste all rows below.
+
+| Token | Value | Usage |
+|---|---|---|
+| — | — | — |
+
+*Until populated, use section 4 as the reference.*
+
+### 13.6 Elevation — CWP Storybook
+
+> **[POPULATE FROM BROWSER]** Open `?path=/docs/foundation-elevation--docs` and paste all rows below.
+
+| Token | Box-shadow | Usage |
+|---|---|---|
+| — | — | — |
+
+*Until populated, use section 6 as the reference.*
+
+### 13.7 Button Component Spec — CWP Storybook
+
+Inventoried from `index.json` — 25 stories.
+
+#### Hierarchies
+| Name | Prototype equivalent |
+|---|---|
+| Primary | Current blue-fill button (`C.blue` background) |
+| Secondary Color | Current bordered button with `C.blue` border/text |
+| Secondary Grey | Current bordered button with `C.border1` / `C.text1` |
+| Tertiary Color | Ghost, `C.blue` text, no border |
+| Tertiary Grey | Ghost, `C.text1` text, no border |
+| Link Color | Inline text link, `C.blue` |
+| Link Grey | Inline text link, `C.text2` |
+
+#### Sizes
+| Size | Height | Font size | Padding (estimated) |
+|---|---|---|---|
+| Small | — | 12px | — |
+| Medium | — | 14px | — |
+| Large | — | 16px | — |
+
+> **[POPULATE FROM BROWSER]** Exact height, padding, and border-radius values for each size
+> should be confirmed from the Storybook canvas.
+
+#### States
+- Default · Hover · Focused · Disabled (opacity-60 per section 7)
+
+#### Intents
+- Success (green) · Warning (amber) · Error (red) — map to gamma accent tokens in section 2
+
+#### Icon support
+- Leading icon · Trailing icon · Notification dot
+
+### 13.8 Side Navigation Spec — CWP Storybook
+
+The Storybook documents an original and an experimental draft version.
+
+> The prototype currently uses a **top nav bar** (`TopNav`). If the product migrates to side nav,
+> reference `?path=/docs/side-navigation--docs` for: active item treatment, icon placement,
+> group/section patterns, and collapse behavior.
+
+### 13.9 Applying CWP Storybook to This Prototype
+
+This prototype is a single-file React 18 app with inline styles. It cannot import Angular components.
+Apply the design system by mapping token values into the `C` object and `FONT`/`MONO` constants.
+
+**Workflow for any UI change:**
+1. Check this file for the relevant token
+2. If the token is populated from Storybook, use that value
+3. If the token is `[POPULATE FROM BROWSER]`, fall back to the Figma-based section (1–11)
+4. After making the change, verify visually against the Storybook reference
+
+### 13.10 Update Log
+
+| Date | What changed in Storybook | Updated by |
+|---|---|---|
+| 2026-05-05 | Initial inventory captured. Structure and component list from `index.json`. Token values pending manual population. | Claude Code |
