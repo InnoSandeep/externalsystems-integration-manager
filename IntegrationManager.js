@@ -710,7 +710,7 @@ function MultiSelectDropdown({ options, value, onChange, placeholder, disabled, 
   },[open]);
   const selected = value||[];
   const toggle = opt => onChange(selected.includes(opt)?selected.filter(o=>o!==opt):[...selected,opt]);
-  const label = selected.length===0?(placeholder||"— Select —"):selected.length===1?selected[0]:`${selected.length} collections selected`;
+  const label = selected.length===0?(placeholder||"— Select —"):selected.length<=2?selected.join(", "):`${selected.slice(0,2).join(", ")} +${selected.length-2}`;
   return (
     <div ref={ref} style={{position:"relative"}}>
       <button onClick={()=>!disabled&&setOpen(o=>!o)} disabled={disabled} style={{
@@ -2098,7 +2098,6 @@ function EditIntegrationDrawer({ open, integration, system, onClose, onSave }) {
   if(!open||!form||!integration) return null;
   const set=(k,v)=>setForm(f=>({...f,[k]:v})); const touch=k=>setTouched(t=>({...t,[k]:true}));
   const isInbound=integration.direction==="inbound";
-  function toggleBO(col){ const cur=form.businessObjects||[]; set("businessObjects",cur.includes(col)?cur.filter(c=>c!==col):[...cur,col]); touch("businessObjects"); }
   function validate(){const e={};if(!form.name.trim())e.name="Required";if(isInbound&&!form.product)e.product="Required";if(isInbound&&(form.businessObjects||[]).length===0)e.businessObjects="Select at least one";return e;}
   function handleSave(){setTouched({name:true,product:true,businessObjects:true});const e=validate();setErrors(e);if(Object.keys(e).length>0)return;onSave({...integration,name:form.name.trim(),product:isInbound?form.product:null,businessObjects:isInbound?form.businessObjects:[],frequency:integration.method==="polling"?form.frequency:null});setSaved(true);setTimeout(onClose,900);}
   return (
@@ -2125,12 +2124,13 @@ function EditIntegrationDrawer({ open, integration, system, onClose, onSave }) {
             <div style={{marginBottom:10}}><FieldLabel label="Product" required/><FieldSelect value={form.product} onChange={v=>{set("product",v);set("businessObjects",[]);touch("product");}} options={PRODUCTS} placeholder="— Select product —" error={touched.product&&errors.product}/><FieldError msg={touched.product&&errors.product}/></div>
             {form.product&&<div>
               <FieldLabel label="Collections" required helper="Select all object types in this integration"/>
-              <div style={{display:"flex",flexWrap:"wrap",gap:8,marginTop:4}}>
-                {(PRODUCT_OBJECTS[form.product]||[]).map(col=>{
-                  const active=(form.businessObjects||[]).includes(col);
-                  return <button key={col} onClick={()=>toggleBO(col)} style={{padding:"4px 10px",fontFamily:FONT,fontSize:12,fontWeight:active?700:400,cursor:"pointer",border:`1px solid ${active?C.blue:C.border1}`,background:active?C.blueBg:C.bg0,color:active?C.blue:C.text1,display:"flex",alignItems:"center",gap:4}}>{active&&<span style={{fontSize:10,fontWeight:900}}>✓</span>}{col}</button>;
-                })}
-              </div>
+              <MultiSelectDropdown
+                options={PRODUCT_OBJECTS[form.product]||[]}
+                value={form.businessObjects}
+                onChange={v=>{set("businessObjects",v);touch("businessObjects");}}
+                placeholder="Select collections"
+                error={touched.businessObjects&&!!errors.businessObjects}
+              />
               {touched.businessObjects&&errors.businessObjects&&<FieldError msg={errors.businessObjects}/>}
             </div>}
           </div>}
