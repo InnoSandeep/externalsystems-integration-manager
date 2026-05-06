@@ -2160,27 +2160,93 @@ function EditIntegrationDrawer({ open, integration, system, onClose, onSave }) {
   );
 }
 
-// ─── NAVIGATION ──────────────────────────────────────────────────────────────
-// The fixed dark top bar that appears on every page.
-// "Workflows" and "My Approvals" are placeholder links — they render but don't navigate.
-// The nav bar is purely decorative in this prototype to simulate a real product shell.
-function TopNav() {
+// ─── PLATFORM SHELL ──────────────────────────────────────────────────────────
+// Replicates the Innovapptive platform left-nav + header shell.
+// Sidebar is 220px wide and sticky; main content area fills remaining width.
+// Integration Manager is permanently highlighted as the active module.
+// All other sidebar items are static placeholders — no routing.
+const SIDEBAR_NAV = [
+  { section:"Platform", items:[
+    { key:"dashboard",         label:"Dashboard",                 icon:"⊞" },
+    { key:"ehs",               label:"Environment Health Safety", icon:"△" },
+    { key:"mcc",               label:"Maintenance Control Center",icon:"⚙" },
+    { key:"notifications",     label:"Notifications",             icon:"◎" },
+  ]},
+  { section:"Management", items:[
+    { key:"user-mgmt",         label:"User Management",           icon:"◉" },
+    { key:"ai-studio",         label:"AI Studio",                 icon:"✦" },
+    { key:"race",              label:"Race",                      icon:"▷" },
+  ]},
+  { section:"Configure", items:[
+    { key:"forms",             label:"Forms",                     icon:"≡" },
+    { key:"settings",          label:"Settings",                  icon:"⊙" },
+    { key:"master-data",       label:"Master Data",               icon:"≣" },
+    { key:"work-instructions", label:"Work Instructions",         icon:"✎" },
+  ]},
+  { section:"Integrations", items:[
+    { key:"integration-manager",label:"Integration Manager",      icon:"⇄" },
+    { key:"smart-trigger",     label:"Smart Trigger",             icon:"⚡" },
+    { key:"webhook-registry",  label:"Webhook Registry",          icon:"⊕" },
+  ]},
+];
+function PlatformSidebar() {
   return (
-    <div style={{height:46,background:C.navBg,borderBottom:`1px solid ${C.navBorder}`,display:"flex",alignItems:"center",padding:"0 24px",position:"sticky",top:0,zIndex:100,flexShrink:0}}>
-      <div style={{display:"flex",alignItems:"center",gap:8}}>
-        <div style={{width:20,height:20,background:C.blue,display:"flex",alignItems:"center",justifyContent:"center"}}><div style={{width:8,height:8,background:"#fff"}}/></div>
-        <span style={{fontFamily:FONT,fontWeight:700,fontSize:14,color:C.navActive,letterSpacing:"0.08em"}}>INTEGRATION MANAGER</span>
+    <div style={{width:220,flexShrink:0,background:C.bg0,borderRight:`1px solid ${C.border0}`,display:"flex",flexDirection:"column",height:"100vh",position:"sticky",top:0,zIndex:50}}>
+      <div style={{height:52,display:"flex",alignItems:"center",padding:"0 14px",borderBottom:`1px solid ${C.border0}`,flexShrink:0,gap:8}}>
+        <div style={{width:28,height:28,background:C.blue,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+          <div style={{width:12,height:12,background:"#fff"}}/>
+        </div>
+        <span style={{fontFamily:FONT,fontSize:13,fontWeight:700,color:C.text0,letterSpacing:"0.01em"}}>Innovapptive</span>
       </div>
-      <div style={{width:1,height:18,background:C.navBorder,margin:"0 20px"}}/>
-      {["Workflows","My Approvals"].map(l=><NavLink key={l} label={l}/>)}
-      <div style={{flex:1}}/>
+      <div style={{flex:1,padding:"4px 0",overflowY:"auto"}}>
+        {SIDEBAR_NAV.map(sec=>(
+          <div key={sec.section} style={{marginBottom:2}}>
+            <div style={{fontFamily:FONT,fontSize:10,fontWeight:700,color:C.text3,textTransform:"uppercase",letterSpacing:"0.08em",padding:"10px 14px 3px"}}>{sec.section}</div>
+            {sec.items.map(item=>{
+              const active=item.key==="integration-manager";
+              return (
+                <div key={item.key} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 14px",background:active?C.blueBg:"transparent",borderLeft:`3px solid ${active?C.blue:"transparent"}`,cursor:active?"default":"not-allowed",opacity:active?1:0.65}}>
+                  <div style={{width:26,height:26,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",background:active?C.blueBg:C.bg1,color:active?C.blue:C.text2,fontSize:13,borderRadius:4}}>
+                    {item.icon}
+                  </div>
+                  <span style={{fontFamily:FONT,fontSize:12,fontWeight:active?700:400,color:active?C.blue:C.text1,lineHeight:1.3}}>{item.label}</span>
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+      <div style={{borderTop:`1px solid ${C.border0}`,padding:"10px 14px",flexShrink:0,display:"flex",alignItems:"center",gap:8}}>
+        <div style={{width:28,height:28,borderRadius:9999,background:C.blueBg,border:`1px solid ${C.blueBorder}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+          <span style={{fontFamily:FONT,fontSize:11,fontWeight:700,color:C.blue}}>SJ</span>
+        </div>
+        <div style={{overflow:"hidden",flex:1}}>
+          <div style={{fontFamily:FONT,fontSize:12,fontWeight:600,color:C.text0,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>Sandeep Jha</div>
+          <div style={{fontFamily:FONT,fontSize:10,color:C.text2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>Platform Admin</div>
+        </div>
+      </div>
     </div>
   );
 }
-function NavLink({ label }) {
+function PlatformHeader() {
   return (
-    <div style={{display:"inline-flex",alignItems:"center",gap:8,padding:"0 12px",height:46,opacity:0.7,cursor:"default"}}>
-      <span style={{fontFamily:FONT,fontSize:14,fontWeight:500,color:C.navText}}>{label}</span>
+    <div style={{height:52,background:C.bg0,borderBottom:`1px solid ${C.border0}`,display:"flex",alignItems:"center",padding:"0 24px",flexShrink:0}}>
+      <div style={{flex:1}}>
+        <div style={{fontFamily:FONT,fontSize:15,fontWeight:700,color:C.text0,lineHeight:1.2}}>Integration Manager</div>
+        <div style={{fontFamily:FONT,fontSize:11,color:C.text2,marginTop:1}}>Integration Manager</div>
+      </div>
+      <div style={{display:"flex",alignItems:"center",gap:12}}>
+        <div style={{width:1,height:20,background:C.border0}}/>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <div style={{width:30,height:30,borderRadius:9999,background:C.blueBg,border:`1px solid ${C.blueBorder}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+            <span style={{fontFamily:FONT,fontSize:12,fontWeight:700,color:C.blue}}>SJ</span>
+          </div>
+          <div>
+            <div style={{fontFamily:FONT,fontSize:12,fontWeight:600,color:C.text0}}>Sandeep Jha</div>
+            <div style={{fontFamily:FONT,fontSize:10,color:C.text2}}>sandeep.jha@innovapptive.com</div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -2652,12 +2718,15 @@ function App() {
   function handleAddWebhook(wh)        { setWebhooks(p=>[...p,wh]); }
 
   return (
-    <div style={{background:C.pageBg,minHeight:"100vh",display:"flex",flexDirection:"column",fontFamily:FONT}}>
-      <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
-      <TopNav/>
-      <div style={{flex:1}}>
-        {page==="systems"&&<SystemsPage systems={systems} integrations={integrations} onViewSystem={id=>{setSelected(id);setPage("detail");}} onAddSystem={()=>setSysDrawer(true)}/>}
-        {page==="detail"&&selectedSystem&&<SystemDetailPage system={selectedSystem} integrations={integrations} onBack={()=>{setPage("systems");setSelected(null);}} onAddIntegration={()=>setIntDrawer(true)} onUpdateSystem={handleUpdateSystem} onUpdateIntegration={handleUpdateIntegration} onDisableIntegration={handleDisableIntegration}/>}
+    <div style={{background:C.pageBg,height:"100vh",display:"flex",fontFamily:FONT,overflow:"hidden"}}>
+      <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+      <PlatformSidebar/>
+      <div style={{flex:1,display:"flex",flexDirection:"column",minWidth:0,overflow:"hidden"}}>
+        <PlatformHeader/>
+        <div style={{flex:1,overflowY:"auto"}}>
+          {page==="systems"&&<SystemsPage systems={systems} integrations={integrations} onViewSystem={id=>{setSelected(id);setPage("detail");}} onAddSystem={()=>setSysDrawer(true)}/>}
+          {page==="detail"&&selectedSystem&&<SystemDetailPage system={selectedSystem} integrations={integrations} onBack={()=>{setPage("systems");setSelected(null);}} onAddIntegration={()=>setIntDrawer(true)} onUpdateSystem={handleUpdateSystem} onUpdateIntegration={handleUpdateIntegration} onDisableIntegration={handleDisableIntegration}/>}
+        </div>
       </div>
       <AddSystemDrawer open={sysDrawer} onClose={()=>setSysDrawer(false)} onSave={sys=>{setSystems(p=>[sys,...p]);setSelected(sys.id);setPage("detail");}}/>
       <AddIntegrationDrawer open={intDrawer} system={selectedSystem} onClose={()=>setIntDrawer(false)} onSave={handleSaveIntegration} onGoToSystem={()=>setIntDrawer(false)} webhooks={webhooks} onAddWebhook={handleAddWebhook}/>
