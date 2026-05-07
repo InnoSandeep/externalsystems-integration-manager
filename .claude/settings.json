@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e ' *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git remote *)",
+      "Bash(node -e \"const s=require\\('fs'\\).readFileSync\\('/Users/sandeepjha/Desktop/prototype-integration-manager-demo/IntegrationManager.js','utf8'\\);let d=0;for\\(const c of s\\){if\\(c==='{'\\)d++;else if\\(c==='}'\\)d--;}console.log\\('balance:',d,'lines:',s.split\\('\\\\n'\\).length\\);\")",
+      "Bash(node -e \"const s=require\\('fs'\\).readFileSync\\('IntegrationManager.js','utf8'\\);let d=0;for\\(const c of s\\){if\\(c==='{'\\)d++;else if\\(c==='}'\\)d--;}console.log\\('balance:',d\\);\")",
+      "WebFetch(domain:cwp-design-system-storybook-2026.netlify.app)",
+      "Bash(python3)",
+      "Bash(node --input-type=module)",
+      "Bash(npx --yes acorn --ecma2020 --module /Users/sandeepjha/Desktop/prototype-integration-manager-demo/IntegrationManager.js)",
+      "Bash(npx --yes @babel/parser --version)"
+    ]
+  }
+}
