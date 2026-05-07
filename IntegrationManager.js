@@ -2160,6 +2160,47 @@ function EditIntegrationDrawer({ open, integration, system, onClose, onSave }) {
   );
 }
 
+// ─── PLATFORM ICON ───────────────────────────────────────────────────────────
+// Renders inline SVG icons for each sidebar module.
+// TODO: Replace with the Innovapptive platform icon font ('innovapptive-font')
+//       once it is loaded in this prototype. All icons use stroke-based SVG
+//       for now so they scale cleanly at 14–20px.
+function PlatformIcon({ itemKey, size=20, color="currentColor" }) {
+  const s={width:size,height:size};
+  const icons={
+    "dashboard":        <svg {...s} viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="11" y="3" width="6" height="6" rx="1"/><rect x="3" y="11" width="6" height="6" rx="1"/><rect x="11" y="11" width="6" height="6" rx="1"/></svg>,
+    "ehs":              <svg {...s} viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10 2L3 6v5c0 4 3 6.5 7 7 4-.5 7-3 7-7V6L10 2z"/></svg>,
+    "mcc":              <svg {...s} viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="10" cy="10" r="3"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.22 4.22l1.42 1.42M14.36 14.36l1.42 1.42M4.22 15.78l1.42-1.42M14.36 5.64l1.42-1.42"/></svg>,
+    "notifications":    <svg {...s} viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10 2a6 6 0 0 0-6 6v3l-1.5 2H17.5L16 11V8a6 6 0 0 0-6-6z"/><path d="M8 16a2 2 0 0 0 4 0"/></svg>,
+    "user-mgmt":        <svg {...s} viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="10" cy="7" r="3"/><path d="M3 17c0-3.3 3.1-6 7-6s7 2.7 7 6"/></svg>,
+    "ai-studio":        <svg {...s} viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10 2l1.8 5.5H18l-4.9 3.6 1.9 5.7L10 13.5l-5 3.3 1.9-5.7L2 7.5h6.2L10 2z"/></svg>,
+    "race":             <svg {...s} viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4l10 6-10 6V4z"/></svg>,
+    "forms":            <svg {...s} viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="3" width="12" height="14" rx="1"/><path d="M7 7h6M7 10h6M7 13h4"/></svg>,
+    "settings":         <svg {...s} viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="10" cy="10" r="2.5"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.22 4.22l1.42 1.42M14.36 14.36l1.42 1.42M4.22 15.78l1.42-1.42M14.36 5.64l1.42-1.42"/></svg>,
+    "master-data":      <svg {...s} viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="10" cy="6" rx="7" ry="2.5"/><path d="M3 6v4c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5V6"/><path d="M3 10v4c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5v-4"/></svg>,
+    "work-instructions":<svg {...s} viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h12v12H4z"/><path d="M7 8h6M7 11h4"/><path d="M9 4v3M11 4v3"/></svg>,
+    "integration-manager":<svg {...s} viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M3 8h11M3 12h11"/><path d="M11 5l4 3-4 3"/><path d="M9 9l-4 3 4 3"/></svg>,
+    "smart-trigger":    <svg {...s} viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 2L4 11h7l-2 7 9-10h-7l2-6z"/></svg>,
+    "webhook-registry": <svg {...s} viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M8 11a3 3 0 1 0 4 0"/><path d="M10 8V5"/><circle cx="7" cy="14" r="2"/><circle cx="13" cy="14" r="2"/><circle cx="10" cy="4" r="2"/><path d="M8.8 15.7l-1.4-1.2M11.2 15.7l1.4-1.2M9 5.9L7.2 12.2M11 5.9l1.8 6.3"/></svg>,
+  };
+  return icons[itemKey]||<svg {...s} viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="1.5"><circle cx="10" cy="10" r="6"/></svg>;
+}
+
+// ─── SYSTEM LOGOS ─────────────────────────────────────────────────────────────
+// Maps system IDs to stable logo URLs. Set to null to use initials fallback.
+// TODO: Replace null values with actual stable CDN or hosted logo URLs
+//       (e.g. company intranet, public vendor logos via Wikipedia CDN, etc.)
+const SYSTEM_LOGOS = {
+  "sys_pi":       null,
+  "sys_augury":   null,
+  "sys_seeq":     null,
+  "sys_hexion":   null,
+  "sys_accenture":null,
+};
+function getSystemLogo(system) {
+  return (system&&SYSTEM_LOGOS[system.id])||null;
+}
+
 // ─── PLATFORM SHELL ──────────────────────────────────────────────────────────
 // Compact 68px icon-only sidebar by default. Expands to 220px via toggle arrow.
 // Integration Manager is always highlighted as the active module.
@@ -2179,7 +2220,7 @@ const SIDEBAR_ITEMS = [
   { key:"smart-trigger",      label:"Smart Trigger",         icon:"⚡" },
   { key:"webhook-registry",   label:"Webhook Registry",      icon:"⊕" },
 ];
-function PlatformSidebar({ expanded, onToggle }) {
+function PlatformSidebar({ expanded }) {
   return (
     <div style={{width:expanded?220:68,flexShrink:0,background:C.bg0,borderRight:`1px solid ${C.border0}`,display:"flex",flexDirection:"column",height:"100vh",position:"sticky",top:0,zIndex:50,overflow:"hidden",transition:"width 0.15s"}}>
       <div style={{height:64,display:"flex",alignItems:"center",justifyContent:expanded?"flex-start":"center",borderBottom:`1px solid ${C.border0}`,flexShrink:0,padding:expanded?"0 14px":"0 10px",gap:8,overflow:"hidden"}}>
@@ -2191,18 +2232,16 @@ function PlatformSidebar({ expanded, onToggle }) {
       <div style={{flex:1,padding:"8px 0",overflowY:"auto",overflowX:"hidden"}}>
         {SIDEBAR_ITEMS.map(item=>{
           const active=item.key==="integration-manager";
+          const iconColor=active?C.blue:"#727caf";
           return (
             <div key={item.key} title={!expanded?item.label:undefined} style={{display:"flex",alignItems:"center",gap:expanded?8:0,padding:expanded?"6px 14px":"6px 0",justifyContent:"center",background:active?C.blueBg:"transparent",borderLeft:`3px solid ${active?C.blue:"transparent"}`,cursor:active?"default":"not-allowed",opacity:active?1:0.65}}>
-              <div style={{width:32,height:32,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",background:active?C.blueBg:C.bg1,color:active?C.blue:"#727caf",fontSize:14,borderRadius:8}}>
-                {item.icon}
+              <div style={{width:32,height:32,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",background:active?C.blueBg:C.bg1,borderRadius:8,color:iconColor}}>
+                <PlatformIcon itemKey={item.key} size={18} color={iconColor}/>
               </div>
               {expanded&&<span style={{fontFamily:FONT,fontSize:13,fontWeight:active?700:400,color:active?C.blue:"#727caf",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{item.label}</span>}
             </div>
           );
         })}
-      </div>
-      <div style={{borderTop:`1px solid ${C.border0}`,padding:"8px 0",flexShrink:0,display:"flex",justifyContent:"center"}}>
-        <button onClick={onToggle} style={{background:"none",border:"none",cursor:"pointer",color:C.text2,fontSize:12,padding:"4px 8px",fontFamily:FONT}}>{expanded?"◀":"▶"}</button>
       </div>
     </div>
   );
@@ -2238,12 +2277,16 @@ function SystemCard({ system, integrations, onClick }) {
   const liveCount=integrations.filter(i=>i.systemId===system.id&&i.status!=="disabled").length;
   const cfg=STATUS_CONFIG[system.status]||{};
   const initials=(system.name||"?").split(/\s+/).slice(0,2).map(w=>w[0]||"").join("").toUpperCase();
+  const logoUrl=getSystemLogo(system);
   return (
     <div onClick={()=>onClick(system.id)} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
       style={{background:C.bg0,border:`1px solid ${hov?C.border1:C.border0}`,borderRadius:8,padding:16,cursor:"pointer",flex:"0 1 424px",minWidth:300,boxSizing:"border-box",transition:"border-color 0.1s"}}>
       <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:12}}>
-        <div style={{width:30,height:32,borderRadius:4,background:C.bg1,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-          <span style={{fontFamily:FONT,fontSize:11,fontWeight:700,color:C.text2}}>{initials}</span>
+        <div style={{width:30,height:32,borderRadius:4,background:C.bg1,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,overflow:"hidden"}}>
+          {logoUrl
+            ? <img src={logoUrl} alt={system.name} style={{width:30,height:32,objectFit:"contain"}}/>
+            : <span style={{fontFamily:FONT,fontSize:11,fontWeight:700,color:C.text2}}>{initials}</span>
+          }
         </div>
         <div style={{background:cfg.bg,borderRadius:4,padding:"0 4px",minHeight:18,display:"flex",alignItems:"center"}}>
           <span style={{fontFamily:FONT,fontSize:12,color:C.text0,lineHeight:"18px"}}>{cfg.label||system.status}</span>
@@ -2732,7 +2775,12 @@ function App() {
   return (
     <div style={{background:C.pageBg,height:"100vh",display:"flex",fontFamily:FONT,overflow:"hidden"}}>
       <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet"/>
-      <PlatformSidebar expanded={sidebarExpanded} onToggle={()=>setSidebarExpanded(e=>!e)}/>
+      <PlatformSidebar expanded={sidebarExpanded}/>
+      <button onClick={()=>setSidebarExpanded(e=>!e)} aria-label={sidebarExpanded?"Collapse sidebar":"Expand sidebar"} style={{position:"fixed",top:72,left:sidebarExpanded?206:54,width:28,height:28,borderRadius:9999,background:C.blue,border:"none",color:"#fff",cursor:"pointer",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 8px rgba(0,0,0,0.18)",transition:"left 0.15s",padding:0,flexShrink:0}}>
+        <svg viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          {sidebarExpanded?<path d="M8 2L4 6l4 4"/>:<path d="M4 2l4 4-4 4"/>}
+        </svg>
+      </button>
       <div style={{flex:1,display:"flex",flexDirection:"column",minWidth:0,overflow:"hidden"}}>
         <PlatformHeader/>
         <div style={{flex:1,overflowY:"auto"}}>
