@@ -24,6 +24,20 @@
 11. [Side Navigation Spec](#11-side-navigation-spec)
 12. [Applying This System to the Prototype](#12-applying-this-system-to-the-prototype)
 13. [Update Log](#13-update-log)
+14. [Integration Manager — Figma Source of Truth](#14-integration-manager--figma-source-of-truth)
+15. [Platform Shell Pattern](#15-platform-shell-pattern)
+16. [Sidebar Behavior](#16-sidebar-behavior)
+17. [Header Pattern](#17-header-pattern)
+18. [Toolbar Pattern](#18-toolbar-pattern)
+19. [Filter Chips](#19-filter-chips)
+20. [System Card Pattern](#20-system-card-pattern)
+21. [Card Actions](#21-card-actions)
+22. [Status Badges](#22-status-badges)
+23. [Integration Manager Typography Map](#23-integration-manager-typography-map)
+24. [Figma → C Token Alignment Table](#24-figma--c-token-alignment-table)
+25. [Spacing, Radius & Elevation Quick Reference](#25-spacing-radius--elevation-quick-reference)
+26. [Do / Don't](#26-do--dont)
+27. [Implementation Notes](#27-implementation-notes)
 
 ---
 
@@ -587,3 +601,488 @@ The prototype is a single-file React 18 app with inline styles. It cannot import
 | 2026-05-05 | Full CWP 2.0 token population: color primitives (Alpha/Beta/Gamma), semantic tokens (text, bg, border, icon, status, focus ring), typography complete scale (t1-t7 bold/medium, b1-b5 regular), spacing (spacing-1 to spacing-16), border radius (none/sm/md/lg/xl/full), elevation (none/sm/md/lg/xl). All sections updated to CWP 2.0 — supersedes Figma v2 spec. | User-provided from CWP Storybook 2026 |
 | 2026-05-05 | Initial Storybook inventory captured (structure only — 47 entries, component list). | `index.json` auto-fetch |
 | 2026-05-05 | Fixed `bg3` token collision: changed from `#8F93A3` (solid Grey-300, same as `text3`) to `rgba(143,147,163,0.25)` ($color-bg-chip). Resolves invisible "Coming Soon" chip label on SelectionCard. SelectionCard tag text changed from `text3` to `text0` (#2A2B30) for ~9:1 contrast on chip surface. | P2 bug finding |
+| 2026-05-08 | Added sections 14–27: Integration Manager Figma design patterns — platform shell, sidebar behavior, header, toolbar, filter chips, system card, card actions, status badges, typography map, token alignment table, spacing/radius/elevation quick ref, Do/Don't, and implementation notes. | Figma node 1:17663 |
+
+---
+
+## 14. Integration Manager — Figma Source of Truth
+
+**Primary design node:** `1:17663` in Figma file `2dRnIiNN2EAqshdjHgPr8Q`
+
+This node shows the Integration Manager home screen ("Systems" list) as it exists in the product Figma file. All layout dimensions, typography, color values, and component patterns in sections 15–26 are derived from this node unless otherwise noted.
+
+> **Note:** Figma prototype URLs (`.../proto/...`) expire and may redirect. Use the design file URL with `?node-id=1:17663` for stable access. Screenshot captures in the Update Log take priority over memory if the Figma spec changes.
+
+**Related screens in the same file:**
+- System Detail page (integrations list)
+- Add Integration drawer
+- Edit Integration drawer
+
+---
+
+## 15. Platform Shell Pattern
+
+The Integration Manager is a **module inside the Innovapptive platform shell**, not a standalone app. The shell provides the sidebar and header; the module renders in the content area.
+
+### Layout geometry
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  PlatformHeader  (height: 64px, full width, z-index: 100)       │
+├──────────┬──────────────────────────────────────────────────────┤
+│          │                                                       │
+│ Sidebar  │  Content area (flex: 1, overflow-y: auto)            │
+│ 68px     │                                                       │
+│ (default)│  ┌───────────────────────────────────────────────┐   │
+│          │  │  White rounded container                       │   │
+│          │  │  margin: 16px · radius: 8px                    │   │
+│          │  │  background: #FFFFFF                           │   │
+│          │  └───────────────────────────────────────────────┘   │
+└──────────┴──────────────────────────────────────────────────────┘
+```
+
+### Shell dimensions
+
+| Element | Value | Token |
+|---|---|---|
+| Header height | 64px | `spacing-16` |
+| Sidebar width (compact) | 68px | — |
+| Sidebar width (expanded) | 220px | — |
+| Content container margin | 16px all sides | `spacing-4` |
+| Content container radius | 8px | `radius-md` |
+| Content container bg | `#FFFFFF` | `C.bg0` |
+| Page background | `#EFF1F5` | `C.pageBg` |
+
+### In the prototype
+
+The shell is composed of three sibling components in `App`:
+1. `PlatformSidebar` — left column, `position:relative`
+2. Expand/collapse toggle button — `position:fixed`, overlays the sidebar boundary
+3. Content column — `flex:1`, contains `PlatformHeader` + scrollable content area
+
+---
+
+## 16. Sidebar Behavior
+
+### Default state
+
+The sidebar is **compact (68px) by default** on the Integration Manager home screen. Only icons are visible; labels are hidden.
+
+### Expanded state
+
+Width expands to 220px. Module labels become visible alongside icons.
+
+### Toggle button
+
+- **Position:** `fixed`, `top: 72px`, `left` tracks sidebar width (`206px` expanded / `54px` compact)
+- **Style:** 28×28px circle, `C.blue` fill, white chevron SVG, `box-shadow: 0 2px 8px rgba(0,0,0,0.18)`
+- **Animation:** `transition: left 0.15s` follows the sidebar slide
+- **Placement rationale:** The button is a sibling in `App` (not a child of `PlatformSidebar`) to avoid clipping by `overflow:hidden` on the sidebar container
+
+### Sidebar items
+
+| Key | Label | Notes |
+|---|---|---|
+| `dashboard` | Dashboard | — |
+| `integration-manager` | Integration Manager | **Active item** — highlighted `C.navActiveBg` |
+| `workflow-builder` | Workflow Builder | — |
+| `my-approvals` | My Approvals | — |
+| `sites` | Sites | Management section |
+| `assets` | Assets | — |
+| `materials` | Materials | — |
+| `work-orders` | Work Orders | — |
+| `reports` | Reports | Configure section |
+| `roles` | Roles & Permissions | — |
+| `notifications` | Notifications | — |
+| `data-quality` | Data Quality | Integrations section |
+| `api-gateway` | API Gateway | — |
+| `connectors` | Connectors | — |
+| `help` | Help & Support | — |
+
+### Icon approach
+
+Icons use the inline SVG `PlatformIcon` component (stroke-based approximations). When `innovapptive-font` becomes available, replace `PlatformIcon` entirely — the `itemKey` strings are already the intended glyph names.
+
+---
+
+## 17. Header Pattern
+
+### Dimensions and surface
+
+| Property | Value | Token |
+|---|---|---|
+| Height | 64px | `spacing-16` |
+| Background | `#FFFFFF` | `C.bg0` |
+| Bottom border | `1px solid #E2E4E9` | `C.border0` |
+| Horizontal padding | 24px | `spacing-6` |
+| z-index | 100 | — |
+
+### Title
+
+| Property | Value | Token/Scale |
+|---|---|---|
+| Text | "Integration Manager" | — |
+| Font | Roboto | `FONT` |
+| Size | 18px | `title/medium/t3` |
+| Weight | 500 (Medium) | — |
+| Line height | 133% (≈ 24px) | — |
+| Color | `#2A2B30` | `C.text0` |
+
+### Right-side controls
+
+1. **Notification bell** — 20px SVG icon button, `C.text1` color, `C.bg1` hover background, 8px radius
+2. **Profile block** — avatar circle (32px, `C.blue` bg, white initials) + user name text (`C.text0`, 12px/500) + Innovapptive logo square (32×32)
+
+---
+
+## 18. Toolbar Pattern
+
+The toolbar sits at the top of the systems list content area, inside the white container.
+
+### Structure (left → right)
+
+```
+[ System Type ▾ ]  [ ⊞ ]  N Systems     [Search…]  [ + Add System ]
+```
+
+| Element | Details |
+|---|---|
+| **System Type dropdown** | Floating-label select; label "System Type", 160px width; options: All + unique system categories |
+| **Filter icon button** | 32×32px, `C.border0` border, 8px radius, `C.text1` icon; opens filter panel (future) |
+| **Count label** | `"{N} Systems"`, `C.text1`, 12px/400 — updates live as filters change |
+| **Search input** | Right-aligned, 220px, 8px radius, `C.border0` border, magnifier icon prefix, placeholder "Search systems…" |
+| **Add System button** | Primary (`C.blue` bg, white text, `+` prefix), 8px radius, 12px/500 |
+
+### Toolbar spacing
+
+- Container padding: `16px 16px 12px` (top/sides, less bottom before filter chips)
+- Gap between left group and right group: `flex: 1` spacer
+- Gap within left group: 8px
+- Gap within right group: 8px
+
+---
+
+## 19. Filter Chips
+
+Filter chips appear below the toolbar and allow quick status filtering of the systems list.
+
+### Design
+
+- **Container:** `flex-wrap`, `gap: 8px`, `padding: 0 16px 12px`
+- **Chip shape:** `border-radius: 8px` (`radius-md`)
+- **Chip surface:** `C.bg3` (`rgba(143,147,163,0.25)`) default; `C.blueBg` + `C.blueBorder` border when active
+- **Chip padding:** `4px 10px`
+- **Typography:** 12px / 500 (`title/medium/t6`), `C.text1`
+
+### Standard chips for Systems list
+
+| Chip key | Label | Status dot color |
+|---|---|---|
+| `ready` | Configured | `C.green` (`#1C8D4F`) |
+| `draft` | Draft | `C.text2` (`#8F93A3`) |
+| `needs_attention` | Needs Attention | `C.red` (`#B42318`) |
+
+### Dot spec
+
+- Size: 6px circle (`border-radius: 9999px`)
+- Position: inline-flex, `margin-right: 6px`, vertically centered
+- Color: matches the status color listed above
+
+### Active chip
+
+When a chip is active (selected), apply:
+```
+background: C.blueBg  (#ECEFFF)
+border: 1px solid C.blueBorder  (#C3CCFF)
+color: C.blue  (#3D5AFE)
+```
+The dot retains its original status color even when the chip is active.
+
+---
+
+## 20. System Card Pattern
+
+### Layout and surface
+
+| Property | Value |
+|---|---|
+| Flex basis | `0 1 424px` (grows to fill row, max ~424px) |
+| Min width | 280px |
+| Background | `#FFFFFF` (`C.bg0`) |
+| Border | `1px solid #E2E4E9` (`C.border0`) |
+| Border radius | 8px (`radius-md`) |
+| Padding | 16px (`spacing-4`) |
+| Box shadow | `0px 1px 2px rgba(0,0,0,0.06)` (`elevation-sm`) |
+
+### Card internal structure (top → bottom)
+
+```
+┌── Row 1: Logo/Initials  ·  Status Badge ──────────────────────┐
+│                                                                │
+│  Row 2: System Name (16px/500)                                 │
+│  Row 3: Category (12px/400, C.text2)                          │
+│                                                                │
+│  ── divider ──────────────────────────────────────────────── │
+│                                                                │
+│  Row 4: "N active integrations"  ·  [View Details / Connect]  │
+└────────────────────────────────────────────────────────────────┘
+```
+
+### Logo / Initials block
+
+- Container: 40×40px, `border-radius: 8px`, `C.bg1` background
+- **With logo URL:** `<img>` fills the container, `object-fit: contain`, 4px padding
+- **Without logo (null):** Two-letter initials, `C.blue` text, 14px/700, `C.blueBg` background
+- Initials formula: first letter of each of the first two words in `system.name`, uppercase
+
+### System name
+
+- Font: 16px / 500 (`title/medium/t4`)
+- Color: `C.text0` (`#2A2B30`)
+- Margin top: 12px from logo row
+
+### Category subtitle
+
+- Font: 12px / 400 (`body/regular/b4`)
+- Color: `C.text2` (`#8F93A3`)
+- Margin top: 2px
+
+### Integration count
+
+- Font: 12px / 400 (`body/regular/b4`)
+- Color: `C.text1` (`#525560`)
+- Text: `"{N} active integration{s}"`; `N=0` shows "No active integrations" in `C.text2`
+
+### Card grid
+
+- Container: `display: flex`, `flex-wrap: wrap`, `gap: 16px`, `padding: 16px`
+
+---
+
+## 21. Card Actions
+
+Each card has a single action button in the bottom-right, chosen based on integration count:
+
+| Condition | Button label | Style |
+|---|---|---|
+| `liveCount > 0` | View Details | `background: C.blueBg` (`#ECEFFF`), `color: C.blue`, `border: 1px solid C.blueBorder` |
+| `liveCount === 0` | Connect | `background: C.blue` (`#3D5AFE`), `color: #FFFFFF`, no border |
+
+**Shared button styles:**
+- Font: 12px / 500 (`title/medium/t6`)
+- Border radius: 6px
+- Padding: `6px 14px`
+- Cursor: pointer
+- No box-shadow
+
+> Use "Connect" only when there are zero active integrations. Using it when integrations exist would mislead the user into thinking no connection is configured.
+
+---
+
+## 22. Status Badges
+
+Status badges appear on cards (system status) and in the integrations list (integration status).
+
+### Dimensions and shape
+
+| Property | Value |
+|---|---|
+| Height | 18px (line-height based, not fixed) |
+| Padding | `2px 8px` |
+| Border radius | 4px (`radius-sm`) |
+| Font | 11px / 500 (`title/medium/t6` capped at 11px for badge context) |
+| Display | `inline-flex`, `align-items: center` |
+| Border | `1px solid {statusBorder}` |
+
+### Badge colors (STATUS_CONFIG)
+
+| Status key | Label | Text color | Background | Border |
+|---|---|---|---|---|
+| `ready` | Configured | `C.green` `#1C8D4F` | `rgba(40,199,111,0.25)` | `C.greenBorder` `#28C76F` |
+| `draft` | Draft | `C.text1` `#525560` | `rgba(143,147,163,0.25)` | `C.border0` `#E2E4E9` |
+| `needs_attention` | Needs Attention | `C.red` `#B42318` | `rgba(217,45,32,0.25)` | `C.redBorder` `#D92D20` |
+| `active` | Active | `C.green` | `rgba(40,199,111,0.25)` | `C.greenBorder` |
+| `ready_to_publish` | Ready to Publish | `C.blue` `#3D5AFE` | `C.blueBg` `#ECEFFF` | `C.blueBorder` `#C3CCFF` |
+| `failed` | Failed | `C.red` | `rgba(217,45,32,0.25)` | `C.redBorder` |
+| `disabled` | Disabled | `C.text2` `#8F93A3` | `C.bg2` `#E2E4E9` | `C.border0` |
+
+**Key rule:** Badge backgrounds use **transparent rgba values**, not solid fills. This keeps badges readable on any card surface without blending issues.
+
+---
+
+## 23. Integration Manager Typography Map
+
+Precise type tokens used in each UI region of Integration Manager. Supplements the global type scale (section 1).
+
+| UI region | Text | Size | Weight | Color token |
+|---|---|---|---|---|
+| PlatformHeader title | "Integration Manager" | 18px | 500 | `C.text0` |
+| Toolbar count | "N Systems" | 12px | 400 | `C.text1` |
+| Toolbar dropdown label | "System Type" | 12px | 500 | `C.text1` |
+| Search placeholder | "Search systems…" | 12px | 400 | `C.text2` |
+| Add System button | "+ Add System" | 12px | 500 | `#FFFFFF` |
+| Filter chip label | status name | 12px | 500 | `C.text1` (default) / `C.blue` (active) |
+| System card name | system.name | 16px | 500 | `C.text0` |
+| System card category | system.category | 12px | 400 | `C.text2` |
+| Integration count | "N active…" | 12px | 400 | `C.text1` |
+| Card action button | "View Details" / "Connect" | 12px | 500 | `C.blue` / `#FFFFFF` |
+| Status badge | status.label | 11px | 500 | status-specific |
+| Sidebar item label | module name | 12px | 400 | `C.navText` |
+| Sidebar active item | module name | 12px | 500 | `C.navActive` |
+| Profile name | user name | 12px | 500 | `C.text0` |
+
+---
+
+## 24. Figma → C Token Alignment Table
+
+Observed hex values in Figma node `1:17663` mapped to their `C` object equivalents. Use this table when a Figma inspection shows a hex that you need to identify.
+
+| Figma hex | Figma role | `C` token | Notes |
+|---|---|---|---|
+| `#EFF1F5` | Page background | `C.pageBg` | Beta Grey-100 |
+| `#FFFFFF` | Card surface, header bg | `C.bg0` | White |
+| `#E2E4E9` | Card border, divider | `C.border0` | Beta Grey-200 |
+| `#8F93A3` | Placeholder, disabled | `C.text2` / `C.text3` | Beta Grey-300 |
+| `#666975` | Icon at rest | `C.border2` | Beta Grey-400 |
+| `#525560` | Body text, secondary labels | `C.text1` | Beta Grey-500 |
+| `#2A2B30` | Primary text, headings | `C.text0` | Beta Grey-600 |
+| `#3D5AFE` | Primary buttons, links | `C.blue` | Alpha Primary-500 |
+| `#ECEFFF` | Hover bg, View Details btn bg | `C.blueBg` | Alpha Primary-50 |
+| `#C3CCFF` | View Details btn border | `C.blueBorder` | Alpha Primary-100 |
+| `#2B40B4` | Nav active bg, button hover | `C.blueHover` / `C.navActiveBg` | Alpha Primary-700 |
+| `#1A2233` | Sidebar background | `C.navBg` | Dark navy |
+| `#C8D0DC` | Sidebar item text | `C.navText` | — |
+| `#1C8D4F` | Configured badge text | `C.green` | Green-700 |
+| `rgba(40,199,111,0.25)` | Configured badge bg | `C.greenBg` | Green-500 25% |
+| `#28C76F` | Configured badge border | `C.greenBorder` | Green-500 |
+| `#B42318` | Error badge text | `C.red` | Red-700 |
+| `rgba(217,45,32,0.25)` | Error badge bg | `C.redBg` | Red-500 25% |
+| `#D92D20` | Error badge border | `C.redBorder` | Red-500 |
+| `rgba(143,147,163,0.25)` | Draft badge bg, chip surface | `C.bg3` | Grey-300 25% / `$color-bg-chip` |
+
+---
+
+## 25. Spacing, Radius & Elevation Quick Reference
+
+Practical lookup for the most common values in Integration Manager screens.
+
+### Spacing used
+
+| Location | Value | Spacing token |
+|---|---|---|
+| Page background → content container | 16px | `spacing-4` |
+| Card internal padding | 16px | `spacing-4` |
+| Card grid gap | 16px | `spacing-4` |
+| Toolbar padding (top/sides) | 16px | `spacing-4` |
+| Filter chip gap | 8px | `spacing-2` |
+| Header horizontal padding | 24px | `spacing-6` |
+| Sidebar icon padding (compact) | 24px centered (auto) | — |
+| Logo/initials block size | 40×40px | — |
+
+### Border radius used
+
+| Component | Value | Token |
+|---|---|---|
+| System card | 8px | `radius-md` |
+| Content container | 8px | `radius-md` |
+| Filter chips | 8px | `radius-md` |
+| Logo/initials block | 8px | `radius-md` |
+| Status badge | 4px | `radius-sm` |
+| Card action button | 6px | between `radius-sm` and `radius-md` |
+| Toggle button | 9999px | `radius-full` |
+| Status dot | 9999px | `radius-full` |
+
+### Elevation used
+
+| Component | Value | Token |
+|---|---|---|
+| System card | `0px 1px 2px rgba(0,0,0,0.06)` | `elevation-sm` |
+| Sidebar toggle button | `0px 2px 8px rgba(0,0,0,0.18)` | custom |
+| Dropdown menus | `2px 2px 12px rgba(0,0,0,0.12)` | `elevation-md` |
+| Drawers | `0px 4px 24px rgba(0,0,0,0.16)` | `elevation-lg` |
+
+---
+
+## 26. Do / Don't
+
+### Colors
+
+| Do | Don't |
+|---|---|
+| Use `C.*` tokens for all colors | Hard-code hex values in inline styles |
+| Use transparent rgba for badge backgrounds | Use solid fills for status badge backgrounds |
+| Use `C.bg3` (`rgba(143,147,163,0.25)`) for chip/tag surfaces | Use `#8F93A3` solid for chip backgrounds (makes text invisible) |
+| Use `C.text0` or `C.text1` for text on chip/badge surfaces | Use `C.text2`/`C.text3` for text on `C.bg3` backgrounds |
+
+### Typography
+
+| Do | Don't |
+|---|---|
+| Use Roboto via the `FONT` constant | Reference "IBM Plex Sans" or other fonts |
+| Use `title/medium/t3` (18px/500) for the header title | Use bold (700) for the header module title |
+| Use 12px as the default UI text size | Use anything below 10px |
+
+### Layout
+
+| Do | Don't |
+|---|---|
+| Keep sidebar compact (68px) as the default state | Open the sidebar expanded by default |
+| Place the toggle button as a `position:fixed` sibling in App | Place the toggle inside `PlatformSidebar` (gets clipped by `overflow:hidden`) |
+| Use `flex: 1` on the content column | Give the content column a fixed width |
+| Use `C.pageBg` (`#EFF1F5`) as the outer page background | Use white or transparent as the page background |
+
+### Cards
+
+| Do | Don't |
+|---|---|
+| Show "View Details" (blue outlined) when integrations exist | Show "Connect" for systems that already have active integrations |
+| Show initials with `C.blueBg` background when no logo URL is set | Show a broken `<img>` tag or empty box |
+| Use `flex: 0 1 424px` with `flex-wrap` for the card grid | Use CSS Grid with a fixed column count |
+
+### Status
+
+| Do | Don't |
+|---|---|
+| Label `ready` status as "Configured" (Figma language) | Use "Active" or "Ready" as the label for the `ready` status key |
+| Label `draft` with neutral grey tones | Use amber/orange for draft status |
+
+---
+
+## 27. Implementation Notes
+
+### Prototype constraints
+
+The prototype is a single-file CDN React 18 app (`IntegrationManager.js`). There is no build step, no CSS modules, and no package imports beyond CDN React/Babel/ReactDOM. All styles are inline JS objects.
+
+- **Token changes** → update the `C` object (and `FONT`/`MONO` constants) near the top of the file
+- **Status label/color changes** → update `STATUS_CONFIG` — it is the single source of truth for all badge text and colors
+- **New icons** → add to the `icons` map in `PlatformIcon`; use stroke-based SVG at `viewBox="0 0 20 20"`
+- **Logo URLs** → update `SYSTEM_LOGOS` map; `null` values fall back to initials automatically
+
+### SVG icons (`PlatformIcon`)
+
+Icons are stroke-based inline SVGs at 20×20. They are placeholder approximations — when `innovapptive-font` (or an agreed icon library CDN) is available:
+1. Remove the `PlatformIcon` function entirely
+2. Replace `<PlatformIcon itemKey={item.key} .../>` calls with the font icon component
+3. The `itemKey` strings match the intended glyph names in the design system
+
+### System logo infrastructure
+
+`SYSTEM_LOGOS` is a map of `systemId → URL | null`. All entries are currently `null` (no stable hosted logo URLs exist yet). When logo URLs are available:
+1. Add them to `SYSTEM_LOGOS` by system ID
+2. `getSystemLogo(system)` will automatically return the URL
+3. `SystemCard` renders an `<img>` when a URL is present, falls back to initials when `null`
+
+### Figma URL stability
+
+The Figma **prototype** URL (`figma.com/proto/...`) uses a one-time token that expires and redirects. For future reference, use the **design file** URL:
+
+```
+https://www.figma.com/design/2dRnIiNN2EAqshdjHgPr8Q/?node-id=1:17663
+```
+
+(Replace `:` with `-` in the `node-id` query param when using the Figma MCP tool: `node-id=1-17663`.)
+
+### Storybook updates
+
+Per the daily update requirement (section header in this file), fetch `https://cwp-design-system-storybook-2026.netlify.app` at the start of each session. The site is JS-rendered — token values must be pasted from the browser into the `[POPULATE FROM BROWSER]` placeholders in section 13 when they change. Confirmed changes go in the Update Log table above.
