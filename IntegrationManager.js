@@ -2274,7 +2274,8 @@ function PlatformHeader() {
 // Top: initials logo + status badge. Middle: name + category. Divider. Bottom: count + action.
 function SystemCard({ system, integrations, onClick }) {
   const [hov,setHov]=useState(false);
-  const liveCount=integrations.filter(i=>i.systemId===system.id&&(i.status==="active"||i.status==="ready")).length;
+  const totalCount=integrations.filter(i=>i.systemId===system.id&&i.status!=="disabled").length;
+  const activeCount=integrations.filter(i=>i.systemId===system.id&&(i.status==="active"||i.status==="ready")).length;
   const cfg=STATUS_CONFIG[system.status]||{};
   const initials=(system.name||"?").split(/\s+/).slice(0,2).map(w=>w[0]||"").join("").toUpperCase();
   const logoUrl=getSystemLogo(system);
@@ -2302,9 +2303,9 @@ function SystemCard({ system, integrations, onClick }) {
           <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke={C.text2} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M13 4L6 11 3 8"/>
           </svg>
-          <span style={{fontFamily:FONT,fontSize:14,color:C.text0,letterSpacing:"0.014em"}}>{liveCount} Integration{liveCount!==1?"s":""}</span>
+          <span style={{fontFamily:FONT,fontSize:14,color:C.text0,letterSpacing:"0.014em"}}>{totalCount} Integration{totalCount!==1?"s":""}</span>
         </div>
-        {liveCount>0
+        {activeCount>0
           ? <button onClick={e=>{e.stopPropagation();onClick(system.id);}} style={{background:C.blueBg,border:"none",borderRadius:8,padding:"10px 16px",fontFamily:FONT,fontSize:12,fontWeight:500,color:C.blue,cursor:"pointer",whiteSpace:"nowrap"}}>View Details</button>
           : <button onClick={e=>{e.stopPropagation();onClick(system.id);}} style={{background:C.blue,border:"none",borderRadius:8,padding:"10px 16px",fontFamily:FONT,fontSize:12,fontWeight:500,color:"#fff",cursor:"pointer",whiteSpace:"nowrap"}}>Connect</button>
         }
