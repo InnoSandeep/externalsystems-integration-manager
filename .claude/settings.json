@@ -1,7 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "Bash(gh *)",
+      "Bash(gh pr create*)",
+      "Bash(gh pr view*)",
+      "Bash(gh pr comment*)",
+      "Bash(gh pr list*)",
+      "Bash(gh api*)",
+      "Bash(gh auth status*)",
       "Bash(git status*)",
       "Bash(git diff*)",
       "Bash(git log*)",
