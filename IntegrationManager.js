@@ -59,11 +59,12 @@ const C = {
   navActiveBg: "#2B40B4",   // Alpha/Primary-700
 
   // Primary interactive — Alpha/Primary
-  blue:        "#3D5AFE",   // Alpha/Primary-500
-  blueHover:   "#2B40B4",   // Alpha/Primary-700
-  blueBg:      "#ECEFFF",   // Alpha/Primary-50
-  blueBorder:  "#C3CCFF",   // Alpha/Primary-100
-  blueFocus:   "#7D90FE",   // Alpha/Primary-300 — focused border
+  blue:          "#3D5AFE",   // Alpha/Primary-500
+  blueHover:     "#2B40B4",   // Alpha/Primary-700
+  blueBg:        "#ECEFFF",   // Alpha/Primary-50
+  blueBorder:    "#C3CCFF",   // Alpha/Primary-100
+  blueFocus:     "#7D90FE",   // Alpha/Primary-300 — focused border
+  navActiveTint: "#DDE3FF",   // --local-color-primary-tint-light (reference app) — active sidebar row bg
 
   // Teal — inbound direction, info callouts
   teal:        "#009688",   // Teal-500
@@ -2202,43 +2203,104 @@ function getSystemLogo(system) {
 }
 
 // ─── PLATFORM SHELL ──────────────────────────────────────────────────────────
-// Compact 68px icon-only sidebar by default. Expands to 220px via toggle arrow.
-// Integration Manager is always highlighted as the active module.
+// Compact 68px icon-only sidebar by default. Expands to 240px via toggle.
+// Figma source of truth: node 1:17663 (file 2dRnIiNN2EAqshdjHgPr8Q).
+// Collapsed width matches Figma (70px → 68px per spec).
+// Expanded width derived from Figma label container (~167px) + icon + padding.
+const SIDEBAR_COLLAPSED_W = 68;
+const SIDEBAR_EXPANDED_W  = 240;
+const SIDEBAR_TOGGLE_SIZE = 28;
+
+// Exact platform module labels in platform order.
+// expandable: true  → show chevron in expanded state (module has sub-items).
+// expandable: false → no chevron.
 const SIDEBAR_ITEMS = [
-  { key:"dashboard",          label:"Dashboard",             icon:"⊞" },
-  { key:"ehs",                label:"Env. Health Safety",    icon:"△" },
-  { key:"mcc",                label:"Maintenance Control",   icon:"⚙" },
-  { key:"notifications",      label:"Notifications",         icon:"◎" },
-  { key:"user-mgmt",          label:"User Management",       icon:"◉" },
-  { key:"ai-studio",          label:"AI Studio",             icon:"✦" },
-  { key:"race",               label:"Race",                  icon:"▷" },
-  { key:"forms",              label:"Forms",                 icon:"≡" },
-  { key:"settings",           label:"Settings",              icon:"⊙" },
-  { key:"master-data",        label:"Master Data",           icon:"≣" },
-  { key:"work-instructions",  label:"Work Instructions",     icon:"✎" },
-  { key:"integration-manager",label:"Integration Manager",   icon:"⇄" },
-  { key:"smart-trigger",      label:"Smart Trigger",         icon:"⚡" },
-  { key:"webhook-registry",   label:"Webhook Registry",      icon:"⊕" },
+  { key:"dashboard",           label:"DASHBOARD",                   expandable:true  },
+  { key:"ehs",                 label:"ENVIRONMENT HEALTH SAFETY",   expandable:true  },
+  { key:"mcc",                 label:"MAINTENANCE CONTROL CENTER",  expandable:false },
+  { key:"notifications",       label:"NOTIFICATIONS",               expandable:false },
+  { key:"user-mgmt",           label:"USER MANAGEMENT",             expandable:true  },
+  { key:"ai-studio",           label:"AI STUDIO",                   expandable:true  },
+  { key:"race",                label:"RACE",                        expandable:true  },
+  { key:"forms",               label:"FORMS",                       expandable:true  },
+  { key:"settings",            label:"SETTINGS",                    expandable:true  },
+  { key:"master-data",         label:"MASTER DATA",                 expandable:true  },
+  { key:"work-instructions",   label:"WORK INSTRUCTIONS",           expandable:false },
+  { key:"integration-manager", label:"INTEGRATION MANAGER",         expandable:false },
+  { key:"smart-trigger",       label:"SMART TRIGGER",               expandable:false },
+  { key:"webhook-registry",    label:"WEBHOOK REGISTRY",            expandable:false },
 ];
-function PlatformSidebar({ expanded }) {
+
+// PlatformLogo renders the Innovapptive brand mark from inline SVG.
+// No external URL dependency — uses SVG approximation until a stable
+// hosted asset URL is available.
+// TODO: Replace the SVG with <img src={STABLE_LOGO_URL}> when a permanent
+//       CDN/hosted URL exists for the Innovapptive logo.
+function PlatformLogo({ expanded }) {
+  // Brand icon mark: blue rounded-square with stylized "i" (dot + stem)
+  const iconMark = (
+    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" aria-label="Innovapptive icon" style={{flexShrink:0}}>
+      <rect width="32" height="32" rx="6" fill={C.blue}/>
+      {/* dot */}
+      <rect x="14" y="8" width="4" height="4" rx="1.5" fill="#fff"/>
+      {/* stem */}
+      <rect x="14" y="14" width="4" height="10" rx="1.5" fill="#fff"/>
+    </svg>
+  );
+  if (!expanded) return iconMark;
   return (
-    <div style={{width:expanded?220:68,flexShrink:0,background:C.bg0,borderRight:`1px solid ${C.border0}`,display:"flex",flexDirection:"column",height:"100vh",position:"sticky",top:0,zIndex:50,overflow:"hidden",transition:"width 0.15s"}}>
-      <div style={{height:64,display:"flex",alignItems:"center",justifyContent:expanded?"flex-start":"center",borderBottom:`1px solid ${C.border0}`,flexShrink:0,padding:expanded?"0 14px":"0 10px",gap:8,overflow:"hidden"}}>
-        <div style={{width:32,height:32,background:C.blue,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-          <div style={{width:14,height:14,background:"#fff"}}/>
-        </div>
-        {expanded&&<span style={{fontFamily:FONT,fontSize:13,fontWeight:700,color:C.text0,whiteSpace:"nowrap",flex:1}}>Innovapptive</span>}
+    <div style={{display:"flex",alignItems:"center",gap:10,overflow:"hidden",flexShrink:0}}>
+      {iconMark}
+      <span style={{fontFamily:FONT,fontSize:13,fontWeight:700,color:C.text0,whiteSpace:"nowrap",letterSpacing:"0.2px"}}>
+        Innovapptive
+      </span>
+    </div>
+  );
+}
+
+function PlatformSidebar({ expanded }) {
+  const w = expanded ? SIDEBAR_EXPANDED_W : SIDEBAR_COLLAPSED_W;
+  return (
+    <div style={{width:w,flexShrink:0,background:C.bg0,borderRight:`1px solid ${C.border0}`,display:"flex",flexDirection:"column",height:"100vh",position:"sticky",top:0,zIndex:50,overflow:"hidden",transition:"width 0.15s"}}>
+      {/* Logo area — height matches PlatformHeader (64px) for horizontal alignment */}
+      <div style={{height:64,display:"flex",alignItems:"center",justifyContent:expanded?"flex-start":"center",borderBottom:`1px solid ${C.border0}`,flexShrink:0,padding:expanded?"0 16px":"0",overflow:"hidden"}}>
+        <PlatformLogo expanded={expanded}/>
       </div>
-      <div style={{flex:1,padding:"8px 0",overflowY:"auto",overflowX:"hidden"}}>
+      {/* Nav items */}
+      <div style={{flex:1,overflowY:"auto",overflowX:"hidden",paddingTop:4,paddingBottom:4}}>
         {SIDEBAR_ITEMS.map(item=>{
-          const active=item.key==="integration-manager";
-          const iconColor=active?C.blue:"#727caf";
+          const active = item.key==="integration-manager";
+          const iconColor = active ? C.blue : "#727caf";
           return (
-            <div key={item.key} title={!expanded?item.label:undefined} style={{display:"flex",alignItems:"center",gap:expanded?8:0,padding:expanded?"6px 14px":"6px 0",justifyContent:"center",background:active?C.blueBg:"transparent",borderLeft:`3px solid ${active?C.blue:"transparent"}`,cursor:active?"default":"not-allowed",opacity:active?1:0.65}}>
-              <div style={{width:32,height:32,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",background:active?C.blueBg:C.bg1,borderRadius:8,color:iconColor}}>
-                <PlatformIcon itemKey={item.key} size={18} color={iconColor}/>
+            <div key={item.key} title={!expanded?item.label:undefined}
+              style={{
+                display:"flex",alignItems:"center",
+                padding:expanded?"8px 8px 8px 10px":"8px",
+                justifyContent:expanded?"flex-start":"center",
+                // Active bg: --local-color-primary-tint-light from reference app (C.navActiveTint)
+                background:active?C.navActiveTint:"transparent",
+                // Left accent: 3px blue stripe in both collapsed and expanded active state
+                borderLeft:`3px solid ${active?C.blue:"transparent"}`,
+                cursor:active?"default":"not-allowed",
+                opacity:active?1:0.65,
+                gap:expanded?8:0,
+                boxSizing:"border-box",
+                width:"100%",
+              }}>
+              {/* Icon container — 24×24px / 6px radius / C.bg1 per Figma spec */}
+              <div style={{width:24,height:24,background:active?C.navActiveTint:C.bg1,borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                <PlatformIcon itemKey={item.key} size={14} color={iconColor}/>
               </div>
-              {expanded&&<span style={{fontFamily:FONT,fontSize:13,fontWeight:active?700:400,color:active?C.blue:"#727caf",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{item.label}</span>}
+              {expanded&&(
+                <>
+                  <span style={{fontFamily:FONT,fontSize:12,fontWeight:700,color:iconColor,letterSpacing:"0.3px",flex:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{item.label}</span>
+                  {item.expandable&&(
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{flexShrink:0,opacity:0.6}}>
+                      <path d="M4.5 2.5l3 3-3 3" stroke="#727caf" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  )}
+                </>
+              )}
             </div>
           );
         })}
@@ -2274,8 +2336,10 @@ function PlatformHeader() {
 // Top: initials logo + status badge. Middle: name + category. Divider. Bottom: count + action.
 function SystemCard({ system, integrations, onClick }) {
   const [hov,setHov]=useState(false);
+  // totalCount drives both the label and the CTA so they stay consistent:
+  // "N Integrations" + "View Details" when any non-disabled integration exists,
+  // "0 Integrations" + "Connect" only when none exist at all.
   const totalCount=integrations.filter(i=>i.systemId===system.id&&i.status!=="disabled").length;
-  const activeCount=integrations.filter(i=>i.systemId===system.id&&i.status!=="disabled"&&i.status!=="draft").length;
   const cfg=STATUS_CONFIG[system.status]||{};
   const initials=(system.name||"?").split(/\s+/).slice(0,2).map(w=>w[0]||"").join("").toUpperCase();
   const logoUrl=getSystemLogo(system);
@@ -2305,7 +2369,7 @@ function SystemCard({ system, integrations, onClick }) {
           </svg>
           <span style={{fontFamily:FONT,fontSize:14,color:C.text0,letterSpacing:"0.014em"}}>{totalCount} Integration{totalCount!==1?"s":""}</span>
         </div>
-        {activeCount>0
+        {totalCount>0
           ? <button onClick={e=>{e.stopPropagation();onClick(system.id);}} style={{background:C.blueBg,border:"none",borderRadius:8,padding:"10px 16px",fontFamily:FONT,fontSize:12,fontWeight:500,color:C.blue,cursor:"pointer",whiteSpace:"nowrap"}}>View Details</button>
           : <button onClick={e=>{e.stopPropagation();onClick(system.id);}} style={{background:C.blue,border:"none",borderRadius:8,padding:"10px 16px",fontFamily:FONT,fontSize:12,fontWeight:500,color:"#fff",cursor:"pointer",whiteSpace:"nowrap"}}>Connect</button>
         }
@@ -2777,7 +2841,7 @@ function App() {
     <div style={{background:C.pageBg,height:"100vh",display:"flex",fontFamily:FONT,overflow:"hidden"}}>
       <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet"/>
       <PlatformSidebar expanded={sidebarExpanded}/>
-      <button onClick={()=>setSidebarExpanded(e=>!e)} aria-label={sidebarExpanded?"Collapse sidebar":"Expand sidebar"} style={{position:"fixed",top:72,left:sidebarExpanded?206:54,width:28,height:28,borderRadius:9999,background:C.blue,border:"none",color:"#fff",cursor:"pointer",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 8px rgba(0,0,0,0.18)",transition:"left 0.15s",padding:0,flexShrink:0}}>
+      <button onClick={()=>setSidebarExpanded(e=>!e)} aria-label={sidebarExpanded?"Collapse sidebar":"Expand sidebar"} style={{position:"fixed",top:72,left:sidebarExpanded?SIDEBAR_EXPANDED_W-SIDEBAR_TOGGLE_SIZE/2:SIDEBAR_COLLAPSED_W-SIDEBAR_TOGGLE_SIZE/2,width:SIDEBAR_TOGGLE_SIZE,height:SIDEBAR_TOGGLE_SIZE,borderRadius:9999,background:C.blue,border:"none",color:"#fff",cursor:"pointer",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 8px rgba(0,0,0,0.18)",transition:"left 0.15s",padding:0,flexShrink:0}}>
         <svg viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           {sidebarExpanded?<path d="M8 2L4 6l4 4"/>:<path d="M4 2l4 4-4 4"/>}
         </svg>

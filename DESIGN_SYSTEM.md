@@ -646,8 +646,8 @@ The Integration Manager is a **module inside the Innovapptive platform shell**, 
 | Element | Value | Token |
 |---|---|---|
 | Header height | 64px | `spacing-16` |
-| Sidebar width (compact) | 68px | — |
-| Sidebar width (expanded) | 220px | — |
+| Sidebar width (compact) | 68px | `SIDEBAR_COLLAPSED_W` constant |
+| Sidebar width (expanded) | 240px | `SIDEBAR_EXPANDED_W` constant |
 | Content container margin | 16px all sides | `spacing-4` |
 | Content container radius | 8px | `radius-md` |
 | Content container bg | `#FFFFFF` | `C.bg0` |
@@ -670,38 +670,64 @@ The sidebar is **compact (68px) by default** on the Integration Manager home scr
 
 ### Expanded state
 
-Width expands to 220px. Module labels become visible alongside icons.
+Width expands to **240px** (`SIDEBAR_EXPANDED_W` constant). Module labels become visible alongside icons and chevrons appear for expandable modules. Derived from Figma Gamma component: ~167px label container + 24px icon + 8px gap + 24px padding = 240px.
 
 ### Toggle button
 
-- **Position:** `fixed`, `top: 72px`, `left` tracks sidebar width (`206px` expanded / `54px` compact)
-- **Style:** 28×28px circle, `C.blue` fill, white chevron SVG, `box-shadow: 0 2px 8px rgba(0,0,0,0.18)`
+- **Position:** `fixed`, `top: 72px`, `left` = `sidebarWidth − SIDEBAR_TOGGLE_SIZE/2` (tracks edge via constants)
+  - Collapsed: `68 − 14 = 54px`
+  - Expanded: `240 − 14 = 226px`
+- **Style:** 28×28px (`SIDEBAR_TOGGLE_SIZE`) circle, `C.blue` fill, white chevron SVG, `box-shadow: 0 2px 8px rgba(0,0,0,0.18)`
 - **Animation:** `transition: left 0.15s` follows the sidebar slide
-- **Placement rationale:** The button is a sibling in `App` (not a child of `PlatformSidebar`) to avoid clipping by `overflow:hidden` on the sidebar container
+- **Placement rationale:** Sibling in `App` (not inside `PlatformSidebar`) to avoid `overflow:hidden` clipping
 
-### Sidebar items
+### Logo area
 
-| Key | Label | Notes |
+- Height: **65px** (Figma: `h-[65px]`)
+- Logo asset: Innovapptive logo image (`LOGO_URL` constant — Figma MCP asset, replace with stable URL when available)
+- **Collapsed:** logo container clipped to 37px, showing only the monogram/left portion
+- **Expanded:** logo container 160px wide, showing full wordmark
+- Fallback: "IN" / "Innovapptive" text if image fails to load
+
+### Sidebar items (exact labels, exact order)
+
+| Key | Label | Chevron |
 |---|---|---|
-| `dashboard` | Dashboard | — |
-| `integration-manager` | Integration Manager | **Active item** — highlighted `C.navActiveBg` |
-| `workflow-builder` | Workflow Builder | — |
-| `my-approvals` | My Approvals | — |
-| `sites` | Sites | Management section |
-| `assets` | Assets | — |
-| `materials` | Materials | — |
-| `work-orders` | Work Orders | — |
-| `reports` | Reports | Configure section |
-| `roles` | Roles & Permissions | — |
-| `notifications` | Notifications | — |
-| `data-quality` | Data Quality | Integrations section |
-| `api-gateway` | API Gateway | — |
-| `connectors` | Connectors | — |
-| `help` | Help & Support | — |
+| `dashboard` | DASHBOARD | ✓ |
+| `ehs` | ENVIRONMENT HEALTH SAFETY | ✓ |
+| `mcc` | MAINTENANCE CONTROL CENTER | — |
+| `notifications` | NOTIFICATIONS | — |
+| `user-mgmt` | USER MANAGEMENT | ✓ |
+| `ai-studio` | AI STUDIO | ✓ |
+| `race` | RACE | ✓ |
+| `forms` | FORMS | ✓ |
+| `settings` | SETTINGS | ✓ |
+| `master-data` | MASTER DATA | ✓ |
+| `work-instructions` | WORK INSTRUCTIONS | — |
+| `integration-manager` | **INTEGRATION MANAGER** | — |
+| `smart-trigger` | SMART TRIGGER | — |
+| `webhook-registry` | WEBHOOK REGISTRY | — |
+
+Rules: All-caps labels. No abbreviations ("Env. Health Safety" is wrong). No invented group names.
+
+### Row layout (Figma-derived)
+
+| Property | Value |
+|---|---|
+| Row padding | `8px` all sides (collapsed) · `8px top/bottom, 10px left, 8px right` (expanded) |
+| Icon container | 24×24px, `border-radius: 6px`, `background: C.bg1` (#EFF1F5) |
+| Active icon bg | `C.blueBg` (#ECEFFF) |
+| Icon size | 14px |
+| Left accent (expanded active) | `3px solid C.blue` on `borderLeft` |
+| Active row bg | `C.blueBg` |
+| Label font | 13px / 700 (Roboto Bold) |
+| Label color | `#727caf` (default) · `C.blue` (active) |
+| Letter spacing | 0.3px |
+| Chevron | 12×12px SVG, `#727caf`, right-aligned, expanded only |
 
 ### Icon approach
 
-Icons use the inline SVG `PlatformIcon` component (stroke-based approximations). When `innovapptive-font` becomes available, replace `PlatformIcon` entirely — the `itemKey` strings are already the intended glyph names.
+Icons use the inline SVG `PlatformIcon` component (stroke-based, 14px, `currentColor`). The Figma uses `innovapptive-font` glyphs at 24px — when that font is available, replace `PlatformIcon` entirely. The `itemKey` strings already match the intended glyph names.
 
 ---
 
