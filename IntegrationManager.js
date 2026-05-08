@@ -2275,7 +2275,7 @@ function PlatformHeader() {
 function SystemCard({ system, integrations, onClick }) {
   const [hov,setHov]=useState(false);
   const totalCount=integrations.filter(i=>i.systemId===system.id&&i.status!=="disabled").length;
-  const activeCount=integrations.filter(i=>i.systemId===system.id&&(i.status==="active"||i.status==="ready")).length;
+  const activeCount=integrations.filter(i=>i.systemId===system.id&&i.status!=="disabled"&&i.status!=="draft").length;
   const cfg=STATUS_CONFIG[system.status]||{};
   const initials=(system.name||"?").split(/\s+/).slice(0,2).map(w=>w[0]||"").join("").toUpperCase();
   const logoUrl=getSystemLogo(system);
