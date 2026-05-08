@@ -779,24 +779,21 @@ function AIActionButton({ label, desc, running, result, onClick }) {
 }
 
 // ─── SELECTION CARD ───────────────────────────────────────────────────────────
-// The large clickable card used to choose Direction and Method in Step 1 of the Add Integration flow.
-// Each card has a radio dot, a main label, a sublabel (e.g. "Inbound"), and a short description.
-// This pattern helps users make informed choices without needing to know technical terms upfront.
-// Cards can be marked "Coming Soon" (disabled=true, tag="Coming Soon") for future methods.
-function SelectionCard({ label, sublabel, description, selected, onClick, disabled, tag }) {
+// Compact wizard-style option card for Direction and Method selection.
+// Title + one-line subtitle. No paragraphs. Reduced padding for a tighter wizard feel.
+function SelectionCard({ label, description, selected, onClick, disabled, tag }) {
   const [hov,setHov]=useState(false);
   return (
     <div onClick={disabled?undefined:onClick} onMouseEnter={()=>!disabled&&setHov(true)} onMouseLeave={()=>setHov(false)}
-      style={{flex:1,padding:"14px 16px",cursor:disabled?"not-allowed":"pointer",border:`2px solid ${selected?C.blue:hov?C.border1:C.border0}`,background:selected?C.blueBg:disabled?"#FAFAFA":hov?C.bg1:C.bg0,opacity:disabled?0.55:1,position:"relative",transition:"border-color 0.12s,background 0.12s"}}>
-      {tag&&<span style={{position:"absolute",top:8,right:8,background:C.bg3,border:`1px solid ${C.border0}`,fontFamily:FONT,fontSize:10,fontWeight:700,color:C.text0,padding:"2px 6px",letterSpacing:"0.05em"}}>{tag}</span>}
-      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
-        <div style={{width:16,height:16,border:`2px solid ${selected?C.blue:C.border1}`,borderRadius:9999,background:selected?C.blue:"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-          {selected&&<div style={{width:6,height:6,borderRadius:9999,background:"#fff"}}/>}
+      style={{flex:1,padding:"10px 12px",cursor:disabled?"not-allowed":"pointer",border:`2px solid ${selected?C.blue:hov?C.border1:C.border0}`,borderRadius:4,background:selected?C.blueBg:disabled?"#FAFAFA":hov?C.bg1:C.bg0,opacity:disabled?0.55:1,position:"relative",transition:"border-color 0.12s,background 0.12s"}}>
+      {tag&&<span style={{position:"absolute",top:6,right:8,background:C.bg3,border:`1px solid ${C.border0}`,fontFamily:FONT,fontSize:10,fontWeight:600,color:C.text1,padding:"1px 5px",letterSpacing:"0.04em"}}>{tag}</span>}
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:description?3:0}}>
+        <div style={{width:14,height:14,border:`2px solid ${selected?C.blue:C.border1}`,borderRadius:9999,background:selected?C.blue:"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+          {selected&&<div style={{width:5,height:5,borderRadius:9999,background:"#fff"}}/>}
         </div>
-        <span style={{fontFamily:FONT,fontSize:14,fontWeight:700,color:disabled?C.text3:selected?C.blue:C.text0}}>{label}</span>
-        {sublabel&&<span style={{fontFamily:FONT,fontSize:10,color:selected?C.blue:C.text3,marginLeft:2,letterSpacing:"0.04em"}}>{sublabel}</span>}
+        <span style={{fontFamily:FONT,fontSize:13,fontWeight:600,color:disabled?C.text3:selected?C.blue:C.text0}}>{label}</span>
       </div>
-      <div style={{fontFamily:FONT,fontSize:12,color:C.text2,lineHeight:1.5,paddingLeft:24}}>{description}</div>
+      {description&&<div style={{fontFamily:FONT,fontSize:12,color:selected?C.text1:C.text2,paddingLeft:22,lineHeight:1.3}}>{description}</div>}
     </div>
   );
 }
@@ -1504,34 +1501,31 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
                 <FieldError msg={touched.name&&errors.name}/>
               </div>
 
-              {/* Direction — Phase 2: two-layer labels */}
+              {/* Direction */}
               <div style={{marginBottom:22}}>
                 <SectionRule label="Direction"/>
-                <div style={{fontFamily:FONT,fontSize:12,color:C.text2,marginBottom:10}}>Where does data originate, and where does it go?</div>
+                <div style={{fontFamily:FONT,fontSize:12,color:C.text2,marginBottom:8}}>Choose how data moves.</div>
                 <div style={{display:"flex",gap:10}}>
-                  <SelectionCard label="Bring data into Innovapptive" sublabel="Inbound" description="Data originates in the external system and is pulled or pushed into Innovapptive." selected={form.direction==="inbound"} onClick={()=>{set("direction","inbound");set("method","");}}/>
-                  <SelectionCard label="Send data from Innovapptive" sublabel="Outbound" description="Data originates in Innovapptive and is delivered to an external system." selected={form.direction==="outbound"} onClick={()=>{set("direction","outbound");set("method","");}}/>
+                  <SelectionCard label="Inbound" description="External system → Innovapptive" selected={form.direction==="inbound"} onClick={()=>{set("direction","inbound");set("method","");}}/>
+                  <SelectionCard label="Outbound" description="Innovapptive → external system" selected={form.direction==="outbound"} onClick={()=>{set("direction","outbound");set("method","");}}/>
                 </div>
                 <FieldError msg={touched.direction&&errors.direction}/>
               </div>
 
-              {/* Method — Phase 2: two-layer + Phase 3: framing question */}
+              {/* Method */}
               {form.direction&&(
                 <div style={{marginBottom:22}}>
                   <SectionRule label="Method"/>
-                  {/* Phase 3: framing question */}
-                  <div style={{fontFamily:FONT,fontSize:12,fontWeight:600,color:C.text1,marginBottom:8}}>
-                    {isInbound?"How should data arrive from the external system?":"How should Innovapptive deliver data to the external system?"}
-                  </div>
+                  <div style={{fontFamily:FONT,fontSize:12,color:C.text2,marginBottom:8}}>Choose the connection method.</div>
                   <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
                     {isInbound&&<>
-                      <SelectionCard label="Real-time event delivery" sublabel="Webhook" description="The external system pushes events to an Innovapptive listener as they happen." selected={form.method==="webhook"} onClick={()=>set("method","webhook")}/>
-                      <SelectionCard label="Scheduled data pull" sublabel="Polling" description="Innovapptive fetches records from the external system on a set schedule." selected={form.method==="polling"} onClick={()=>set("method","polling")}/>
-                      <SelectionCard label="Batch file import" sublabel="File Import" description="Import records from a file on a schedule." selected={false} disabled tag="Coming Soon"/>
+                      <SelectionCard label="Webhook" description="Real-time events" selected={form.method==="webhook"} onClick={()=>set("method","webhook")}/>
+                      <SelectionCard label="Polling" description="Scheduled sync" selected={form.method==="polling"} onClick={()=>set("method","polling")}/>
+                      <SelectionCard label="File Import" description="Coming soon" selected={false} disabled tag="Coming Soon"/>
                     </>}
                     {isOutbound&&<>
-                      <SelectionCard label="Send events in real time" sublabel="Webhook" description="Innovapptive delivers event payloads to an external endpoint immediately when triggered." selected={form.method==="webhook"} onClick={()=>set("method","webhook")}/>
-                      <SelectionCard label="Batch file export" sublabel="File Export" description="Export records to a file on a schedule." selected={false} disabled tag="Coming Soon"/>
+                      <SelectionCard label="Webhook" description="Real-time events" selected={form.method==="webhook"} onClick={()=>set("method","webhook")}/>
+                      <SelectionCard label="File Export" description="Coming soon" selected={false} disabled tag="Coming Soon"/>
                     </>}
                   </div>
                   <FieldError msg={touched.method&&errors.method}/>
@@ -1549,7 +1543,7 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
                   </div>
                   {form.product&&(
                     <div>
-                      <FieldLabel label="Collections" required helper="Select all object types this integration maps to"/>
+                      <FieldLabel label="Collections" required helper="Select object types."/>
                       <MultiSelectDropdown
                         options={PRODUCT_OBJECTS[form.product]||[]}
                         value={form.businessObjects}
@@ -1575,7 +1569,7 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
                 <div style={{marginBottom:22}}>
                   <SectionRule label="Receiving Endpoint"/>
                   <div style={{marginBottom:12}}>
-                    <FieldLabel label="Receiving URL" required helper="Enter the URL where Innovapptive should receive incoming events. Paste or type the endpoint URL, then register it in your external system's webhook settings."/>
+                    <FieldLabel label="Receiving URL" required helper="Register this URL in the external system."/>
                     <FieldInput
                       value={form.listenerEndpointUrl}
                       onChange={v=>{set("listenerEndpointUrl",v);touch("listenerEndpointUrl");}}
@@ -1586,7 +1580,7 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
                     <FieldError msg={touched.listenerEndpointUrl&&errors.listenerEndpointUrl}/>
                   </div>
                   <div style={{marginBottom:12}}>
-                    <FieldLabel label="Incoming Authentication" helper="What authentication will the external system send when calling this endpoint?"/>
+                    <FieldLabel label="Incoming Authentication" helper="Select the authentication method."/>
                     <FieldSelect value={form.incomingAuthType} onChange={v=>set("incomingAuthType",v)} options={INCOMING_AUTH_TYPES} placeholder="— Select —"/>
                     {form.incomingAuthType==="API Key (header)"&&(
                       <div style={{marginTop:8,display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px 12px"}}>
@@ -1598,7 +1592,7 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
                       <div style={{marginTop:8}}><FieldLabel label="Signing Secret"/><FieldInput value={form.incomingHmacSecret} onChange={v=>set("incomingHmacSecret",v)} placeholder="whsec_••••••••" mono/></div>
                     )}
                   </div>
-                  <InfoBox variant="teal">Once you have a URL, register it in your external system's webhook settings using the authentication method configured here. Innovapptive will begin receiving events immediately after you publish this integration.</InfoBox>
+                  <InfoBox variant="teal">Use this endpoint in your external system's webhook settings.</InfoBox>
                 </div>
               )}
 
@@ -1667,9 +1661,8 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
               {isOutboundWebhook&&(
                 <div style={{marginBottom:22}}>
                   <SectionRule label="Webhook Registry"/>
-                  <div style={{fontFamily:FONT,fontSize:12,color:C.text1,marginBottom:14,lineHeight:1.6}}>Select a registered webhook as the delivery target for this integration. Webhooks are configured and managed centrally in the Webhook Registry — not inline inside individual integrations.</div>
                   <div style={{marginBottom:12}}>
-                    <FieldLabel label="Registered Webhook" helper="Select from your organization's Webhook Registry"/>
+                    <FieldLabel label="Registered Webhook" helper="Select a delivery target from your organization's webhook registry."/>
                     <FieldSelect value={form.selectedWebhookId} onChange={v=>set("selectedWebhookId",v)} options={webhooks.map(w=>w.id)} placeholder={webhooks.length?"— Select a webhook —":"No webhooks registered yet"} disabled={!webhooks.length}/>
                     {form.selectedWebhookId&&(()=>{
                       const wh=webhooks.find(w=>w.id===form.selectedWebhookId);
@@ -1682,7 +1675,6 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
                   </div>
                   <div>
                     <button onClick={()=>setWbModal(true)} style={{background:C.blueBg,border:`1px solid ${C.blueBorder}`,color:C.blue,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"7px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:8}}>+ Create New Webhook</button>
-                    <div style={{fontFamily:FONT,fontSize:12,color:C.text3,marginTop:5}}>Opens Webhook Registry to define a new delivery endpoint</div>
                   </div>
                 </div>
               )}
@@ -1693,11 +1685,11 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
                   <SectionRule label="Behavior"/>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px 14px"}}>
                     <div>
-                      <FieldLabel label="When should this run?" sublabel="Trigger"/>
+                      <FieldLabel label="Trigger"/>
                       <FieldSelect value={form.triggerOn} onChange={v=>set("triggerOn",v)} options={TRIGGER_OPTIONS}/>
                     </div>
                     <div>
-                      <FieldLabel label="What happens if it fails?" sublabel="Failure handling"/>
+                      <FieldLabel label="On failure"/>
                       <FieldSelect value={form.failureBehavior} onChange={v=>set("failureBehavior",v)} options={FAILURE_OPTIONS}/>
                     </div>
                   </div>
