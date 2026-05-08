@@ -11,7 +11,7 @@
       "Bash(git log*)",
       "Bash(git add*)",
       "Bash(git commit*)",
-      "Bash(git push origin develop)",
+      "Bash(git push origin HEAD)",
       "Bash(git pull*)",
       "Bash(git fetch*)",
       "Bash(git branch*)",
