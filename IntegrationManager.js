@@ -59,11 +59,12 @@ const C = {
   navActiveBg: "#2B40B4",   // Alpha/Primary-700
 
   // Primary interactive — Alpha/Primary
-  blue:        "#3D5AFE",   // Alpha/Primary-500
-  blueHover:   "#2B40B4",   // Alpha/Primary-700
-  blueBg:      "#ECEFFF",   // Alpha/Primary-50
-  blueBorder:  "#C3CCFF",   // Alpha/Primary-100
-  blueFocus:   "#7D90FE",   // Alpha/Primary-300 — focused border
+  blue:          "#3D5AFE",   // Alpha/Primary-500
+  blueHover:     "#2B40B4",   // Alpha/Primary-700
+  blueBg:        "#ECEFFF",   // Alpha/Primary-50
+  blueBorder:    "#C3CCFF",   // Alpha/Primary-100
+  blueFocus:     "#7D90FE",   // Alpha/Primary-300 — focused border
+  navActiveTint: "#DDE3FF",   // --local-color-primary-tint-light (reference app) — active sidebar row bg
 
   // Teal — inbound direction, info callouts
   teal:        "#009688",   // Teal-500
@@ -2230,25 +2231,29 @@ const SIDEBAR_ITEMS = [
   { key:"webhook-registry",    label:"WEBHOOK REGISTRY",            expandable:false },
 ];
 
-// Innovapptive logo from Figma asset.
-// Figma spec: 201×30px image. Collapsed: clipped to ~37px (shows monogram).
-// Expanded: full width shown up to container width.
-// TODO: Replace LOGO_URL with a stable hosted URL when available.
-const LOGO_URL = "https://www.figma.com/api/mcp/asset/1abe36da-ec61-4542-9415-045578e38827";
+// PlatformLogo renders the Innovapptive brand mark from inline SVG.
+// No external URL dependency — uses SVG approximation until a stable
+// hosted asset URL is available.
+// TODO: Replace the SVG with <img src={STABLE_LOGO_URL}> when a permanent
+//       CDN/hosted URL exists for the Innovapptive logo.
 function PlatformLogo({ expanded }) {
+  // Brand icon mark: blue rounded-square with stylized "i" (dot + stem)
+  const iconMark = (
+    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" aria-label="Innovapptive icon" style={{flexShrink:0}}>
+      <rect width="32" height="32" rx="6" fill={C.blue}/>
+      {/* dot */}
+      <rect x="14" y="8" width="4" height="4" rx="1.5" fill="#fff"/>
+      {/* stem */}
+      <rect x="14" y="14" width="4" height="10" rx="1.5" fill="#fff"/>
+    </svg>
+  );
+  if (!expanded) return iconMark;
   return (
-    <div style={{width:expanded?160:37,height:30,overflow:"hidden",flexShrink:0,position:"relative"}}>
-      <img src={LOGO_URL} alt="Innovapptive"
-        style={{position:"absolute",height:"100%",width:201,maxWidth:"none",left:0,top:0,objectFit:"fill",objectPosition:"left center"}}
-        onError={e=>{
-          e.target.style.display="none";
-          e.target.nextSibling&&(e.target.nextSibling.style.display="flex");
-        }}
-      />
-      {/* Fallback shown only if logo fails to load */}
-      <div style={{display:"none",width:"100%",height:"100%",alignItems:"center",justifyContent:"center",background:C.blue,borderRadius:4}}>
-        <span style={{fontFamily:FONT,fontSize:expanded?11:9,fontWeight:700,color:"#fff"}}>{expanded?"Innovapptive":"IN"}</span>
-      </div>
+    <div style={{display:"flex",alignItems:"center",gap:10,overflow:"hidden",flexShrink:0}}>
+      {iconMark}
+      <span style={{fontFamily:FONT,fontSize:13,fontWeight:700,color:C.text0,whiteSpace:"nowrap",letterSpacing:"0.2px"}}>
+        Innovapptive
+      </span>
     </div>
   );
 }
@@ -2256,9 +2261,9 @@ function PlatformLogo({ expanded }) {
 function PlatformSidebar({ expanded }) {
   const w = expanded ? SIDEBAR_EXPANDED_W : SIDEBAR_COLLAPSED_W;
   return (
-    <div style={{width:w,flexShrink:0,background:"#fff",borderRight:"1px solid #e0e0e0",display:"flex",flexDirection:"column",height:"100vh",position:"sticky",top:0,zIndex:50,overflow:"hidden",transition:"width 0.15s"}}>
-      {/* Logo area — 65px height matches Figma collapsed header */}
-      <div style={{height:65,display:"flex",alignItems:"center",justifyContent:"center",borderBottom:`1px solid ${C.border0}`,flexShrink:0,padding:expanded?"0 16px":"0",overflow:"hidden"}}>
+    <div style={{width:w,flexShrink:0,background:C.bg0,borderRight:`1px solid ${C.border0}`,display:"flex",flexDirection:"column",height:"100vh",position:"sticky",top:0,zIndex:50,overflow:"hidden",transition:"width 0.15s"}}>
+      {/* Logo area — height matches PlatformHeader (64px) for horizontal alignment */}
+      <div style={{height:64,display:"flex",alignItems:"center",justifyContent:expanded?"flex-start":"center",borderBottom:`1px solid ${C.border0}`,flexShrink:0,padding:expanded?"0 16px":"0",overflow:"hidden"}}>
         <PlatformLogo expanded={expanded}/>
       </div>
       {/* Nav items */}
@@ -2272,21 +2277,23 @@ function PlatformSidebar({ expanded }) {
                 display:"flex",alignItems:"center",
                 padding:expanded?"8px 8px 8px 10px":"8px",
                 justifyContent:expanded?"flex-start":"center",
-                background:active?C.blueBg:"transparent",
-                borderLeft:expanded?`3px solid ${active?C.blue:"transparent"}`:"none",
+                // Active bg: --local-color-primary-tint-light from reference app (C.navActiveTint)
+                background:active?C.navActiveTint:"transparent",
+                // Left accent: 3px blue stripe in both collapsed and expanded active state
+                borderLeft:`3px solid ${active?C.blue:"transparent"}`,
                 cursor:active?"default":"not-allowed",
                 opacity:active?1:0.65,
                 gap:expanded?8:0,
                 boxSizing:"border-box",
                 width:"100%",
               }}>
-              {/* Icon container — 24px square, 6px radius, #eff1f5 bg per Figma */}
-              <div style={{width:24,height:24,background:active?C.blueBg:C.bg1,borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+              {/* Icon container — 24×24px / 6px radius / C.bg1 per Figma spec */}
+              <div style={{width:24,height:24,background:active?C.navActiveTint:C.bg1,borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                 <PlatformIcon itemKey={item.key} size={14} color={iconColor}/>
               </div>
               {expanded&&(
                 <>
-                  <span style={{fontFamily:FONT,fontSize:13,fontWeight:700,color:iconColor,letterSpacing:"0.3px",flex:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{item.label}</span>
+                  <span style={{fontFamily:FONT,fontSize:12,fontWeight:700,color:iconColor,letterSpacing:"0.3px",flex:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{item.label}</span>
                   {item.expandable&&(
                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{flexShrink:0,opacity:0.6}}>
                       <path d="M4.5 2.5l3 3-3 3" stroke="#727caf" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
