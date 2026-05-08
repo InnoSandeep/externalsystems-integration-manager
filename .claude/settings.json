@@ -1,7 +1,4 @@
 {
-  "env": {
-    "PATH": "/Users/sandeepjha/.local/bin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin"
-  },
   "permissions": {
     "allow": [
       "Bash(gh *)",
