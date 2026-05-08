@@ -2548,7 +2548,43 @@ function IntegrationsTab({ system, integrations, onAddIntegration, onEditIntegra
 }
 function ActivityTab() {
   const DOT={success:C.green,warning:C.amber,info:C.blue,error:C.red};
-  return <div style={{background:C.bg0,border:`1px solid ${C.border0}`}}>{ACTIVITY.map((a,idx)=><div key={a.id} style={{display:"flex",gap:12,padding:"10px 16px",borderBottom:idx<ACTIVITY.length-1?`1px solid ${C.border0}`:"none",background:idx%2===0?C.bg0:C.bg1,alignItems:"flex-start"}}><div style={{paddingTop:5,flexShrink:0}}><span style={{display:"block",width:8,height:8,borderRadius:9999,background:DOT[a.status]||C.text3}}/></div><div style={{flex:1,fontFamily:FONT,fontSize:14,color:C.text0}}>{a.desc}</div><div style={{fontFamily:MONO,fontSize:12,color:C.text3,flexShrink:0}}>{new Date(a.timestamp).toLocaleString()}</div></div>)}</div>;
+  const TH={padding:"7px 16px",fontFamily:FONT,fontSize:10,fontWeight:700,color:C.text2,textTransform:"uppercase",letterSpacing:"0.08em",textAlign:"left",borderBottom:`1px solid ${C.border0}`,background:C.bg2,whiteSpace:"nowrap"};
+  const TD={padding:"10px 16px",fontFamily:FONT,fontSize:12,color:C.text0,verticalAlign:"middle",borderBottom:`1px solid ${C.border0}`};
+  return (
+    <div style={{border:`1px solid ${C.border0}`,background:C.bg0,overflow:"hidden"}}>
+      {ACTIVITY.length===0
+        ? <div style={{padding:"32px",textAlign:"center",fontFamily:FONT,fontSize:14,color:C.text3}}>No user activity for this system.</div>
+        : <table style={{width:"100%",borderCollapse:"collapse",tableLayout:"fixed"}}>
+            <colgroup>
+              <col style={{width:52}}/>
+              <col/>
+              <col style={{width:190}}/>
+            </colgroup>
+            <thead>
+              <tr>
+                <th style={{...TH,textAlign:"center"}}>Status</th>
+                <th style={TH}>Activity</th>
+                <th style={{...TH,textAlign:"right"}}>Timestamp</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ACTIVITY.map((a,idx)=>{
+                const isLast=idx===ACTIVITY.length-1;
+                return (
+                  <tr key={a.id} style={{background:C.bg0}}>
+                    <td style={{...TD,textAlign:"center",borderBottom:isLast?"none":`1px solid ${C.border0}`}}>
+                      <span style={{display:"inline-block",width:8,height:8,borderRadius:9999,background:DOT[a.status]||C.text3}}/>
+                    </td>
+                    <td style={{...TD,lineHeight:1.5,borderBottom:isLast?"none":`1px solid ${C.border0}`}}>{a.desc}</td>
+                    <td style={{...TD,fontFamily:MONO,color:C.text3,textAlign:"right",borderBottom:isLast?"none":`1px solid ${C.border0}`}}>{new Date(a.timestamp).toLocaleString()}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+      }
+    </div>
+  );
 }
 
 // ─── DLQ TAB (Review Queue) ───────────────────────────────────────────────────
