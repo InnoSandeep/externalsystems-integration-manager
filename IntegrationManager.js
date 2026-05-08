@@ -103,7 +103,7 @@ const CATEGORIES  = ["Historian","Analytics Platform","Process Safety","Consulti
 const AUTH_TYPES  = ["— Select auth type —","API Key","Basic Auth","Bearer Token","OAuth 2.0","HMAC / Signature Secret","No Authentication"];
 const HTTP_METHODS = ["GET","POST"];
 const TRIGGER_OPTIONS = ["Always","Manual review approval"];
-const FAILURE_OPTIONS = ["Auto-retry 3x then DLQ","Mark for review","Skip and log","Block subsequent events until resolved"];
+const FAILURE_OPTIONS = ["Auto-retry 3x, then hold for review","Mark for review","Skip and log","Block subsequent events until resolved"];
 const FREQ_OPTIONS    = ["Every 5 min","Every 15 min","Every 30 min","Every 1 hour","Every 6 hours","Daily at start time"];
 const INCOMING_AUTH_TYPES = ["API Key (header)","HMAC Signature","No Authentication"];
 
@@ -549,7 +549,7 @@ function blankIntegrationForm() {
     // Step 2 runtime
     frequency:"Every 15 min", startTime:"06:00",
     // Advanced
-    idempotencyKey:"", rateLimit:"60", retryPolicy:"Auto-retry 3x then DLQ", advErrorEmail:"",
+    idempotencyKey:"", rateLimit:"60", retryPolicy:"Auto-retry 3x, then hold for review", advErrorEmail:"",
     // Mapping
     fieldMappings: SAMPLE_FIELDS.map(f=>({...f})),
     sampleMode:"pull", sampleJson:"", sampleFetched:false,
@@ -568,15 +568,15 @@ function StatusBadge({ status, size="sm" }) {
   const cfg=STATUS_CONFIG[status]||{label:status,color:C.text2,bg:C.bg2,border:C.border0};
   return <span style={{display:"inline-flex",alignItems:"center",gap:5,background:cfg.bg,border:`1px solid ${cfg.border}`,padding:size==="lg"?"4px 10px":"2px 8px",fontFamily:FONT,fontSize:size==="lg"?12:11,fontWeight:600,color:cfg.color,whiteSpace:"nowrap"}}><span style={{width:6,height:6,borderRadius:9999,background:cfg.color,flexShrink:0}}/>{cfg.label}</span>;
 }
-// Teal "↓ Inbound" or purple "↑ Outbound" pill shown on Integration Cards and drawers.
+// Neutral "↓ Inbound" or "↑ Outbound" pill — direction is communicated by text + arrow.
 function DirectionBadge({ direction }) {
   const isIn=direction==="inbound";
-  return <span style={{display:"inline-flex",alignItems:"center",gap:4,background:isIn?C.tealBg:C.purpleBg,border:`1px solid ${isIn?C.tealBorder:C.purpleBorder}`,padding:"2px 8px",fontSize:12,fontFamily:FONT,fontWeight:600,color:isIn?C.teal:C.purple}}>{isIn?"↓ Inbound":"↑ Outbound"}</span>;
+  return <span style={{display:"inline-flex",alignItems:"center",gap:4,background:C.bg2,border:`1px solid ${C.border1}`,padding:"2px 8px",fontSize:12,fontFamily:FONT,fontWeight:600,color:C.text1}}>{isIn?"↓ Inbound":"↑ Outbound"}</span>;
 }
-// Grey monospace badge showing the integration method: POLLING, WEBHOOK, etc.
+// Grey badge showing the integration method in plain language.
 function MethodBadge({ method }) {
-  const labels={polling:"POLLING",webhook:"WEBHOOK",file_import:"FILE IMPORT",file_export:"FILE EXPORT"};
-  return <span style={{display:"inline-flex",alignItems:"center",background:C.bg2,border:`1px solid ${C.border1}`,padding:"2px 8px",fontSize:12,fontFamily:MONO,fontWeight:500,color:C.text1}}>{labels[method]||method?.toUpperCase()}</span>;
+  const labels={polling:"Scheduled",webhook:"Real-time",file_import:"File Import",file_export:"File Export"};
+  return <span style={{display:"inline-flex",alignItems:"center",background:C.bg2,border:`1px solid ${C.border1}`,padding:"2px 8px",fontSize:12,fontFamily:FONT,fontWeight:500,color:C.text1}}>{labels[method]||(method||"").charAt(0).toUpperCase()+(method||"").slice(1)}</span>;
 }
 function MonoText({ children, color, size=12 }) {
   return <span style={{fontFamily:MONO,fontSize:size,color:color||C.blue}}>{children}</span>;
@@ -758,32 +758,22 @@ function MultiSelectDropdown({ options, value, onChange, placeholder, disabled, 
 }
 
 // ─── AI ACTION BUTTON ────────────────────────────────────────────────────────
-// The visually distinct button used for AI-assistive actions: "Auto Map" and "Validate".
-//
-// Design intent: the purple gradient background, dashed border, and ✦ icon signal
-// to users that this is an assistive action — it suggests or checks, it does NOT
-// commit changes on their behalf. The user stays in control.
-//
-// Behavior:
-//   - Idle: shows label + desc (e.g. "Auto Map" + "Match fields automatically")
-//   - Running: shows ⏳ + "Auto Map…" (disabled while running)
-//   - Done: shows ✦ + label + result (e.g. "8 fields mapped")
-//
-// This pattern is designed to be forward-compatible with a real AI model.
+// AI-assistive action button — blue styling signals it's a smart/assistive action.
+// Suggests or checks; never commits on the user's behalf.
 function AIActionButton({ label, desc, running, result, onClick }) {
   return (
     <button onClick={onClick} disabled={running} style={{
       display:"flex",flexDirection:"column",alignItems:"flex-start",
-      background:`linear-gradient(135deg,${C.purpleBg} 0%,${C.blueBg} 100%)`,
-      border:`1px dashed ${C.purpleBorder}`,padding:"7px 14px",
+      background:C.blueBg,
+      border:`1px solid ${C.blueBorder}`,padding:"7px 14px",
       cursor:running?"wait":"pointer",minWidth:170,textAlign:"left",
     }}>
       <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:2}}>
-        <span style={{fontSize:12,color:C.purple}}>{running?"⏳":"✦"}</span>
-        <span style={{fontFamily:FONT,fontSize:12,fontWeight:700,color:C.purple}}>{running?`${label}…`:label}</span>
+        <span style={{fontSize:12,color:C.blue}}>{running?"⏳":"✦"}</span>
+        <span style={{fontFamily:FONT,fontSize:12,fontWeight:700,color:C.blue}}>{running?`${label}…`:label}</span>
       </div>
       {!result&&!running&&<span style={{fontFamily:FONT,fontSize:10,color:C.text3,lineHeight:1.3}}>{desc}</span>}
-      {result&&<span style={{fontFamily:FONT,fontSize:10,color:C.purple,lineHeight:1.3}}>{result}</span>}
+      {result&&<span style={{fontFamily:FONT,fontSize:10,color:C.blue,lineHeight:1.3}}>{result}</span>}
     </button>
   );
 }
@@ -927,7 +917,7 @@ function WebhookRegistryModal({ open, onClose, onSave }) {
 // ALL required fields have a target mapped AND at least one field is mapped overall.
 // This prevents broken integrations from going live with missing critical data.
 //
-// The mapping is opened from Step 2 of the Add Integration drawer via "Open Mapping Workspace →".
+// The mapping is opened from Step 2 of the Add Integration drawer via "Map Fields →".
 // When the user clicks "Back", they return to Step 2 with their mapping progress saved.
 function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
   const [autoMapRunning, setAutoMapRunning] = useState(false);
@@ -1109,13 +1099,12 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
     .filter(m=>!filterText.trim()||m.src.toLowerCase().includes(filterText.toLowerCase())||m.target.toLowerCase().includes(filterText.toLowerCase()));
 
   function FieldTreeRow({ f, indent }) {
-    const typeColors={string:C.text2,datetime:C.teal,number:C.blue,enum:C.purple,url:C.amber};
     return (
       <div style={{display:"flex",alignItems:"center",gap:8,padding:`5px ${indent?28:14}px 5px ${indent?28:14}px`,borderBottom:`1px solid ${C.border0}`,background:C.bg0}}>
         <MonoText size={12} color={C.text0}>{f.src}</MonoText>
-        {f.arrayPath&&<span style={{fontSize:10,fontWeight:700,color:C.purple,background:C.purpleBg,border:`1px solid ${C.purpleBorder}`,padding:"0 3px"}}>array</span>}
+        {f.arrayPath&&<span style={{fontSize:10,fontWeight:600,color:C.text1,background:C.bg2,border:`1px solid ${C.border1}`,padding:"0 3px"}}>array</span>}
         {f.refLookup&&<span style={{color:C.amber,fontSize:12}}>⚠</span>}
-        <span style={{marginLeft:"auto",fontFamily:MONO,fontSize:10,color:typeColors[f.srcType]||C.text3}}>{f.srcType}</span>
+        <span style={{marginLeft:"auto",fontFamily:MONO,fontSize:10,color:C.text2}}>{f.srcType}</span>
         {f.required&&<span style={{fontSize:10,fontWeight:700,color:C.red}}>req</span>}
       </div>
     );
@@ -1147,7 +1136,7 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
           <div style={{width:320,flexShrink:0,borderRight:`1px solid ${C.border0}`,display:"flex",flexDirection:"column",overflow:"hidden"}}>
             {/* Collections */}
             <div style={{padding:"10px 14px",borderBottom:`1px solid ${C.border0}`,flexShrink:0}}>
-              <div style={{fontFamily:FONT,fontSize:10,fontWeight:700,color:C.text2,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>Target Collections</div>
+              <div style={{fontFamily:FONT,fontSize:10,fontWeight:700,color:C.text2,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>Destination Objects</div>
               <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
                 {collections.map(col=>(
                   <span key={col} style={{background:C.blueBg,border:`1px solid ${C.blueBorder}`,fontFamily:FONT,fontSize:12,fontWeight:700,color:C.blue,padding:"2px 8px"}}>{col}</span>
@@ -1157,7 +1146,7 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
 
             {/* Sample pull */}
             <div style={{padding:"10px 14px",borderBottom:`1px solid ${C.border0}`,flexShrink:0}}>
-              <div style={{fontFamily:FONT,fontSize:10,fontWeight:700,color:C.text2,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>Source Sample</div>
+              <div style={{fontFamily:FONT,fontSize:10,fontWeight:700,color:C.text2,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>Sample Data</div>
               <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
                 {hasPullEndpoint?(
                   fetchState==="idle"?<button onClick={handleFetchSample} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.blue,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"4px 10px",cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>▶ Pull sample</button>:
@@ -1168,18 +1157,14 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
                 )}
               </div>
               {form.schemaSummary&&(
-                <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
-                  {[{label:"Fields",val:form.schemaSummary.fieldsDetected},{label:"Nested",val:form.schemaSummary.nestedObjects},{label:"Arrays",val:form.schemaSummary.arraysDetected}].map(s=>(
-                    <div key={s.label} style={{display:"flex",alignItems:"baseline",gap:3}}><span style={{fontFamily:FONT,fontSize:14,fontWeight:700,color:C.text0}}>{s.val}</span><span style={{fontFamily:FONT,fontSize:10,color:C.text2}}>{s.label}</span></div>
-                  ))}
-                </div>
+                <div style={{fontFamily:FONT,fontSize:12,color:C.green}}>✓ {form.schemaSummary.fieldsDetected} fields detected</div>
               )}
             </div>
 
             {/* Payload field tree */}
             <div style={{flex:1,overflowY:"auto"}}>
               <div style={{padding:"8px 14px 4px",fontFamily:FONT,fontSize:10,fontWeight:700,color:C.text2,textTransform:"uppercase",letterSpacing:"0.08em",background:C.bg2,borderBottom:`1px solid ${C.border0}`,position:"sticky",top:0}}>
-                Payload Fields
+                Incoming Fields
               </div>
               {roots.map(f=><FieldTreeRow key={f.src} f={f} indent={false}/>)}
               {Object.entries(groups).map(([grp,fields])=>(
@@ -1363,7 +1348,7 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
     if(!form.name.trim()) e.name="Integration name is required";
     if(!form.direction)   e.direction="Select a direction";
     if(!form.method)      e.method="Select a method";
-    if(isInboundWebhook&&!form.listenerEndpointUrl.trim()) e.listenerEndpointUrl="Listener Endpoint URL is required";
+    if(isInboundWebhook&&!form.listenerEndpointUrl.trim()) e.listenerEndpointUrl="Receiving URL is required";
     if(isInboundWebhook&&form.listenerEndpointUrl.trim()&&!isValidUrl(form.listenerEndpointUrl.trim())) e.listenerEndpointUrl="Must be a valid URL, e.g. https://hooks.company.com/inno-listener";
     if(isPolling&&!form.baseUrl.trim()) e.baseUrl="Base URL is required";
     if(isPolling&&form.baseUrl.trim()&&!isValidUrl(form.baseUrl.trim())) e.baseUrl="Must be a valid URL";
@@ -1588,9 +1573,9 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
               {/* INBOUND WEBHOOK config */}
               {isInboundWebhook&&(
                 <div style={{marginBottom:22}}>
-                  <SectionRule label="Listener Endpoint"/>
+                  <SectionRule label="Receiving Endpoint"/>
                   <div style={{marginBottom:12}}>
-                    <FieldLabel label="Listener Endpoint URL" required helper="Enter the URL where Innovapptive should receive incoming events. Paste or type the endpoint URL, then register it in your external system's webhook settings."/>
+                    <FieldLabel label="Receiving URL" required helper="Enter the URL where Innovapptive should receive incoming events. Paste or type the endpoint URL, then register it in your external system's webhook settings."/>
                     <FieldInput
                       value={form.listenerEndpointUrl}
                       onChange={v=>{set("listenerEndpointUrl",v);touch("listenerEndpointUrl");}}
@@ -1620,7 +1605,7 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
               {/* INBOUND POLLING config */}
               {isPolling&&(
                 <div style={{marginBottom:22}}>
-                  <SectionRule label="Request Configuration"/>
+                  <SectionRule label="Connection Settings"/>
                   <div style={{marginBottom:12}}>
                     <FieldLabel label="Base URL" required helper="Full URL of the endpoint to poll, e.g. https://pi.company.com/api/v2/observations"/>
                     <FieldInput value={form.baseUrl} onChange={v=>{set("baseUrl",v);touch("baseUrl");}} placeholder="https://api.external-system.com/data/observations" mono error={touched.baseUrl&&errors.baseUrl}/>
@@ -1635,7 +1620,7 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
                     </div>
                   </div>
                   <div style={{marginBottom:12}}>
-                    <FieldLabel label="Query Parameters" sublabel="key=value pairs sent in the URL"/>
+                    <FieldLabel label="URL Parameters" sublabel="key=value pairs sent in the URL"/>
                     <KVTable rows={form.requestParams} onChange={v=>set("requestParams",v)} addLabel="Add parameter"/>
                   </div>
                   <div style={{marginBottom:12}}>
@@ -1740,10 +1725,10 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
                 <>
                   <div style={{marginBottom:20}}>
                     <SectionRule label="Connection Summary"/>
-                    <div style={{background:C.bg1,border:`1px solid ${C.border0}`,borderLeft:`3px solid ${C.teal}`,padding:"12px 14px"}}>
+                    <div style={{background:C.bg1,border:`1px solid ${C.border0}`,padding:"12px 14px"}}>
                       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px 20px"}}>
                         {[
-                          {label:"Listener URL",   value:form.listenerEndpointUrl||"—", mono:true},
+                          {label:"Receiving URL",   value:form.listenerEndpointUrl||"—", mono:true},
                           {label:"Incoming Auth",  value:form.incomingAuthType||"None"},
                           {label:"How this runs",  sublabel:"Runtime", value:"Real-time"},
                           {label:"Product",        value:form.product||"—"},
@@ -1774,7 +1759,7 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
                             {mapped===0&&<div style={{fontFamily:FONT,fontSize:12,color:C.text2}}>Open the mapping workspace to connect incoming payload fields to target collections.</div>}
                           </div>
                           <button onClick={()=>setMappingOpen(true)} style={{background:C.blue,border:`1px solid ${C.blueHover}`,color:"#fff",fontFamily:FONT,fontSize:12,fontWeight:700,padding:"7px 16px",cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>
-                            Open Mapping Workspace →
+                            Map Fields →
                           </button>
                         </div>
                       );
@@ -1792,19 +1777,16 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
                 <>
                   {/* Request Context — inherited from Step 1 */}
                   <div style={{marginBottom:20}}>
-                    <SectionRule label="Request Context"/>
-                    <div style={{background:C.bg1,border:`1px solid ${C.border0}`,borderLeft:`3px solid ${C.border1}`,padding:"12px 14px"}}>
+                    <SectionRule label="Connection"/>
+                    <div style={{background:C.bg1,border:`1px solid ${C.border0}`,padding:"12px 14px"}}>
                       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-                        <span style={{fontFamily:FONT,fontSize:12,fontWeight:700,color:C.text2,textTransform:"uppercase",letterSpacing:"0.09em"}}>From Step 1</span>
+                        <span style={{fontFamily:FONT,fontSize:12,color:C.text2}}>Configured in Step 1</span>
                         <button onClick={()=>setStep(1)} style={{background:"none",border:`1px solid ${C.border1}`,color:C.blue,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"3px 10px",cursor:"pointer"}}>Edit</button>
                       </div>
                       <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:"6px 20px"}}>
                         {[
-                          {label:"Base URL",    value:form.baseUrl||"Not set",   mono:true},
-                          {label:"HTTP Method", value:form.httpMethod,            mono:true},
-                          {label:"Auth Type",   value:form.pollingAuthType||"None"},
-                          {label:"Parameters",  value:form.requestParams.filter(r=>r.key).map(r=>`${r.key}=${r.value}`).join(", ")||"None"},
-                          ...(form.httpMethod==="POST"?[{label:"Request Body",value:form.requestBody?(form.requestBody.slice(0,50)+(form.requestBody.length>50?"…":"")):"None",mono:!!form.requestBody}]:[]),
+                          {label:"URL",      value:form.baseUrl||"Not set", mono:true},
+                          {label:"Auth",     value:form.pollingAuthType||"None"},
                         ].map(row=>(
                           <div key={row.label}>
                             <div style={{fontFamily:FONT,fontSize:10,color:C.text3,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:2}}>{row.label}</div>
@@ -1834,7 +1816,7 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
                             {mapped===0&&<div style={{fontFamily:FONT,fontSize:12,color:C.text2}}>Open the mapping workspace to connect source fields to target paths.</div>}
                           </div>
                           <button onClick={()=>setMappingOpen(true)} style={{background:C.blue,border:`1px solid ${C.blueHover}`,color:"#fff",fontFamily:FONT,fontSize:12,fontWeight:700,padding:"7px 16px",cursor:"pointer",flexShrink:0,whiteSpace:"nowrap"}}>
-                            Open Mapping Workspace →
+                            Map Fields →
                           </button>
                         </div>
                       );
@@ -1878,8 +1860,8 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
                 {advOpen&&(
                   <div style={{border:`1px solid ${C.border0}`,borderTop:"none",padding:"14px 14px 6px",background:C.bg1}}>
                     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"12px 14px"}}>
-                      <div><FieldLabel label="Idempotency Key Field" helper="Field used to deduplicate records"/><FieldInput value={form.idempotencyKey} onChange={v=>set("idempotencyKey",v)} placeholder="id" mono/></div>
-                      <div><FieldLabel label="Rate Limit (req/min)"/><FieldInput value={form.rateLimit} onChange={v=>set("rateLimit",v)} placeholder="60" mono/></div>
+                      <div><FieldLabel label="Deduplication Field" helper="Field used to detect and skip duplicate records"/><FieldInput value={form.idempotencyKey} onChange={v=>set("idempotencyKey",v)} placeholder="id" mono/></div>
+                      <div><FieldLabel label="Request Limit (per min)"/><FieldInput value={form.rateLimit} onChange={v=>set("rateLimit",v)} placeholder="60" mono/></div>
                       <div><FieldLabel label="Retry Policy"/><FieldSelect value={form.retryPolicy} onChange={v=>set("retryPolicy",v)} options={FAILURE_OPTIONS}/></div>
                       <div><FieldLabel label="Error Email" helper="Inherits system email if blank"/><FieldInput value={form.advErrorEmail} onChange={v=>set("advErrorEmail",v)} placeholder={system?.errorEmail||"ops@company.com"}/></div>
                     </div>
@@ -2456,27 +2438,22 @@ function SystemsPage({ systems, integrations, onViewSystem, onAddSystem }) {
 function SummaryCard({ system }) {
   return (
     <div style={{background:C.bg0,border:`1px solid ${C.border0}`,padding:"14px 18px"}}>
-      <SectionRule label="System Details"/>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px 28px"}}>
         {[
-          {label:"System Code",  value:system.code,mono:true,color:C.blue},
-          {label:"Category",     value:system.category},
-          {label:"Plant",        value:system.plant},
-          {label:"Error Email",  value:system.errorEmail||"Not configured",muted:!system.errorEmail},
-          {label:"Description",  value:system.description||"No description",muted:!system.description,wide:true},
+          {label:"Category",    value:system.category},
+          {label:"Plant",       value:system.plant},
+          {label:"Description", value:system.description||"No description",muted:!system.description,wide:true},
         ].map(row=>(
           <div key={row.label} style={row.wide?{gridColumn:"1/-1"}:{}}>
             <div style={{fontFamily:FONT,fontSize:10,color:C.text3,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:2}}>{row.label}</div>
-            {row.mono?<MonoText size={12} color={row.color||C.blue}>{row.value}</MonoText>:<div style={{fontFamily:FONT,fontSize:14,color:row.muted?C.text3:C.text0}}>{row.value}</div>}
+            <div style={{fontFamily:FONT,fontSize:14,color:row.muted?C.text3:C.text0}}>{row.value}</div>
           </div>
         ))}
       </div>
     </div>
   );
 }
-function StatCard({ label, value, color, sub, mono }) {
-  return <div style={{background:C.bg1,padding:"12px 16px",borderLeft:`2px solid ${C.border0}`}}><div style={{fontFamily:FONT,fontSize:10,color:C.text3,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:5}}>{label}</div><div style={{fontFamily:mono?MONO:FONT,fontSize:mono?13:20,fontWeight:mono?500:700,color:color||C.text0,lineHeight:1}}>{value}</div>{sub&&<div style={{fontFamily:FONT,fontSize:12,color:C.text3,marginTop:4}}>{sub}</div>}</div>;
-}
+
 
 // ─── FLOW STRIP ───────────────────────────────────────────────────────────────
 // A compact visual summary of what data is actively moving through this system.
@@ -2500,7 +2477,7 @@ function FlowStrip({ system, integrations }) {
         const dst=isIn?(intg.product||"Innovapptive"):system.name;
         const obj=(intg.businessObjects||[])[0]||(intg.method==="webhook"?"events":"data");
         return (
-          <div key={intg.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 14px",borderBottom:i<shown.length-1?`1px solid ${C.border0}`:"none",borderLeft:`3px solid ${isIn?C.teal:C.purple}`}}>
+          <div key={intg.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 14px",borderBottom:i<shown.length-1?`1px solid ${C.border0}`:"none",borderLeft:`3px solid ${C.border1}`}}>
             <span style={{fontFamily:FONT,fontSize:12,fontWeight:700,color:C.text0,minWidth:120,flexShrink:0}}>{src}</span>
             <span style={{color:C.text3,fontSize:14}}>→</span>
             <span style={{fontFamily:FONT,fontSize:12,color:C.text1,flex:1}}>{obj}</span>
@@ -2536,7 +2513,7 @@ function IntegrationCard({ integration, systemName, onEdit, onDisable }) {
   const lastLabel   =integration.method==="polling"?"Last fetched":"Last received";
   const summary     =summaryLine(integration,systemName);
   return (
-    <div style={{background:isDisabled?C.bg1:C.bg0,border:`1px solid ${C.border0}`,borderLeft:`3px solid ${isDisabled?C.border1:integration.direction==="inbound"?C.teal:C.purple}`,padding:"12px 18px",opacity:isDisabled?0.75:1}}>
+    <div style={{background:isDisabled?C.bg1:C.bg0,border:`1px solid ${C.border0}`,borderLeft:`3px solid ${integration.status==="failed"?C.red:C.border1}`,padding:"12px 18px",opacity:isDisabled?0.75:1}}>
       <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:8}}>
         <div style={{flex:1}}>
           {/* Phase 2: summary sentence */}
@@ -2553,18 +2530,10 @@ function IntegrationCard({ integration, systemName, onEdit, onDisable }) {
           <button onClick={()=>onDisable&&onDisable(integration.id)} style={{background:isDisabled?C.greenBg:C.bg1,border:`1px solid ${isDisabled?C.greenBorder:C.border1}`,color:isDisabled?C.green:C.text1,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"4px 10px",cursor:"pointer"}}>{isDisabled?"Enable":"Disable"}</button>
         </div>
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",background:C.bg1,border:`1px solid ${C.border0}`,padding:"8px 0"}}>
-        {[
-          {label:"Product",  value:integration.product||"—",  muted:!integration.product},
-          {label:"Collections", value:(integration.businessObjects||[]).join(", ")||"—", muted:!(integration.businessObjects||[]).length},
-          {label:"How this runs", value:runtimeLabel},
-          {label:lastLabel,  value:integration.lastRunAt?new Date(integration.lastRunAt).toLocaleString():"Never", muted:!integration.lastRunAt},
-        ].map((row,i,arr)=>(
-          <div key={row.label} style={{padding:"0 14px",borderRight:i<arr.length-1?`1px solid ${C.border0}`:"none"}}>
-            <div style={{fontFamily:FONT,fontSize:10,color:C.text3,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:2}}>{row.label}</div>
-            <div style={{fontFamily:FONT,fontSize:12,color:row.muted?C.text3:C.text0}}>{row.value}</div>
-          </div>
-        ))}
+      <div style={{display:"flex",gap:16,padding:"6px 0",borderTop:`1px solid ${C.border0}`,marginTop:6}}>
+        {integration.product&&<span style={{fontFamily:FONT,fontSize:12,color:C.text2}}>{integration.product}{(integration.businessObjects||[]).length>0?" · "+(integration.businessObjects.join(", ")):""}
+        </span>}
+        <span style={{fontFamily:FONT,fontSize:12,color:C.text2,marginLeft:"auto"}}>{runtimeLabel}{integration.lastRunAt?" · "+new Date(integration.lastRunAt).toLocaleString():""}</span>
       </div>
       {integration.status==="draft"&&<div style={{marginTop:8,background:C.amberBg,border:`1px solid ${C.amberBorder}`,borderLeft:`3px solid ${C.amber}`,padding:"6px 10px",fontFamily:FONT,fontSize:12,color:C.amber}}>Draft — edit to complete configuration and publish.</div>}
       {integration.status==="ready_to_publish"&&<div style={{marginTop:8,background:C.blueBg,border:`1px solid ${C.blueBorder}`,borderLeft:`3px solid ${C.blue}`,padding:"6px 10px",fontFamily:FONT,fontSize:12,color:C.blue}}>Ready to publish — edit to review and activate data flow.</div>}
@@ -2605,7 +2574,7 @@ function DLQTab({ systemId, onInspect }) {
   return (
     <div>
       <div style={{background:C.amberBg,border:`1px solid ${C.amberBorder}`,borderLeft:`3px solid ${C.amber}`,padding:"10px 14px",marginBottom:10,fontFamily:FONT,fontSize:12,color:C.text1,lineHeight:1.6}}>
-        <strong style={{color:C.amber}}>▲ These records couldn't be processed and were held for review.</strong>{" "}Inspect each one to understand what went wrong before replaying or discarding.
+        <strong style={{color:C.amber}}>▲ These records failed to process and are being held for review.</strong>{" "}Inspect each one to understand what went wrong, then replay or discard.
       </div>
       {entries.length===0?<div style={{background:C.bg0,border:`1px solid ${C.border0}`,padding:"32px",textAlign:"center",fontFamily:FONT,fontSize:14,color:C.text3}}>No items in the review queue for this system.</div>:(
         <div style={{display:"flex",flexDirection:"column",gap:8}}>
@@ -2698,7 +2667,7 @@ function DLQInspectModal({ entry, onClose }) {
           </div>
           {/* Collapsible raw payload (Phase 3) */}
           <button onClick={()=>setRawOpen(o=>!o)} style={{display:"flex",alignItems:"center",gap:8,background:"none",border:`1px solid ${C.border0}`,width:"100%",padding:"7px 10px",cursor:"pointer",fontFamily:FONT,fontSize:12,fontWeight:600,color:C.text1,marginBottom:rawOpen?0:8}}>
-            <span style={{color:C.text3,fontSize:12}}>{rawOpen?"▼":"▶"}</span> Raw event data <span style={{fontFamily:FONT,fontSize:12,color:C.text3,fontWeight:400,marginLeft:4}}>— technical payload</span>
+            <span style={{color:C.text3,fontSize:12}}>{rawOpen?"▼":"▶"}</span> Record details <span style={{fontFamily:FONT,fontSize:12,color:C.text3,fontWeight:400,marginLeft:4}}>— the data that failed</span>
           </button>
           {rawOpen&&(
             <>
@@ -2717,7 +2686,7 @@ function DLQInspectModal({ entry, onClose }) {
         <div style={{borderTop:`1px solid ${C.border0}`,padding:"10px 20px",background:C.bg1,display:"flex",gap:8,alignItems:"center",flexShrink:0}}>
           <button onClick={onClose} style={{background:"none",border:`1px solid ${C.border0}`,color:C.text2,fontFamily:FONT,fontSize:14,padding:"6px 14px",cursor:"pointer"}}>Close</button>
           <div style={{flex:1}}/>
-          <button onClick={()=>navigator.clipboard?.writeText(entry.payload)} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"6px 12px",cursor:"pointer"}}>Copy payload</button>
+          <button onClick={()=>navigator.clipboard?.writeText(entry.payload)} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"6px 12px",cursor:"pointer"}}>Copy record data</button>
           <span title="Replay coming soon" style={{display:"inline-flex",alignItems:"center",gap:5,background:C.bg2,border:`1px solid ${C.border0}`,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"6px 14px",color:C.text3,cursor:"not-allowed"}}>Replay <span style={{fontSize:10,fontWeight:700,letterSpacing:"0.05em"}}>COMING SOON</span></span>
           <span title="Discard coming soon" style={{display:"inline-flex",alignItems:"center",gap:5,background:C.bg2,border:`1px solid ${C.border0}`,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"6px 12px",color:C.text3,cursor:"not-allowed"}}>Discard <span style={{fontSize:10,fontWeight:700,letterSpacing:"0.05em"}}>COMING SOON</span></span>
         </div>
@@ -2745,8 +2714,6 @@ function SystemDetailPage({ system, integrations, onBack, onAddIntegration, onUp
   const [dlqEntry,setDlqEntry]=useState(null);
   // Phase 3: "Review Queue" tab label
   const TABS=[{key:"integrations",label:"Integrations"},{key:"activity",label:"User Activity"},{key:"dlq",label:"Review Queue"},{key:"audit",label:"Audit Log"}];
-  const sysIntgCount =integrations.filter(i=>i.systemId===system.id&&i.status!=="disabled").length;
-  const sysActiveCount=integrations.filter(i=>i.systemId===system.id&&i.status==="active").length;
   const isIncomplete=system.status==="draft"&&!system.errorEmail;
   return (
     <div style={{padding:"22px 32px",maxWidth:1200,margin:"0 auto"}}>
@@ -2776,18 +2743,7 @@ function SystemDetailPage({ system, integrations, onBack, onAddIntegration, onUp
       <FlowStrip system={system} integrations={integrations}/>
 
       <div style={{marginBottom:12}}>
-        <div style={{display:"grid",gridTemplateColumns:"1fr auto",gap:10,alignItems:"start"}}>
-          <SummaryCard system={system}/>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:1,background:C.border0,width:320}}>
-            <StatCard label="Total Integrations" value={sysIntgCount}/>
-            <StatCard label="Active" value={sysActiveCount} color={sysActiveCount>0?C.green:C.text0}/>
-            <StatCard label="Items to review" value={system.errorCount} color={system.errorCount>0?C.red:C.text0} sub={system.errorCount>0?"In Review Queue":"All clear"}/>
-            <StatCard label="Status" value={STATUS_CONFIG[system.status]?.label||system.status} color={STATUS_CONFIG[system.status]?.color}/>
-          </div>
-        </div>
-      </div>
-      <div style={{fontFamily:FONT,fontSize:12,color:C.text2,marginBottom:8,padding:"7px 12px",background:C.tealBg,border:`1px solid ${C.tealBorder}`,borderLeft:`3px solid ${C.teal}`}}>
-        <strong style={{color:C.teal}}>Connection details live at the integration level.</strong>{" "}Each integration manages its own endpoint, authentication, and runtime settings independently.
+        <SummaryCard system={system}/>
       </div>
       <div style={{display:"flex",borderBottom:`1px solid ${C.border0}`,background:C.bg0}}>
         {TABS.map(tab=>{const active=activeTab===tab.key;return <button key={tab.key} onClick={()=>setTab(tab.key)} style={{background:active?C.bg1:"none",border:"none",borderBottom:active?`2px solid ${C.blue}`:"2px solid transparent",borderRight:`1px solid ${active?C.border0:"transparent"}`,color:active?C.text0:C.text2,fontFamily:FONT,fontSize:14,fontWeight:active?700:400,padding:"9px 20px",cursor:"pointer",marginBottom:active?-1:0}}>{tab.label}{tab.key==="dlq"&&system.errorCount>0&&<span style={{marginLeft:6,background:C.redBg,border:`1px solid ${C.redBorder}`,fontSize:10,color:C.red,padding:"1px 6px",fontWeight:700}}>{system.errorCount}</span>}</button>;})}
