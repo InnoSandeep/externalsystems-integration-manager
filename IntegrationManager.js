@@ -2202,43 +2202,98 @@ function getSystemLogo(system) {
 }
 
 // ─── PLATFORM SHELL ──────────────────────────────────────────────────────────
-// Compact 68px icon-only sidebar by default. Expands to 220px via toggle arrow.
-// Integration Manager is always highlighted as the active module.
+// Compact 68px icon-only sidebar by default. Expands to 240px via toggle.
+// Figma source of truth: node 1:17663 (file 2dRnIiNN2EAqshdjHgPr8Q).
+// Collapsed width matches Figma (70px → 68px per spec).
+// Expanded width derived from Figma label container (~167px) + icon + padding.
+const SIDEBAR_COLLAPSED_W = 68;
+const SIDEBAR_EXPANDED_W  = 240;
+const SIDEBAR_TOGGLE_SIZE = 28;
+
+// Exact platform module labels in platform order.
+// expandable: true  → show chevron in expanded state (module has sub-items).
+// expandable: false → no chevron.
 const SIDEBAR_ITEMS = [
-  { key:"dashboard",          label:"Dashboard",             icon:"⊞" },
-  { key:"ehs",                label:"Env. Health Safety",    icon:"△" },
-  { key:"mcc",                label:"Maintenance Control",   icon:"⚙" },
-  { key:"notifications",      label:"Notifications",         icon:"◎" },
-  { key:"user-mgmt",          label:"User Management",       icon:"◉" },
-  { key:"ai-studio",          label:"AI Studio",             icon:"✦" },
-  { key:"race",               label:"Race",                  icon:"▷" },
-  { key:"forms",              label:"Forms",                 icon:"≡" },
-  { key:"settings",           label:"Settings",              icon:"⊙" },
-  { key:"master-data",        label:"Master Data",           icon:"≣" },
-  { key:"work-instructions",  label:"Work Instructions",     icon:"✎" },
-  { key:"integration-manager",label:"Integration Manager",   icon:"⇄" },
-  { key:"smart-trigger",      label:"Smart Trigger",         icon:"⚡" },
-  { key:"webhook-registry",   label:"Webhook Registry",      icon:"⊕" },
+  { key:"dashboard",           label:"DASHBOARD",                   expandable:true  },
+  { key:"ehs",                 label:"ENVIRONMENT HEALTH SAFETY",   expandable:true  },
+  { key:"mcc",                 label:"MAINTENANCE CONTROL CENTER",  expandable:false },
+  { key:"notifications",       label:"NOTIFICATIONS",               expandable:false },
+  { key:"user-mgmt",           label:"USER MANAGEMENT",             expandable:true  },
+  { key:"ai-studio",           label:"AI STUDIO",                   expandable:true  },
+  { key:"race",                label:"RACE",                        expandable:true  },
+  { key:"forms",               label:"FORMS",                       expandable:true  },
+  { key:"settings",            label:"SETTINGS",                    expandable:true  },
+  { key:"master-data",         label:"MASTER DATA",                 expandable:true  },
+  { key:"work-instructions",   label:"WORK INSTRUCTIONS",           expandable:false },
+  { key:"integration-manager", label:"INTEGRATION MANAGER",         expandable:false },
+  { key:"smart-trigger",       label:"SMART TRIGGER",               expandable:false },
+  { key:"webhook-registry",    label:"WEBHOOK REGISTRY",            expandable:false },
 ];
-function PlatformSidebar({ expanded }) {
+
+// Innovapptive logo from Figma asset.
+// Figma spec: 201×30px image. Collapsed: clipped to ~37px (shows monogram).
+// Expanded: full width shown up to container width.
+// TODO: Replace LOGO_URL with a stable hosted URL when available.
+const LOGO_URL = "https://www.figma.com/api/mcp/asset/1abe36da-ec61-4542-9415-045578e38827";
+function PlatformLogo({ expanded }) {
   return (
-    <div style={{width:expanded?220:68,flexShrink:0,background:C.bg0,borderRight:`1px solid ${C.border0}`,display:"flex",flexDirection:"column",height:"100vh",position:"sticky",top:0,zIndex:50,overflow:"hidden",transition:"width 0.15s"}}>
-      <div style={{height:64,display:"flex",alignItems:"center",justifyContent:expanded?"flex-start":"center",borderBottom:`1px solid ${C.border0}`,flexShrink:0,padding:expanded?"0 14px":"0 10px",gap:8,overflow:"hidden"}}>
-        <div style={{width:32,height:32,background:C.blue,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-          <div style={{width:14,height:14,background:"#fff"}}/>
-        </div>
-        {expanded&&<span style={{fontFamily:FONT,fontSize:13,fontWeight:700,color:C.text0,whiteSpace:"nowrap",flex:1}}>Innovapptive</span>}
+    <div style={{width:expanded?160:37,height:30,overflow:"hidden",flexShrink:0,position:"relative"}}>
+      <img src={LOGO_URL} alt="Innovapptive"
+        style={{position:"absolute",height:"100%",width:201,maxWidth:"none",left:0,top:0,objectFit:"fill",objectPosition:"left center"}}
+        onError={e=>{
+          e.target.style.display="none";
+          e.target.nextSibling&&(e.target.nextSibling.style.display="flex");
+        }}
+      />
+      {/* Fallback shown only if logo fails to load */}
+      <div style={{display:"none",width:"100%",height:"100%",alignItems:"center",justifyContent:"center",background:C.blue,borderRadius:4}}>
+        <span style={{fontFamily:FONT,fontSize:expanded?11:9,fontWeight:700,color:"#fff"}}>{expanded?"Innovapptive":"IN"}</span>
       </div>
-      <div style={{flex:1,padding:"8px 0",overflowY:"auto",overflowX:"hidden"}}>
+    </div>
+  );
+}
+
+function PlatformSidebar({ expanded }) {
+  const w = expanded ? SIDEBAR_EXPANDED_W : SIDEBAR_COLLAPSED_W;
+  return (
+    <div style={{width:w,flexShrink:0,background:"#fff",borderRight:"1px solid #e0e0e0",display:"flex",flexDirection:"column",height:"100vh",position:"sticky",top:0,zIndex:50,overflow:"hidden",transition:"width 0.15s"}}>
+      {/* Logo area — 65px height matches Figma collapsed header */}
+      <div style={{height:65,display:"flex",alignItems:"center",justifyContent:"center",borderBottom:`1px solid ${C.border0}`,flexShrink:0,padding:expanded?"0 16px":"0",overflow:"hidden"}}>
+        <PlatformLogo expanded={expanded}/>
+      </div>
+      {/* Nav items */}
+      <div style={{flex:1,overflowY:"auto",overflowX:"hidden",paddingTop:4,paddingBottom:4}}>
         {SIDEBAR_ITEMS.map(item=>{
-          const active=item.key==="integration-manager";
-          const iconColor=active?C.blue:"#727caf";
+          const active = item.key==="integration-manager";
+          const iconColor = active ? C.blue : "#727caf";
           return (
-            <div key={item.key} title={!expanded?item.label:undefined} style={{display:"flex",alignItems:"center",gap:expanded?8:0,padding:expanded?"6px 14px":"6px 0",justifyContent:"center",background:active?C.blueBg:"transparent",borderLeft:`3px solid ${active?C.blue:"transparent"}`,cursor:active?"default":"not-allowed",opacity:active?1:0.65}}>
-              <div style={{width:32,height:32,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",background:active?C.blueBg:C.bg1,borderRadius:8,color:iconColor}}>
-                <PlatformIcon itemKey={item.key} size={18} color={iconColor}/>
+            <div key={item.key} title={!expanded?item.label:undefined}
+              style={{
+                display:"flex",alignItems:"center",
+                padding:expanded?"8px 8px 8px 10px":"8px",
+                justifyContent:expanded?"flex-start":"center",
+                background:active?C.blueBg:"transparent",
+                borderLeft:expanded?`3px solid ${active?C.blue:"transparent"}`:"none",
+                cursor:active?"default":"not-allowed",
+                opacity:active?1:0.65,
+                gap:expanded?8:0,
+                boxSizing:"border-box",
+                width:"100%",
+              }}>
+              {/* Icon container — 24px square, 6px radius, #eff1f5 bg per Figma */}
+              <div style={{width:24,height:24,background:active?C.blueBg:C.bg1,borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                <PlatformIcon itemKey={item.key} size={14} color={iconColor}/>
               </div>
-              {expanded&&<span style={{fontFamily:FONT,fontSize:13,fontWeight:active?700:400,color:active?C.blue:"#727caf",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{item.label}</span>}
+              {expanded&&(
+                <>
+                  <span style={{fontFamily:FONT,fontSize:13,fontWeight:700,color:iconColor,letterSpacing:"0.3px",flex:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{item.label}</span>
+                  {item.expandable&&(
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{flexShrink:0,opacity:0.6}}>
+                      <path d="M4.5 2.5l3 3-3 3" stroke="#727caf" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  )}
+                </>
+              )}
             </div>
           );
         })}
@@ -2777,7 +2832,7 @@ function App() {
     <div style={{background:C.pageBg,height:"100vh",display:"flex",fontFamily:FONT,overflow:"hidden"}}>
       <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet"/>
       <PlatformSidebar expanded={sidebarExpanded}/>
-      <button onClick={()=>setSidebarExpanded(e=>!e)} aria-label={sidebarExpanded?"Collapse sidebar":"Expand sidebar"} style={{position:"fixed",top:72,left:sidebarExpanded?206:54,width:28,height:28,borderRadius:9999,background:C.blue,border:"none",color:"#fff",cursor:"pointer",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 8px rgba(0,0,0,0.18)",transition:"left 0.15s",padding:0,flexShrink:0}}>
+      <button onClick={()=>setSidebarExpanded(e=>!e)} aria-label={sidebarExpanded?"Collapse sidebar":"Expand sidebar"} style={{position:"fixed",top:72,left:sidebarExpanded?SIDEBAR_EXPANDED_W-SIDEBAR_TOGGLE_SIZE/2:SIDEBAR_COLLAPSED_W-SIDEBAR_TOGGLE_SIZE/2,width:SIDEBAR_TOGGLE_SIZE,height:SIDEBAR_TOGGLE_SIZE,borderRadius:9999,background:C.blue,border:"none",color:"#fff",cursor:"pointer",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 8px rgba(0,0,0,0.18)",transition:"left 0.15s",padding:0,flexShrink:0}}>
         <svg viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           {sidebarExpanded?<path d="M8 2L4 6l4 4"/>:<path d="M4 2l4 4-4 4"/>}
         </svg>
