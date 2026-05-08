@@ -2329,8 +2329,10 @@ function PlatformHeader() {
 // Top: initials logo + status badge. Middle: name + category. Divider. Bottom: count + action.
 function SystemCard({ system, integrations, onClick }) {
   const [hov,setHov]=useState(false);
+  // totalCount drives both the label and the CTA so they stay consistent:
+  // "N Integrations" + "View Details" when any non-disabled integration exists,
+  // "0 Integrations" + "Connect" only when none exist at all.
   const totalCount=integrations.filter(i=>i.systemId===system.id&&i.status!=="disabled").length;
-  const activeCount=integrations.filter(i=>i.systemId===system.id&&i.status!=="disabled"&&i.status!=="draft").length;
   const cfg=STATUS_CONFIG[system.status]||{};
   const initials=(system.name||"?").split(/\s+/).slice(0,2).map(w=>w[0]||"").join("").toUpperCase();
   const logoUrl=getSystemLogo(system);
@@ -2360,7 +2362,7 @@ function SystemCard({ system, integrations, onClick }) {
           </svg>
           <span style={{fontFamily:FONT,fontSize:14,color:C.text0,letterSpacing:"0.014em"}}>{totalCount} Integration{totalCount!==1?"s":""}</span>
         </div>
-        {activeCount>0
+        {totalCount>0
           ? <button onClick={e=>{e.stopPropagation();onClick(system.id);}} style={{background:C.blueBg,border:"none",borderRadius:8,padding:"10px 16px",fontFamily:FONT,fontSize:12,fontWeight:500,color:C.blue,cursor:"pointer",whiteSpace:"nowrap"}}>View Details</button>
           : <button onClick={e=>{e.stopPropagation();onClick(system.id);}} style={{background:C.blue,border:"none",borderRadius:8,padding:"10px 16px",fontFamily:FONT,fontSize:12,fontWeight:500,color:"#fff",cursor:"pointer",whiteSpace:"nowrap"}}>Connect</button>
         }
