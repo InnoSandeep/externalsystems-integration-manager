@@ -2564,9 +2564,6 @@ function DLQTab({ systemId, onInspect }) {
   const entries=DLQ_ENTRIES.filter(d=>d.systemId===systemId);
   return (
     <div>
-      <div style={{background:C.amberBg,border:`1px solid ${C.amberBorder}`,borderLeft:`3px solid ${C.amber}`,padding:"10px 14px",marginBottom:10,fontFamily:FONT,fontSize:12,color:C.text1,lineHeight:1.6}}>
-        <strong style={{color:C.amber}}>▲ These records failed to process and are being held for review.</strong>{" "}Inspect each one to understand what went wrong, then replay or discard.
-      </div>
       {entries.length===0?<div style={{background:C.bg0,border:`1px solid ${C.border0}`,padding:"32px",textAlign:"center",fontFamily:FONT,fontSize:14,color:C.text3}}>No items in the review queue for this system.</div>:(
         <div style={{display:"flex",flexDirection:"column",gap:8}}>
           {entries.map(e=>{
