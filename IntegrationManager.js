@@ -2596,10 +2596,36 @@ function DLQTab({ systemId, onInspect }) {
 // Shows user email, timestamp, and the action taken (create, publish, edit).
 // In a real product, this would be a live query from a backend audit service.
 function AuditTab() {
+  const TH={padding:"7px 16px",fontFamily:FONT,fontSize:10,fontWeight:700,color:C.text2,textTransform:"uppercase",letterSpacing:"0.08em",textAlign:"left",borderBottom:`1px solid ${C.border0}`,background:C.bg2,whiteSpace:"nowrap"};
+  const TD={padding:"10px 16px",fontFamily:FONT,fontSize:12,color:C.text0,verticalAlign:"top",borderBottom:`1px solid ${C.border0}`};
   return (
-    <div style={{background:C.bg0,border:`1px solid ${C.border0}`}}>
-      <div style={{display:"grid",gridTemplateColumns:"190px 210px 1fr",padding:"7px 16px",borderBottom:`1px solid ${C.border0}`,background:C.bg2,fontFamily:FONT,fontSize:10,fontWeight:700,color:C.text2,textTransform:"uppercase",letterSpacing:"0.08em"}}><span>Timestamp</span><span>User</span><span>Action</span></div>
-      {AUDIT_LOG.map((a,idx)=><div key={a.id} style={{display:"grid",gridTemplateColumns:"190px 210px 1fr",padding:"9px 16px",borderBottom:idx<AUDIT_LOG.length-1?`1px solid ${C.border0}`:"none",background:idx%2===0?C.bg0:C.bg1,alignItems:"center"}}><span style={{fontFamily:MONO,fontSize:12,color:C.text3}}>{new Date(a.timestamp).toLocaleString()}</span><span style={{fontFamily:MONO,fontSize:12,color:C.blue}}>{a.userEmail}</span><span style={{fontFamily:FONT,fontSize:14,color:C.text0}}>{a.action}</span></div>)}
+    <div style={{border:`1px solid ${C.border0}`,background:C.bg0,overflow:"hidden"}}>
+      {AUDIT_LOG.length===0
+        ? <div style={{padding:"32px",textAlign:"center",fontFamily:FONT,fontSize:14,color:C.text3}}>No audit activity for this system.</div>
+        : <table style={{width:"100%",borderCollapse:"collapse",tableLayout:"fixed"}}>
+            <colgroup>
+              <col style={{width:190}}/>
+              <col style={{width:220}}/>
+              <col/>
+            </colgroup>
+            <thead>
+              <tr>
+                <th style={TH}>Timestamp</th>
+                <th style={TH}>User</th>
+                <th style={TH}>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {AUDIT_LOG.map((a,idx)=>(
+                <tr key={a.id} style={{background:C.bg0}}>
+                  <td style={{...TD,fontFamily:MONO,color:C.text3,borderBottom:idx<AUDIT_LOG.length-1?`1px solid ${C.border0}`:"none"}}>{new Date(a.timestamp).toLocaleString()}</td>
+                  <td style={{...TD,fontFamily:MONO,color:C.blue,borderBottom:idx<AUDIT_LOG.length-1?`1px solid ${C.border0}`:"none"}}>{a.userEmail}</td>
+                  <td style={{...TD,color:C.text0,lineHeight:1.5,borderBottom:idx<AUDIT_LOG.length-1?`1px solid ${C.border0}`:"none"}}>{a.action}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+      }
     </div>
   );
 }
