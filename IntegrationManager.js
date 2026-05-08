@@ -446,9 +446,9 @@ const AUDIT_LOG = [
 // Every status badge, filter chip, and colored border in the UI reads from this object.
 // Adding a new status just means adding one entry here — nothing else needs to change.
 const STATUS_CONFIG = {
-  ready:                 { label:"Ready",                color:C.green,  bg:C.greenBg,  border:C.greenBorder  },
+  ready:                 { label:"Configured",           color:C.green,  bg:C.greenBg,  border:C.greenBorder  },
   connection_incomplete: { label:"Connection Incomplete", color:C.amber,  bg:C.amberBg,  border:C.amberBorder  },
-  draft:                 { label:"Draft",                color:C.amber,  bg:C.amberBg,  border:C.amberBorder  },
+  draft:                 { label:"Draft",                color:C.text1,  bg:"rgba(143,147,163,0.25)", border:C.border0 },
   needs_attention:       { label:"Needs Attention",      color:C.red,    bg:C.redBg,    border:C.redBorder    },
   active:                { label:"Active",               color:C.green,  bg:C.greenBg,  border:C.greenBorder  },
   ready_to_publish:      { label:"Ready to Publish",     color:C.blue,   bg:C.blueBg,   border:C.blueBorder   },
@@ -2160,179 +2160,234 @@ function EditIntegrationDrawer({ open, integration, system, onClose, onSave }) {
   );
 }
 
+// ─── PLATFORM ICON ───────────────────────────────────────────────────────────
+// Renders inline SVG icons for each sidebar module.
+// TODO: Replace with the Innovapptive platform icon font ('innovapptive-font')
+//       once it is loaded in this prototype. All icons use stroke-based SVG
+//       for now so they scale cleanly at 14–20px.
+function PlatformIcon({ itemKey, size=20, color="currentColor" }) {
+  const s={width:size,height:size};
+  const icons={
+    "dashboard":        <svg {...s} viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="11" y="3" width="6" height="6" rx="1"/><rect x="3" y="11" width="6" height="6" rx="1"/><rect x="11" y="11" width="6" height="6" rx="1"/></svg>,
+    "ehs":              <svg {...s} viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10 2L3 6v5c0 4 3 6.5 7 7 4-.5 7-3 7-7V6L10 2z"/></svg>,
+    "mcc":              <svg {...s} viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="10" cy="10" r="3"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.22 4.22l1.42 1.42M14.36 14.36l1.42 1.42M4.22 15.78l1.42-1.42M14.36 5.64l1.42-1.42"/></svg>,
+    "notifications":    <svg {...s} viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10 2a6 6 0 0 0-6 6v3l-1.5 2H17.5L16 11V8a6 6 0 0 0-6-6z"/><path d="M8 16a2 2 0 0 0 4 0"/></svg>,
+    "user-mgmt":        <svg {...s} viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="10" cy="7" r="3"/><path d="M3 17c0-3.3 3.1-6 7-6s7 2.7 7 6"/></svg>,
+    "ai-studio":        <svg {...s} viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10 2l1.8 5.5H18l-4.9 3.6 1.9 5.7L10 13.5l-5 3.3 1.9-5.7L2 7.5h6.2L10 2z"/></svg>,
+    "race":             <svg {...s} viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4l10 6-10 6V4z"/></svg>,
+    "forms":            <svg {...s} viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="3" width="12" height="14" rx="1"/><path d="M7 7h6M7 10h6M7 13h4"/></svg>,
+    "settings":         <svg {...s} viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="10" cy="10" r="2.5"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.22 4.22l1.42 1.42M14.36 14.36l1.42 1.42M4.22 15.78l1.42-1.42M14.36 5.64l1.42-1.42"/></svg>,
+    "master-data":      <svg {...s} viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="10" cy="6" rx="7" ry="2.5"/><path d="M3 6v4c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5V6"/><path d="M3 10v4c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5v-4"/></svg>,
+    "work-instructions":<svg {...s} viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h12v12H4z"/><path d="M7 8h6M7 11h4"/><path d="M9 4v3M11 4v3"/></svg>,
+    "integration-manager":<svg {...s} viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M3 8h11M3 12h11"/><path d="M11 5l4 3-4 3"/><path d="M9 9l-4 3 4 3"/></svg>,
+    "smart-trigger":    <svg {...s} viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 2L4 11h7l-2 7 9-10h-7l2-6z"/></svg>,
+    "webhook-registry": <svg {...s} viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M8 11a3 3 0 1 0 4 0"/><path d="M10 8V5"/><circle cx="7" cy="14" r="2"/><circle cx="13" cy="14" r="2"/><circle cx="10" cy="4" r="2"/><path d="M8.8 15.7l-1.4-1.2M11.2 15.7l1.4-1.2M9 5.9L7.2 12.2M11 5.9l1.8 6.3"/></svg>,
+  };
+  return icons[itemKey]||<svg {...s} viewBox="0 0 20 20" fill="none" stroke={color} strokeWidth="1.5"><circle cx="10" cy="10" r="6"/></svg>;
+}
+
+// ─── SYSTEM LOGOS ─────────────────────────────────────────────────────────────
+// Maps system IDs to stable logo URLs. Set to null to use initials fallback.
+// TODO: Replace null values with actual stable CDN or hosted logo URLs
+//       (e.g. company intranet, public vendor logos via Wikipedia CDN, etc.)
+const SYSTEM_LOGOS = {
+  "sys_pi":       null,
+  "sys_augury":   null,
+  "sys_seeq":     null,
+  "sys_hexion":   null,
+  "sys_accenture":null,
+};
+function getSystemLogo(system) {
+  return (system&&SYSTEM_LOGOS[system.id])||null;
+}
+
 // ─── PLATFORM SHELL ──────────────────────────────────────────────────────────
-// Replicates the Innovapptive platform left-nav + header shell.
-// Sidebar is 220px wide and sticky; main content area fills remaining width.
-// Integration Manager is permanently highlighted as the active module.
-// All other sidebar items are static placeholders — no routing.
-const SIDEBAR_NAV = [
-  { section:"Platform", items:[
-    { key:"dashboard",         label:"Dashboard",                 icon:"⊞" },
-    { key:"ehs",               label:"Environment Health Safety", icon:"△" },
-    { key:"mcc",               label:"Maintenance Control Center",icon:"⚙" },
-    { key:"notifications",     label:"Notifications",             icon:"◎" },
-  ]},
-  { section:"Management", items:[
-    { key:"user-mgmt",         label:"User Management",           icon:"◉" },
-    { key:"ai-studio",         label:"AI Studio",                 icon:"✦" },
-    { key:"race",              label:"Race",                      icon:"▷" },
-  ]},
-  { section:"Configure", items:[
-    { key:"forms",             label:"Forms",                     icon:"≡" },
-    { key:"settings",          label:"Settings",                  icon:"⊙" },
-    { key:"master-data",       label:"Master Data",               icon:"≣" },
-    { key:"work-instructions", label:"Work Instructions",         icon:"✎" },
-  ]},
-  { section:"Integrations", items:[
-    { key:"integration-manager",label:"Integration Manager",      icon:"⇄" },
-    { key:"smart-trigger",     label:"Smart Trigger",             icon:"⚡" },
-    { key:"webhook-registry",  label:"Webhook Registry",          icon:"⊕" },
-  ]},
+// Compact 68px icon-only sidebar by default. Expands to 220px via toggle arrow.
+// Integration Manager is always highlighted as the active module.
+const SIDEBAR_ITEMS = [
+  { key:"dashboard",          label:"Dashboard",             icon:"⊞" },
+  { key:"ehs",                label:"Env. Health Safety",    icon:"△" },
+  { key:"mcc",                label:"Maintenance Control",   icon:"⚙" },
+  { key:"notifications",      label:"Notifications",         icon:"◎" },
+  { key:"user-mgmt",          label:"User Management",       icon:"◉" },
+  { key:"ai-studio",          label:"AI Studio",             icon:"✦" },
+  { key:"race",               label:"Race",                  icon:"▷" },
+  { key:"forms",              label:"Forms",                 icon:"≡" },
+  { key:"settings",           label:"Settings",              icon:"⊙" },
+  { key:"master-data",        label:"Master Data",           icon:"≣" },
+  { key:"work-instructions",  label:"Work Instructions",     icon:"✎" },
+  { key:"integration-manager",label:"Integration Manager",   icon:"⇄" },
+  { key:"smart-trigger",      label:"Smart Trigger",         icon:"⚡" },
+  { key:"webhook-registry",   label:"Webhook Registry",      icon:"⊕" },
 ];
-function PlatformSidebar() {
+function PlatformSidebar({ expanded }) {
   return (
-    <div style={{width:220,flexShrink:0,background:C.bg0,borderRight:`1px solid ${C.border0}`,display:"flex",flexDirection:"column",height:"100vh",position:"sticky",top:0,zIndex:50}}>
-      <div style={{height:52,display:"flex",alignItems:"center",padding:"0 14px",borderBottom:`1px solid ${C.border0}`,flexShrink:0,gap:8}}>
-        <div style={{width:28,height:28,background:C.blue,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-          <div style={{width:12,height:12,background:"#fff"}}/>
+    <div style={{width:expanded?220:68,flexShrink:0,background:C.bg0,borderRight:`1px solid ${C.border0}`,display:"flex",flexDirection:"column",height:"100vh",position:"sticky",top:0,zIndex:50,overflow:"hidden",transition:"width 0.15s"}}>
+      <div style={{height:64,display:"flex",alignItems:"center",justifyContent:expanded?"flex-start":"center",borderBottom:`1px solid ${C.border0}`,flexShrink:0,padding:expanded?"0 14px":"0 10px",gap:8,overflow:"hidden"}}>
+        <div style={{width:32,height:32,background:C.blue,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+          <div style={{width:14,height:14,background:"#fff"}}/>
         </div>
-        <span style={{fontFamily:FONT,fontSize:13,fontWeight:700,color:C.text0,letterSpacing:"0.01em"}}>Innovapptive</span>
+        {expanded&&<span style={{fontFamily:FONT,fontSize:13,fontWeight:700,color:C.text0,whiteSpace:"nowrap",flex:1}}>Innovapptive</span>}
       </div>
-      <div style={{flex:1,padding:"4px 0",overflowY:"auto"}}>
-        {SIDEBAR_NAV.map(sec=>(
-          <div key={sec.section} style={{marginBottom:2}}>
-            <div style={{fontFamily:FONT,fontSize:10,fontWeight:700,color:C.text3,textTransform:"uppercase",letterSpacing:"0.08em",padding:"10px 14px 3px"}}>{sec.section}</div>
-            {sec.items.map(item=>{
-              const active=item.key==="integration-manager";
-              return (
-                <div key={item.key} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 14px",background:active?C.blueBg:"transparent",borderLeft:`3px solid ${active?C.blue:"transparent"}`,cursor:active?"default":"not-allowed",opacity:active?1:0.65}}>
-                  <div style={{width:26,height:26,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",background:active?C.blueBg:C.bg1,color:active?C.blue:C.text2,fontSize:13,borderRadius:4}}>
-                    {item.icon}
-                  </div>
-                  <span style={{fontFamily:FONT,fontSize:12,fontWeight:active?700:400,color:active?C.blue:C.text1,lineHeight:1.3}}>{item.label}</span>
-                </div>
-              );
-            })}
-          </div>
-        ))}
-      </div>
-      <div style={{borderTop:`1px solid ${C.border0}`,padding:"10px 14px",flexShrink:0,display:"flex",alignItems:"center",gap:8}}>
-        <div style={{width:28,height:28,borderRadius:9999,background:C.blueBg,border:`1px solid ${C.blueBorder}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-          <span style={{fontFamily:FONT,fontSize:11,fontWeight:700,color:C.blue}}>SJ</span>
-        </div>
-        <div style={{overflow:"hidden",flex:1}}>
-          <div style={{fontFamily:FONT,fontSize:12,fontWeight:600,color:C.text0,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>Sandeep Jha</div>
-          <div style={{fontFamily:FONT,fontSize:10,color:C.text2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>Platform Admin</div>
-        </div>
+      <div style={{flex:1,padding:"8px 0",overflowY:"auto",overflowX:"hidden"}}>
+        {SIDEBAR_ITEMS.map(item=>{
+          const active=item.key==="integration-manager";
+          const iconColor=active?C.blue:"#727caf";
+          return (
+            <div key={item.key} title={!expanded?item.label:undefined} style={{display:"flex",alignItems:"center",gap:expanded?8:0,padding:expanded?"6px 14px":"6px 0",justifyContent:"center",background:active?C.blueBg:"transparent",borderLeft:`3px solid ${active?C.blue:"transparent"}`,cursor:active?"default":"not-allowed",opacity:active?1:0.65}}>
+              <div style={{width:32,height:32,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",background:active?C.blueBg:C.bg1,borderRadius:8,color:iconColor}}>
+                <PlatformIcon itemKey={item.key} size={18} color={iconColor}/>
+              </div>
+              {expanded&&<span style={{fontFamily:FONT,fontSize:13,fontWeight:active?700:400,color:active?C.blue:"#727caf",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{item.label}</span>}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
 }
 function PlatformHeader() {
   return (
-    <div style={{height:52,background:C.bg0,borderBottom:`1px solid ${C.border0}`,display:"flex",alignItems:"center",padding:"0 24px",flexShrink:0}}>
+    <div style={{height:64,background:C.bg0,borderBottom:`1px solid ${C.border0}`,display:"flex",alignItems:"center",padding:"0 16px",flexShrink:0}}>
       <div style={{flex:1}}>
-        <div style={{fontFamily:FONT,fontSize:15,fontWeight:700,color:C.text0,lineHeight:1.2}}>Integration Manager</div>
-        <div style={{fontFamily:FONT,fontSize:11,color:C.text2,marginTop:1}}>Integration Manager</div>
+        <div style={{fontFamily:FONT,fontSize:18,fontWeight:500,color:C.text0,lineHeight:1.33,letterSpacing:"-0.09px"}}>Integration Manager</div>
       </div>
-      <div style={{display:"flex",alignItems:"center",gap:12}}>
-        <div style={{width:1,height:20,background:C.border0}}/>
-        <div style={{display:"flex",alignItems:"center",gap:8}}>
-          <div style={{width:30,height:30,borderRadius:9999,background:C.blueBg,border:`1px solid ${C.blueBorder}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-            <span style={{fontFamily:FONT,fontSize:12,fontWeight:700,color:C.blue}}>SJ</span>
+      <div style={{display:"flex",alignItems:"center",gap:8}}>
+        <button style={{background:C.bg0,border:`1px solid ${C.border0}`,borderRadius:8,width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:C.text1,flexShrink:0}}>
+          <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M8 1.5a4.5 4.5 0 0 0-4.5 4.5v2.25L2 9.75v.75h12v-.75l-1.5-1.5V6A4.5 4.5 0 0 0 8 1.5z"/>
+            <path d="M6.5 10.5a1.5 1.5 0 0 0 3 0"/>
+          </svg>
+        </button>
+        <div style={{background:C.bg0,border:`1px solid ${C.border0}`,borderRadius:8,height:36,display:"flex",alignItems:"center",padding:"0 8px",gap:8,flexShrink:0}}>
+          <div style={{width:24,height:24,borderRadius:9999,background:C.blueBg,border:`1px solid ${C.blueBorder}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+            <span style={{fontFamily:FONT,fontSize:10,fontWeight:700,color:C.blue}}>SJ</span>
           </div>
-          <div>
-            <div style={{fontFamily:FONT,fontSize:12,fontWeight:600,color:C.text0}}>Sandeep Jha</div>
-            <div style={{fontFamily:FONT,fontSize:10,color:C.text2}}>sandeep.jha@innovapptive.com</div>
-          </div>
+          <span style={{fontFamily:FONT,fontSize:12,fontWeight:600,color:C.text0}}>Innovapptive</span>
         </div>
       </div>
     </div>
   );
 }
-
 // ─── SYSTEM CARD ─────────────────────────────────────────────────────────────
-// A card on the Systems list page representing one external system.
-//
-// Shows: name, status badge, category, plant, description, integration count,
-// error notification email, and a red error badge if there are items in the Review Queue.
-//
-// Amber warning shown at the bottom if the system has no error email configured
-// (failure alerts would be undeliverable in that case).
-//
-// Clicking anywhere on the card opens the System Detail page.
-// The "View →" button also navigates but stops click propagation to prevent double-firing.
+// Figma-matching neutral card: white bg, 1px border, 8px radius, 16px padding.
+// Top: initials logo + status badge. Middle: name + category. Divider. Bottom: count + action.
 function SystemCard({ system, integrations, onClick }) {
   const [hov,setHov]=useState(false);
-  const liveCount  = integrations.filter(i=>i.systemId===system.id&&i.status!=="disabled").length;
-  const activeCount= integrations.filter(i=>i.systemId===system.id&&i.status==="active").length;
+  const totalCount=integrations.filter(i=>i.systemId===system.id&&i.status!=="disabled").length;
+  const activeCount=integrations.filter(i=>i.systemId===system.id&&i.status!=="disabled"&&i.status!=="draft").length;
+  const cfg=STATUS_CONFIG[system.status]||{};
+  const initials=(system.name||"?").split(/\s+/).slice(0,2).map(w=>w[0]||"").join("").toUpperCase();
+  const logoUrl=getSystemLogo(system);
   return (
-    <div onClick={()=>onClick(system.id)} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)} style={{background:hov?C.bg1:C.bg0,border:`1px solid ${hov?C.border1:C.border0}`,borderLeft:`3px solid ${hov?C.blue:C.border0}`,padding:"14px 18px",cursor:"pointer",transition:"background 0.1s,border-color 0.1s"}}>
-      <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:8}}>
-        <div style={{flex:1,minWidth:0}}>
-          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3}}><span style={{fontFamily:FONT,fontWeight:700,fontSize:14,color:C.text0}}>{system.name}</span><StatusBadge status={system.status}/></div>
-          <div style={{fontFamily:FONT,fontSize:12,color:C.text2}}>{system.category}<span style={{margin:"0 6px",color:C.border1}}>·</span>{system.plant}</div>
+    <div onClick={()=>onClick(system.id)} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
+      style={{background:C.bg0,border:`1px solid ${hov?C.border1:C.border0}`,borderRadius:8,padding:16,cursor:"pointer",flex:"0 1 424px",minWidth:300,boxSizing:"border-box",transition:"border-color 0.1s"}}>
+      <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:12}}>
+        <div style={{width:30,height:32,borderRadius:4,background:C.bg1,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,overflow:"hidden"}}>
+          {logoUrl
+            ? <img src={logoUrl} alt={system.name} style={{width:30,height:32,objectFit:"contain"}}/>
+            : <span style={{fontFamily:FONT,fontSize:11,fontWeight:700,color:C.text2}}>{initials}</span>
+          }
         </div>
-        <button onClick={e=>{e.stopPropagation();onClick(system.id);}} style={{background:"none",border:`1px solid ${C.border1}`,color:C.blue,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"4px 12px",cursor:"pointer",flexShrink:0}}>View →</button>
+        <div style={{background:cfg.bg,borderRadius:4,padding:"0 4px",minHeight:18,display:"flex",alignItems:"center"}}>
+          <span style={{fontFamily:FONT,fontSize:12,color:C.text0,lineHeight:"18px"}}>{cfg.label||system.status}</span>
+        </div>
       </div>
-      <div style={{background:C.bg1,border:`1px solid ${C.border0}`,padding:"5px 8px",marginBottom:10,fontFamily:FONT,fontSize:12,color:C.text2,lineHeight:1.4}}>
-        {system.description||<span style={{color:C.text3,fontStyle:"italic"}}>No description</span>}
+      <div style={{marginBottom:12}}>
+        <div style={{fontFamily:FONT,fontSize:16,fontWeight:500,color:C.text0,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",marginBottom:4}}>{system.name}</div>
+        <div style={{fontFamily:FONT,fontSize:14,color:C.text1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{system.category}</div>
       </div>
+      <div style={{height:1,background:C.border0,marginBottom:12}}/>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-        <div style={{display:"flex",alignItems:"center",gap:16}}>
-          <div style={{fontFamily:FONT,fontSize:12,color:C.text2}}><span style={{color:C.text0,fontWeight:700}}>{liveCount}</span> integration{liveCount!==1?"s":""}{liveCount>0&&activeCount!==liveCount&&<span style={{color:C.text3,fontSize:12}}> · {activeCount} active</span>}</div>
-          {system.errorEmail&&<div style={{fontFamily:FONT,fontSize:12,color:C.text2}}>Alerts: <MonoText size={12} color={C.text1}>{system.errorEmail}</MonoText></div>}
+        <div style={{display:"flex",alignItems:"center",gap:4}}>
+          <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke={C.text2} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M13 4L6 11 3 8"/>
+          </svg>
+          <span style={{fontFamily:FONT,fontSize:14,color:C.text0,letterSpacing:"0.014em"}}>{totalCount} Integration{totalCount!==1?"s":""}</span>
         </div>
-        {system.errorBadge&&<span style={{background:C.redBg,border:`1px solid ${C.redBorder}`,padding:"2px 8px",fontSize:12,fontFamily:FONT,fontWeight:600,color:C.red}}>{system.errorBadge}</span>}
+        {activeCount>0
+          ? <button onClick={e=>{e.stopPropagation();onClick(system.id);}} style={{background:C.blueBg,border:"none",borderRadius:8,padding:"10px 16px",fontFamily:FONT,fontSize:12,fontWeight:500,color:C.blue,cursor:"pointer",whiteSpace:"nowrap"}}>View Details</button>
+          : <button onClick={e=>{e.stopPropagation();onClick(system.id);}} style={{background:C.blue,border:"none",borderRadius:8,padding:"10px 16px",fontFamily:FONT,fontSize:12,fontWeight:500,color:"#fff",cursor:"pointer",whiteSpace:"nowrap"}}>Connect</button>
+        }
       </div>
-      {!system.errorEmail&&system.status!=="draft"&&<div style={{marginTop:10,background:C.amberBg,border:`1px solid ${C.amberBorder}`,borderLeft:`3px solid ${C.amber}`,padding:"5px 10px",fontFamily:FONT,fontSize:12,color:C.amber,display:"flex",alignItems:"center",gap:8}}><span>▲</span>Error notification email not configured.</div>}
     </div>
   );
 }
-
 // ─── SYSTEMS PAGE ────────────────────────────────────────────────────────────
-// The main landing page. Shows all external systems as cards in a responsive grid.
-//
-// Filtering: search box (name or category) + plant select + status chip filters
-// all work together. The count "N of M systems" updates live as filters change.
-//
-// The page intro copy explains the System → Integration hierarchy at a glance
-// for users who may be new to the product.
+// Figma-matching layout: white rounded container, toolbar with System Type
+// dropdown + filter icon + count on left, search + Add System on right.
+// Filter chips row below toolbar: Configured / Draft / Needs Attention.
+// Cards in flex-wrap grid with 16px gap.
 function SystemsPage({ systems, integrations, onViewSystem, onAddSystem }) {
-  const [search,setSearch]=useState(""); const [plant,setPlant]=useState("All Plants"); const [statusF,setStatusF]=useState("all");
-  const statusCounts=useMemo(()=>{const c={all:systems.length};systems.forEach(s=>{c[s.status]=(c[s.status]||0)+1;});return c;},[systems]);
-  const chips=[{key:"all",label:"All"},{key:"ready",label:"Ready"},{key:"draft",label:"Draft"},{key:"needs_attention",label:"Needs Attention"}];
-  const filtered=useMemo(()=>systems.filter(s=>{const q=search.toLowerCase();return(s.name.toLowerCase().includes(q)||s.category.toLowerCase().includes(q))&&(plant==="All Plants"||s.plant===plant)&&(statusF==="all"||s.status===statusF);}),[systems,search,plant,statusF]);
-  const inp={background:C.bg0,border:`1px solid ${C.border1}`,color:C.text0,fontFamily:FONT,fontSize:14,padding:"6px 10px",outline:"none",boxSizing:"border-box"};
+  const [search,setSearch]=useState("");
+  const [typeF,setTypeF]=useState("All");
+  const [statusF,setStatusF]=useState("all");
+  const statusCounts=useMemo(()=>{const c={};systems.forEach(s=>{c[s.status]=(c[s.status]||0)+1;});return c;},[systems]);
+  const uniqueTypes=useMemo(()=>[...new Set(systems.map(s=>s.category))],[systems]);
+  const filtered=useMemo(()=>systems.filter(s=>{
+    const q=search.toLowerCase();
+    return(s.name.toLowerCase().includes(q)||s.category.toLowerCase().includes(q))
+      &&(typeF==="All"||s.category===typeF)
+      &&(statusF==="all"||s.status===statusF);
+  }),[systems,search,typeF,statusF]);
+  const CHIPS=[{key:"ready",dot:C.green},{key:"draft",dot:C.text2},{key:"needs_attention",dot:C.red}];
   return (
-    <div style={{padding:"24px 32px",maxWidth:1200,margin:"0 auto"}}>
-      <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:6}}>
-        <div>
-          <h1 style={{fontFamily:FONT,fontSize:24,fontWeight:700,color:C.text0,margin:"0 0 4px"}}>External Systems</h1>
-          <p style={{fontFamily:FONT,fontSize:14,color:C.text2,margin:0,lineHeight:1.5}}>
-            A <strong style={{color:C.text0}}>System</strong> is an external platform you've connected.{" "}
-            Each <strong style={{color:C.text0}}>Integration</strong> under it defines one specific data flow — what data moves, how it moves, and when.
-          </p>
+    <div style={{padding:16}}>
+      <div style={{background:C.bg0,borderRadius:8,overflow:"hidden"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:16}}>
+          <div style={{display:"flex",alignItems:"center",gap:12}}>
+            <div style={{position:"relative",flexShrink:0}}>
+              <select value={typeF} onChange={e=>setTypeF(e.target.value)} style={{background:C.bg0,border:`1px solid ${C.border0}`,borderRadius:8,fontFamily:FONT,fontSize:12,color:C.text0,padding:"9px 28px 9px 12px",outline:"none",cursor:"pointer",minWidth:212,appearance:"none",WebkitAppearance:"none"}}>
+                <option value="All">All</option>
+                {uniqueTypes.map(t=><option key={t} value={t}>{t}</option>)}
+              </select>
+              <div style={{position:"absolute",top:-6,left:7,background:C.bg0,padding:"0 4px",pointerEvents:"none"}}>
+                <span style={{fontFamily:FONT,fontSize:10,color:C.text1,letterSpacing:"0.2px"}}>System Type</span>
+              </div>
+              <div style={{position:"absolute",right:8,top:"50%",transform:"translateY(-50%)",pointerEvents:"none",color:C.text2,fontSize:10}}>▼</div>
+            </div>
+            <button style={{background:C.bg0,border:`1px solid ${C.border0}`,borderRadius:8,width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",color:C.text2,flexShrink:0}}>
+              <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                <path d="M2 4h12M4 8h8M6 12h4"/>
+              </svg>
+            </button>
+            <span style={{fontFamily:FONT,fontSize:12,color:C.text1}}>{filtered.length} Systems</span>
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:12}}>
+            <div style={{position:"relative",display:"inline-flex",alignItems:"center"}}>
+              <svg style={{position:"absolute",left:12,pointerEvents:"none",color:C.text3}} viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <circle cx="7" cy="7" r="4.5"/><path d="M11 11l2.5 2.5"/>
+              </svg>
+              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search" style={{background:C.bg0,border:`1px solid ${C.border0}`,borderRadius:8,fontFamily:FONT,fontSize:12,color:C.text0,padding:"9px 12px 9px 32px",outline:"none",width:224,boxSizing:"border-box"}}/>
+            </div>
+            <button onClick={onAddSystem} style={{background:C.blue,border:"none",borderRadius:8,padding:"10px 16px",fontFamily:FONT,fontSize:12,fontWeight:500,color:"#fff",cursor:"pointer",display:"flex",alignItems:"center",gap:6,flexShrink:0,whiteSpace:"nowrap"}}>
+              <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M8 3v10M3 8h10"/></svg>
+              Add System
+            </button>
+          </div>
         </div>
-        <button onClick={onAddSystem} style={{background:C.blue,border:`1px solid ${C.blueHover}`,color:"#fff",fontFamily:FONT,fontWeight:700,fontSize:14,padding:"8px 18px",cursor:"pointer",flexShrink:0,display:"flex",alignItems:"center",gap:8}}>+ Add System</button>
+        <div style={{display:"flex",alignItems:"center",gap:11,padding:"12px 16px",borderTop:`1px solid ${C.border0}`}}>
+          {CHIPS.map(chip=>{
+            const cfg=STATUS_CONFIG[chip.key]||{};
+            const cnt=statusCounts[chip.key]||0;
+            const isActive=statusF===chip.key;
+            return (
+              <button key={chip.key} onClick={()=>setStatusF(isActive?"all":chip.key)} style={{background:isActive?cfg.bg:C.bg0,border:`1px solid ${C.border0}`,borderRadius:8,padding:"7px 12px",display:"flex",alignItems:"center",gap:4,cursor:"pointer",flexShrink:0}}>
+                <div style={{width:12,height:12,borderRadius:9999,background:chip.dot,flexShrink:0}}/>
+                <span style={{fontFamily:FONT,fontSize:12,color:C.text0}}>{cfg.label}</span>
+                <span style={{fontFamily:FONT,fontSize:12,fontWeight:500,color:C.text0,marginLeft:2}}>{cnt}</span>
+              </button>
+            );
+          })}
+        </div>
+        <div style={{padding:16,display:"flex",flexWrap:"wrap",gap:16}}>
+          {filtered.map(s=><SystemCard key={s.id} system={s} integrations={integrations} onClick={onViewSystem}/>)}
+          {filtered.length===0&&<div style={{width:"100%",padding:"44px 24px",textAlign:"center"}}><div style={{fontFamily:FONT,fontSize:14,color:C.text1,marginBottom:4}}>No systems match your filters</div><div style={{fontFamily:FONT,fontSize:12,color:C.text2}}>Try adjusting the search, type, or status filter</div></div>}
+        </div>
       </div>
-      <div style={{display:"flex",gap:8,alignItems:"center",padding:"10px 12px",background:C.bg0,border:`1px solid ${C.border0}`,marginBottom:12,marginTop:16}}>
-        <div style={{position:"relative",flex:"0 0 240px"}}><span style={{position:"absolute",left:8,top:"50%",transform:"translateY(-50%)",color:C.text3,fontSize:14,pointerEvents:"none"}}>⌕</span><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search by name or category…" style={{...inp,width:"100%",paddingLeft:26}}/></div>
-        <div style={{width:1,height:22,background:C.border0}}/>
-        <select value={plant} onChange={e=>setPlant(e.target.value)} style={{...inp,cursor:"pointer",minWidth:180}}>{PLANTS_ALL.map(p=><option key={p}>{p}</option>)}</select>
-        <div style={{flex:1}}/><span style={{fontFamily:FONT,fontSize:12,color:C.text3}}>{filtered.length} of {systems.length} systems</span>
-      </div>
-      <div style={{display:"flex",gap:4,marginBottom:16,flexWrap:"wrap"}}>
-        {chips.map(chip=>{const active=statusF===chip.key,cfg=STATUS_CONFIG[chip.key]||{};return <button key={chip.key} onClick={()=>setStatusF(chip.key)} style={{background:active?(cfg.bg||C.bg2):C.bg0,border:`1px solid ${active?(cfg.border||C.border1):C.border0}`,color:active?(cfg.color||C.text0):C.text1,fontFamily:FONT,fontSize:12,fontWeight:active?700:400,padding:"5px 12px",cursor:"pointer",display:"flex",alignItems:"center",gap:8}}>{active&&cfg.color&&<span style={{width:6,height:6,borderRadius:9999,background:cfg.color}}/>}{chip.label}<span style={{background:active?"rgba(0,0,0,0.07)":C.bg2,border:`1px solid ${C.border0}`,color:active?(cfg.color||C.text1):C.text3,fontSize:12,padding:"0 5px",fontWeight:700}}>{statusCounts[chip.key]||0}</span></button>;})}
-      </div>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill, minmax(400px, 1fr))",gap:8}}>
-        {filtered.map(s=><SystemCard key={s.id} system={s} integrations={integrations} onClick={onViewSystem}/>)}
-      </div>
-      {filtered.length===0&&<div style={{background:C.bg0,border:`1px solid ${C.border0}`,padding:"44px 24px",textAlign:"center"}}><div style={{fontFamily:FONT,fontSize:14,color:C.text1,marginBottom:4}}>No systems match your filters</div><div style={{fontFamily:FONT,fontSize:12,color:C.text3}}>Try adjusting the search, plant, or status filter</div></div>}
     </div>
   );
 }
-
 // ─── DETAIL PAGE ─────────────────────────────────────────────────────────────
 function SummaryCard({ system }) {
   return (
@@ -2708,6 +2763,7 @@ function App() {
   const [selectedId,   setSelected]    = useState(null);
   const [sysDrawer,    setSysDrawer]   = useState(false);
   const [intDrawer,    setIntDrawer]   = useState(false);
+  const [sidebarExpanded,setSidebarExpanded]=useState(false);
 
   const selectedSystem = systems.find(s=>s.id===selectedId);
 
@@ -2720,7 +2776,12 @@ function App() {
   return (
     <div style={{background:C.pageBg,height:"100vh",display:"flex",fontFamily:FONT,overflow:"hidden"}}>
       <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet"/>
-      <PlatformSidebar/>
+      <PlatformSidebar expanded={sidebarExpanded}/>
+      <button onClick={()=>setSidebarExpanded(e=>!e)} aria-label={sidebarExpanded?"Collapse sidebar":"Expand sidebar"} style={{position:"fixed",top:72,left:sidebarExpanded?206:54,width:28,height:28,borderRadius:9999,background:C.blue,border:"none",color:"#fff",cursor:"pointer",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 8px rgba(0,0,0,0.18)",transition:"left 0.15s",padding:0,flexShrink:0}}>
+        <svg viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          {sidebarExpanded?<path d="M8 2L4 6l4 4"/>:<path d="M4 2l4 4-4 4"/>}
+        </svg>
+      </button>
       <div style={{flex:1,display:"flex",flexDirection:"column",minWidth:0,overflow:"hidden"}}>
         <PlatformHeader/>
         <div style={{flex:1,overflowY:"auto"}}>
