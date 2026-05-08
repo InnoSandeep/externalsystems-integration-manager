@@ -781,12 +781,11 @@ function AIActionButton({ label, desc, running, result, onClick }) {
 // ─── SELECTION CARD ───────────────────────────────────────────────────────────
 // Compact wizard-style option card for Direction and Method selection.
 // Title + one-line subtitle. No paragraphs. Reduced padding for a tighter wizard feel.
-function SelectionCard({ label, description, selected, onClick, disabled, tag }) {
+function SelectionCard({ label, description, selected, onClick, disabled }) {
   const [hov,setHov]=useState(false);
   return (
     <div onClick={disabled?undefined:onClick} onMouseEnter={()=>!disabled&&setHov(true)} onMouseLeave={()=>setHov(false)}
-      style={{flex:1,padding:"10px 12px",cursor:disabled?"not-allowed":"pointer",border:`2px solid ${selected?C.blue:hov?C.border1:C.border0}`,borderRadius:4,background:selected?C.blueBg:disabled?"#FAFAFA":hov?C.bg1:C.bg0,opacity:disabled?0.55:1,position:"relative",transition:"border-color 0.12s,background 0.12s"}}>
-      {tag&&<span style={{position:"absolute",top:6,right:8,background:C.bg3,border:`1px solid ${C.border0}`,fontFamily:FONT,fontSize:10,fontWeight:600,color:C.text1,padding:"1px 5px",letterSpacing:"0.04em"}}>{tag}</span>}
+      style={{flex:1,padding:"10px 12px",cursor:disabled?"not-allowed":"pointer",border:`2px solid ${selected?C.blue:hov?C.border1:C.border0}`,borderRadius:4,background:selected?C.blueBg:disabled?"#FAFAFA":hov?C.bg1:C.bg0,opacity:disabled?0.55:1,transition:"border-color 0.12s,background 0.12s"}}>
       <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:description?3:0}}>
         <div style={{width:14,height:14,border:`2px solid ${selected?C.blue:C.border1}`,borderRadius:9999,background:selected?C.blue:"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
           {selected&&<div style={{width:5,height:5,borderRadius:9999,background:"#fff"}}/>}
@@ -1521,11 +1520,11 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
                     {isInbound&&<>
                       <SelectionCard label="Webhook" description="Real-time events" selected={form.method==="webhook"} onClick={()=>set("method","webhook")}/>
                       <SelectionCard label="Polling" description="Scheduled sync" selected={form.method==="polling"} onClick={()=>set("method","polling")}/>
-                      <SelectionCard label="File Import" description="Coming soon" selected={false} disabled tag="Coming Soon"/>
+                      <SelectionCard label="File Import" description="Coming soon" selected={false} disabled/>
                     </>}
                     {isOutbound&&<>
                       <SelectionCard label="Webhook" description="Real-time events" selected={form.method==="webhook"} onClick={()=>set("method","webhook")}/>
-                      <SelectionCard label="File Export" description="Coming soon" selected={false} disabled tag="Coming Soon"/>
+                      <SelectionCard label="File Export" description="Coming soon" selected={false} disabled/>
                     </>}
                   </div>
                   <FieldError msg={touched.method&&errors.method}/>
