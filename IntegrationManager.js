@@ -566,17 +566,17 @@ function blankIntegrationForm() {
 // Reads colors from STATUS_CONFIG so the look stays consistent everywhere.
 function StatusBadge({ status, size="sm" }) {
   const cfg=STATUS_CONFIG[status]||{label:status,color:C.text2,bg:C.bg2,border:C.border0};
-  return <span style={{display:"inline-flex",alignItems:"center",gap:5,background:cfg.bg,border:`1px solid ${cfg.border}`,padding:size==="lg"?"4px 10px":"2px 8px",fontFamily:FONT,fontSize:size==="lg"?12:11,fontWeight:600,color:cfg.color,whiteSpace:"nowrap"}}><span style={{width:6,height:6,borderRadius:9999,background:cfg.color,flexShrink:0}}/>{cfg.label}</span>;
+  return <span style={{display:"inline-flex",alignItems:"center",gap:5,background:cfg.bg,border:`1px solid ${cfg.border}`,borderRadius:9999,padding:size==="lg"?"4px 12px":"3px 10px",fontFamily:FONT,fontSize:size==="lg"?12:11,fontWeight:600,color:cfg.color,whiteSpace:"nowrap"}}><span style={{width:6,height:6,borderRadius:9999,background:cfg.color,flexShrink:0}}/>{cfg.label}</span>;
 }
 // Neutral "↓ Inbound" or "↑ Outbound" pill — direction is communicated by text + arrow.
 function DirectionBadge({ direction }) {
   const isIn=direction==="inbound";
-  return <span style={{display:"inline-flex",alignItems:"center",gap:4,background:C.bg2,border:`1px solid ${C.border1}`,padding:"2px 8px",fontSize:12,fontFamily:FONT,fontWeight:600,color:C.text1}}>{isIn?"↓ Inbound":"↑ Outbound"}</span>;
+  return <span style={{display:"inline-flex",alignItems:"center",gap:4,background:C.bg2,border:`1px solid ${C.border1}`,borderRadius:9999,padding:"3px 10px",fontSize:11,fontFamily:FONT,fontWeight:600,color:C.text1}}>{isIn?"↓ Inbound":"↑ Outbound"}</span>;
 }
 // Grey badge showing the integration method in plain language.
 function MethodBadge({ method }) {
   const labels={polling:"Scheduled",webhook:"Real-time",file_import:"File Import",file_export:"File Export"};
-  return <span style={{display:"inline-flex",alignItems:"center",background:C.bg2,border:`1px solid ${C.border1}`,padding:"2px 8px",fontSize:12,fontFamily:FONT,fontWeight:500,color:C.text1}}>{labels[method]||(method||"").charAt(0).toUpperCase()+(method||"").slice(1)}</span>;
+  return <span style={{display:"inline-flex",alignItems:"center",background:C.bg2,border:`1px solid ${C.border1}`,borderRadius:9999,padding:"3px 10px",fontSize:11,fontFamily:FONT,fontWeight:600,color:C.text1}}>{labels[method]||(method||"").charAt(0).toUpperCase()+(method||"").slice(1)}</span>;
 }
 function MonoText({ children, color, size=12 }) {
   return <span style={{fontFamily:MONO,fontSize:size,color:color||C.blue}}>{children}</span>;
@@ -2460,28 +2460,29 @@ function FlowStrip({ system, integrations }) {
   if(intgs.length===0) return null;
   const shown = intgs.slice(0,4);
   return (
-    <div style={{marginBottom:10,border:`1px solid ${C.border0}`,background:C.bg0}}>
-      <div style={{padding:"6px 14px",borderBottom:`1px solid ${C.border0}`,background:C.bg2,fontFamily:FONT,fontSize:10,fontWeight:700,color:C.text2,textTransform:"uppercase",letterSpacing:"0.08em"}}>Active data flows</div>
-      {shown.map((intg,i)=>{
-        const isIn=intg.direction==="inbound";
-        const src=isIn?system.name:"Innovapptive";
-        const dst=isIn?(intg.product||"Innovapptive"):system.name;
-        const obj=(intg.businessObjects||[])[0]||(intg.method==="webhook"?"events":"data");
-        return (
-          <div key={intg.id} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 14px",borderBottom:i<shown.length-1?`1px solid ${C.border0}`:"none",borderLeft:`3px solid ${C.border1}`}}>
-            <span style={{fontFamily:FONT,fontSize:12,fontWeight:700,color:C.text0,minWidth:120,flexShrink:0}}>{src}</span>
-            <span style={{color:C.text3,fontSize:14}}>→</span>
-            <span style={{fontFamily:FONT,fontSize:12,color:C.text1,flex:1}}>{obj}</span>
-            <span style={{color:C.text3,fontSize:14}}>→</span>
-            <span style={{fontFamily:FONT,fontSize:12,fontWeight:700,color:C.text0,minWidth:120,flexShrink:0,textAlign:"right"}}>{dst}</span>
-            <div style={{marginLeft:8,display:"flex",gap:5,flexShrink:0}}>
-              <MethodBadge method={intg.method}/>
-              <StatusBadge status={intg.status}/>
+    <div style={{background:C.bg0,border:`1px solid ${C.border0}`,borderRadius:8,padding:"16px 20px",marginBottom:12}}>
+      <h3 style={{fontFamily:FONT,fontSize:11,fontWeight:700,color:C.text3,textTransform:"uppercase",letterSpacing:"0.08em",margin:"0 0 12px"}}>Active Data Flows</h3>
+      <div style={{display:"flex",flexDirection:"column",gap:6}}>
+        {shown.map((intg)=>{
+          const isIn=intg.direction==="inbound";
+          const src=isIn?system.name:"Innovapptive";
+          const dst=isIn?(intg.product||"Innovapptive"):system.name;
+          const obj=(intg.businessObjects||[])[0]||(intg.method==="webhook"?"Events":"Data");
+          return (
+            <div key={intg.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:C.bg1,borderRadius:6,flexWrap:"wrap"}}>
+              <span style={{fontFamily:FONT,fontSize:13,fontWeight:600,color:C.text0,flexShrink:0}}>{src}</span>
+              <span style={{color:C.blue,fontSize:14,fontWeight:700,flexShrink:0}}>→</span>
+              <span style={{fontFamily:FONT,fontSize:13,fontWeight:600,color:C.text0,flexShrink:0}}>{dst}</span>
+              <span style={{fontFamily:FONT,fontSize:12,color:C.text2,flexShrink:0}}>{obj}</span>
+              <div style={{marginLeft:"auto",display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
+                <MethodBadge method={intg.method}/>
+                <StatusBadge status={intg.status}/>
+              </div>
             </div>
-          </div>
-        );
-      })}
-      {intgs.length>4&&<div style={{padding:"6px 14px",fontFamily:FONT,fontSize:12,color:C.text3}}>+{intgs.length-4} more integrations</div>}
+          );
+        })}
+      </div>
+      {intgs.length>4&&<div style={{paddingTop:10,fontFamily:FONT,fontSize:12,color:C.text3}}>+{intgs.length-4} more integrations</div>}
     </div>
   );
 }
@@ -2500,48 +2501,65 @@ function FlowStrip({ system, integrations }) {
 //   Failed → "check the Review Queue for details"
 function IntegrationCard({ integration, systemName, onEdit, onDisable }) {
   const isDisabled=integration.status==="disabled";
+  const isReadyToPublish=integration.status==="ready_to_publish";
   const runtimeLabel=integration.method==="polling"?"Scheduled":"Real-time";
-  const lastLabel   =integration.method==="polling"?"Last fetched":"Last received";
-  const summary     =summaryLine(integration,systemName);
+  const summary=summaryLine(integration,systemName);
+  const isIn=integration.direction==="inbound";
+  const src=isIn?systemName:"Innovapptive";
+  const dst=isIn?(integration.product||"Innovapptive"):systemName;
+  const obj=(integration.businessObjects||[])[0]||(integration.method==="webhook"?"Events":"Data");
+  const scheduleText=integration.lastRunAt
+    ?`${runtimeLabel} · ${new Date(integration.lastRunAt).toLocaleString()}`
+    :runtimeLabel;
   return (
-    <div style={{background:isDisabled?C.bg1:C.bg0,border:`1px solid ${C.border0}`,borderLeft:`3px solid ${integration.status==="failed"?C.red:C.border1}`,padding:"12px 18px",opacity:isDisabled?0.75:1}}>
-      <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:8}}>
-        <div style={{flex:1}}>
-          {/* Phase 2: summary sentence */}
-          <div style={{fontFamily:FONT,fontSize:12,color:C.text2,marginBottom:6,lineHeight:1.5}}>{summary}</div>
-          <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
-            <span style={{fontFamily:FONT,fontSize:14,fontWeight:700,color:isDisabled?C.text2:C.text0,marginRight:4}}>{integration.name}</span>
-            <StatusBadge status={integration.status}/>
-            <DirectionBadge direction={integration.direction}/>
-            <MethodBadge method={integration.method}/>
-          </div>
+    <div style={{background:isDisabled?C.bg1:C.bg0,border:`1px solid ${C.border0}`,borderRadius:8,padding:"16px 20px",opacity:isDisabled?0.8:1}}>
+      {/* Title row: name + badges + action buttons */}
+      <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:12,marginBottom:8}}>
+        <div style={{display:"flex",flexWrap:"wrap",alignItems:"center",gap:8}}>
+          <span style={{fontFamily:FONT,fontSize:15,fontWeight:700,color:isDisabled?C.text2:C.text0}}>{integration.name}</span>
+          <StatusBadge status={integration.status}/>
+          <DirectionBadge direction={integration.direction}/>
+          <MethodBadge method={integration.method}/>
         </div>
-        <div style={{display:"flex",gap:8,flexShrink:0,marginLeft:10}}>
-          <button onClick={()=>onEdit&&onEdit(integration)} style={{background:C.bg1,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"4px 10px",cursor:"pointer"}}>Edit</button>
-          <button onClick={()=>onDisable&&onDisable(integration.id)} style={{background:isDisabled?C.greenBg:C.bg1,border:`1px solid ${isDisabled?C.greenBorder:C.border1}`,color:isDisabled?C.green:C.text1,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"4px 10px",cursor:"pointer"}}>{isDisabled?"Enable":"Disable"}</button>
+        <div style={{display:"flex",gap:6,flexShrink:0}}>
+          <button onClick={()=>onEdit&&onEdit(integration)} aria-label={`Edit ${integration.name}`} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"5px 12px",borderRadius:6,cursor:"pointer"}}>Edit</button>
+          <button onClick={()=>onDisable&&onDisable(integration.id)} aria-label={isDisabled?`Enable ${integration.name}`:`Disable ${integration.name}`} style={{background:isDisabled?C.greenBg:C.bg0,border:`1px solid ${isDisabled?C.greenBorder:C.border1}`,color:isDisabled?C.green:C.text1,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"5px 12px",borderRadius:6,cursor:"pointer"}}>{isDisabled?"Enable":"Disable"}</button>
         </div>
       </div>
-      <div style={{display:"flex",gap:16,padding:"6px 0",borderTop:`1px solid ${C.border0}`,marginTop:6}}>
-        {integration.product&&<span style={{fontFamily:FONT,fontSize:12,color:C.text2}}>{integration.product}{(integration.businessObjects||[]).length>0?" · "+(integration.businessObjects.join(", ")):""}
-        </span>}
-        <span style={{fontFamily:FONT,fontSize:12,color:C.text2,marginLeft:"auto"}}>{runtimeLabel}{integration.lastRunAt?" · "+new Date(integration.lastRunAt).toLocaleString():""}</span>
+      {/* Description */}
+      <p style={{fontFamily:FONT,fontSize:13,color:C.text1,margin:"0 0 12px",lineHeight:1.6}}>{summary}</p>
+      {/* Footer: source → destination + schedule */}
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:8,paddingTop:10,borderTop:`1px solid ${C.border0}`}}>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <span style={{fontFamily:FONT,fontSize:12,fontWeight:600,color:C.text1}}>{src}</span>
+          <span style={{color:C.blue,fontSize:13,fontWeight:700}}>→</span>
+          <span style={{fontFamily:FONT,fontSize:12,fontWeight:600,color:C.text1}}>{dst}</span>
+          {obj&&<span style={{fontFamily:FONT,fontSize:12,color:C.text3}}>· {obj}</span>}
+        </div>
+        <span style={{fontFamily:FONT,fontSize:12,color:C.text3}}>{scheduleText}</span>
       </div>
-      {integration.status==="draft"&&<div style={{marginTop:8,background:C.amberBg,border:`1px solid ${C.amberBorder}`,borderLeft:`3px solid ${C.amber}`,padding:"6px 10px",fontFamily:FONT,fontSize:12,color:C.amber}}>Draft — edit to complete configuration and publish.</div>}
-      {integration.status==="ready_to_publish"&&<div style={{marginTop:8,background:C.blueBg,border:`1px solid ${C.blueBorder}`,borderLeft:`3px solid ${C.blue}`,padding:"6px 10px",fontFamily:FONT,fontSize:12,color:C.blue}}>Ready to publish — edit to review and activate data flow.</div>}
-      {isDisabled&&<div style={{marginTop:8,background:C.bg2,border:`1px solid ${C.border0}`,borderLeft:`3px solid ${C.border1}`,padding:"6px 10px",fontFamily:FONT,fontSize:12,color:C.text2}}>Disabled — no data will flow until re-enabled.</div>}
-      {integration.status==="failed"&&<div style={{marginTop:8,background:C.redBg,border:`1px solid ${C.redBorder}`,borderLeft:`3px solid ${C.red}`,padding:"6px 10px",fontFamily:FONT,fontSize:12,color:C.red}}>Failed — check the Review Queue for details.</div>}
+      {/* Status callouts */}
+      {integration.status==="draft"&&<div style={{marginTop:10,background:C.amberBg,border:`1px solid ${C.amberBorder}`,borderRadius:6,padding:"8px 12px",fontFamily:FONT,fontSize:12,color:C.amber}}>Draft — edit to complete configuration and publish.</div>}
+      {isReadyToPublish&&(
+        <div style={{marginTop:10,background:C.blueBg,border:`1px solid ${C.blueBorder}`,borderRadius:6,padding:"10px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,flexWrap:"wrap"}}>
+          <span style={{fontFamily:FONT,fontSize:12,color:C.blue}}>Ready to publish — review and activate this data flow.</span>
+          <button onClick={()=>onEdit&&onEdit(integration)} style={{background:C.blue,border:"none",color:"#fff",fontFamily:FONT,fontSize:12,fontWeight:700,padding:"6px 14px",borderRadius:6,cursor:"pointer",flexShrink:0}}>Review &amp; Activate</button>
+        </div>
+      )}
+      {isDisabled&&<div style={{marginTop:10,background:C.bg2,border:`1px solid ${C.border0}`,borderRadius:6,padding:"8px 12px",fontFamily:FONT,fontSize:12,color:C.text2}}>Disabled — no data will flow until re-enabled.</div>}
+      {integration.status==="failed"&&<div style={{marginTop:10,background:C.redBg,border:`1px solid ${C.redBorder}`,borderRadius:6,padding:"8px 12px",fontFamily:FONT,fontSize:12,color:C.red}}>Failed — check the Review Queue for details.</div>}
     </div>
   );
 }
 function IntegrationsTab({ system, integrations, onAddIntegration, onEditIntegration, onDisableIntegration }) {
   const intgs=integrations.filter(i=>i.systemId===system.id);
   if(intgs.length===0) return (
-    <div style={{background:C.bg0,border:`1px solid ${C.border0}`,padding:"44px 32px",textAlign:"center"}}>
-      <div style={{width:40,height:40,border:`2px solid ${C.border1}`,margin:"0 auto 16px",display:"flex",alignItems:"center",justifyContent:"center",color:C.text3,fontSize:24}}>⇄</div>
+    <div style={{background:C.bg0,border:`1px solid ${C.border0}`,borderRadius:8,padding:"44px 32px",textAlign:"center"}}>
+      <div style={{width:40,height:40,border:`2px solid ${C.border1}`,borderRadius:8,margin:"0 auto 16px",display:"flex",alignItems:"center",justifyContent:"center",color:C.text3,fontSize:24}}>⇄</div>
       <div style={{fontFamily:FONT,fontSize:14,fontWeight:700,color:C.text0,marginBottom:6}}>No integrations yet</div>
       <div style={{fontFamily:FONT,fontSize:14,color:C.text2,maxWidth:460,margin:"0 auto 6px",lineHeight:1.6}}>An Integration defines one specific data flow under this system — its direction, method, connection, and runtime.</div>
       <div style={{fontFamily:FONT,fontSize:12,color:C.text3,maxWidth:400,margin:"0 auto 20px"}}>Example: pull sensor readings from {system.name} every 15 minutes, or receive real-time alerts as they happen.</div>
-      <button onClick={onAddIntegration} style={{background:C.blue,border:`1px solid ${C.blueHover}`,color:"#fff",fontFamily:FONT,fontWeight:700,fontSize:14,padding:"8px 18px",cursor:"pointer"}}>+ Add Integration</button>
+      <button onClick={onAddIntegration} style={{background:C.blue,border:`1px solid ${C.blueHover}`,color:"#fff",fontFamily:FONT,fontWeight:700,fontSize:14,padding:"8px 18px",borderRadius:6,cursor:"pointer"}}>+ Add Integration</button>
     </div>
   );
   return <div style={{display:"flex",flexDirection:"column",gap:8}}>{intgs.map(i=><IntegrationCard key={i.id} integration={i} systemName={system.name} onEdit={onEditIntegration} onDisable={onDisableIntegration}/>)}</div>;
@@ -2766,39 +2784,50 @@ function SystemDetailPage({ system, integrations, onBack, onAddIntegration, onUp
   const TABS=[{key:"integrations",label:"Integrations"},{key:"activity",label:"User Activity"},{key:"dlq",label:"Review Queue"},{key:"audit",label:"Audit Log"}];
   const isIncomplete=system.status==="draft"&&!system.errorEmail;
   return (
-    <div style={{padding:"22px 32px",maxWidth:1200,margin:"0 auto"}}>
-      <button onClick={onBack} style={{background:"none",border:"none",color:C.blue,fontFamily:FONT,fontSize:14,fontWeight:600,cursor:"pointer",padding:"0 0 14px",display:"flex",alignItems:"center",gap:4}}>← Back to Systems</button>
-      <div style={{background:C.bg0,border:`1px solid ${C.border0}`,borderTop:`3px solid ${C.blue}`,padding:"18px 22px",marginBottom:10}}>
-        <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between"}}>
-          <div>
-            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}><h2 style={{fontFamily:FONT,fontSize:18,fontWeight:700,color:C.text0,margin:0}}>{system.name}</h2><StatusBadge status={system.status} size="lg"/></div>
-            <div style={{display:"flex",flexWrap:"wrap",gap:0}}>
+    <div style={{padding:"24px 32px",maxWidth:1200,margin:"0 auto"}}>
+      {/* Header Card */}
+      <div style={{background:C.bg0,border:`1px solid ${C.border0}`,borderRadius:8,padding:"18px 24px",marginBottom:12}}>
+        <button onClick={onBack} style={{background:"none",border:"none",color:C.blue,fontFamily:FONT,fontSize:13,fontWeight:600,cursor:"pointer",padding:"0 0 14px",display:"flex",alignItems:"center",gap:4}}>← Back to Systems</button>
+        <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:16,flexWrap:"wrap"}}>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10,flexWrap:"wrap"}}>
+              <h2 style={{fontFamily:FONT,fontSize:20,fontWeight:700,color:C.text0,margin:0}}>{system.name}</h2>
+              <StatusBadge status={system.status} size="lg"/>
+            </div>
+            <div style={{display:"flex",flexWrap:"wrap",gap:0,marginBottom:10}}>
               {[{label:"System Code",value:system.code,mono:true},{label:"Category",value:system.category},{label:"Plant",value:system.plant}].map((item,i,arr)=>(
                 <div key={item.label} style={{paddingRight:20,marginRight:20,borderRight:i<arr.length-1?`1px solid ${C.border0}`:"none"}}>
-                  <div style={{fontFamily:FONT,fontSize:10,color:C.text3,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:1}}>{item.label}</div>
-                  {item.mono?<MonoText size={12} color={C.blue}>{item.value}</MonoText>:<span style={{fontFamily:FONT,fontSize:14,color:C.text1}}>{item.value}</span>}
+                  <div style={{fontFamily:FONT,fontSize:10,color:C.text3,textTransform:"uppercase",letterSpacing:"0.07em",marginBottom:2}}>{item.label}</div>
+                  {item.mono?<MonoText size={12} color={C.blue}>{item.value}</MonoText>:<span style={{fontFamily:FONT,fontSize:13,color:C.text1}}>{item.value}</span>}
                 </div>
               ))}
             </div>
+            {system.description&&<p style={{fontFamily:FONT,fontSize:13,color:C.text2,margin:0,lineHeight:1.6}}>{system.description}</p>}
           </div>
-          <div style={{display:"flex",gap:8,flexShrink:0}}>
-            <button onClick={()=>setEditSys(true)} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text0,fontFamily:FONT,fontSize:14,fontWeight:600,padding:"7px 16px",cursor:"pointer"}}>Edit System</button>
-            <button onClick={onAddIntegration} style={{background:C.blue,border:`1px solid ${C.blueHover}`,color:"#fff",fontFamily:FONT,fontSize:14,fontWeight:700,padding:"7px 16px",cursor:"pointer",display:"flex",alignItems:"center",gap:8}}>+ Add Integration</button>
+          <div style={{display:"flex",gap:8,flexShrink:0,alignItems:"flex-start",flexWrap:"wrap"}}>
+            <button onClick={()=>setEditSys(true)} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text0,fontFamily:FONT,fontSize:13,fontWeight:600,padding:"7px 16px",borderRadius:6,cursor:"pointer"}}>Edit System</button>
+            <button onClick={onAddIntegration} style={{background:C.blue,border:`1px solid ${C.blueHover}`,color:"#fff",fontFamily:FONT,fontSize:13,fontWeight:700,padding:"7px 16px",borderRadius:6,cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>+ Add Integration</button>
           </div>
         </div>
       </div>
-      {isIncomplete&&<div style={{background:C.amberBg,border:`1px solid ${C.amberBorder}`,borderLeft:`3px solid ${C.amber}`,padding:"10px 16px",marginBottom:10,display:"flex",gap:10,alignItems:"center"}}><span style={{color:C.amber,fontSize:14,flexShrink:0}}>▲</span><div style={{flex:1}}><span style={{fontFamily:FONT,fontWeight:700,fontSize:12,color:C.amber}}>Setup incomplete — </span><span style={{fontFamily:FONT,fontSize:12,color:C.text1}}>Error notification email not configured.</span></div><button onClick={()=>setEditSys(true)} style={{background:C.amber,border:"none",color:"#fff",fontFamily:FONT,fontSize:12,fontWeight:700,padding:"5px 12px",cursor:"pointer",flexShrink:0}}>Complete Setup</button></div>}
 
-      {/* Phase 3: Flow Strip */}
+      {isIncomplete&&<div style={{background:C.amberBg,border:`1px solid ${C.amberBorder}`,borderRadius:6,padding:"10px 16px",marginBottom:12,display:"flex",gap:10,alignItems:"center"}}><span style={{color:C.amber,fontSize:14,flexShrink:0}}>▲</span><div style={{flex:1}}><span style={{fontFamily:FONT,fontWeight:700,fontSize:12,color:C.amber}}>Setup incomplete — </span><span style={{fontFamily:FONT,fontSize:12,color:C.text1}}>Error notification email not configured.</span></div><button onClick={()=>setEditSys(true)} style={{background:C.amber,border:"none",color:"#fff",fontFamily:FONT,fontSize:12,fontWeight:700,padding:"5px 12px",borderRadius:4,cursor:"pointer",flexShrink:0}}>Complete Setup</button></div>}
+
       <FlowStrip system={system} integrations={integrations}/>
 
-      <div style={{marginBottom:12}}>
-        <SummaryCard system={system}/>
+      {/* Tab bar */}
+      <div style={{display:"flex",borderBottom:`2px solid ${C.border0}`,marginBottom:14}}>
+        {TABS.map(tab=>{
+          const active=activeTab===tab.key;
+          return (
+            <button key={tab.key} onClick={()=>setTab(tab.key)} style={{background:"none",border:"none",borderBottom:active?`2px solid ${C.blue}`:"2px solid transparent",marginBottom:-2,color:active?C.blue:C.text2,fontFamily:FONT,fontSize:14,fontWeight:active?700:400,padding:"10px 20px",cursor:"pointer"}}>
+              {tab.label}
+              {tab.key==="dlq"&&system.errorCount>0&&<span style={{marginLeft:6,background:C.redBg,border:`1px solid ${C.redBorder}`,borderRadius:9999,fontSize:10,color:C.red,padding:"1px 6px",fontWeight:700}}>{system.errorCount}</span>}
+            </button>
+          );
+        })}
       </div>
-      <div style={{display:"flex",borderBottom:`1px solid ${C.border0}`,background:C.bg0}}>
-        {TABS.map(tab=>{const active=activeTab===tab.key;return <button key={tab.key} onClick={()=>setTab(tab.key)} style={{background:active?C.bg1:"none",border:"none",borderBottom:active?`2px solid ${C.blue}`:"2px solid transparent",borderRight:`1px solid ${active?C.border0:"transparent"}`,color:active?C.text0:C.text2,fontFamily:FONT,fontSize:14,fontWeight:active?700:400,padding:"9px 20px",cursor:"pointer",marginBottom:active?-1:0}}>{tab.label}{tab.key==="dlq"&&system.errorCount>0&&<span style={{marginLeft:6,background:C.redBg,border:`1px solid ${C.redBorder}`,fontSize:10,color:C.red,padding:"1px 6px",fontWeight:700}}>{system.errorCount}</span>}</button>;})}
-      </div>
-      <div style={{paddingTop:14}}>
+      <div>
         {activeTab==="integrations"&&<IntegrationsTab system={system} integrations={integrations} onAddIntegration={onAddIntegration} onEditIntegration={i=>setEditIntg(i)} onDisableIntegration={id=>onDisableIntegration&&onDisableIntegration(id)}/>}
         {activeTab==="activity"    &&<ActivityTab/>}
         {activeTab==="dlq"         &&<DLQTab systemId={system.id} onInspect={e=>setDlqEntry(e)}/>}
