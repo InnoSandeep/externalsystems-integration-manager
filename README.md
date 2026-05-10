@@ -327,11 +327,11 @@ Renders a colored pill with a dot indicator. Reads display config from `STATUS_C
 
 ### `DirectionBadge({ direction })`
 
-Teal `↓ Inbound` or purple `↑ Outbound` pill.
+Neutral grey pill showing `↓ Inbound` or `↑ Outbound`. Uses `C.bg2` background and `C.text1` text — no teal or purple.
 
 ### `MethodBadge({ method })`
 
-Grey monospace pill showing `POLLING`, `WEBHOOK`, `FILE IMPORT`, or `FILE EXPORT`.
+Grey monospace pill showing plain-language labels: `Scheduled` (polling), `Real-time` (webhook), `File Import`, or `File Export`.
 
 ### `MonoText({ children, color, size })`
 
@@ -369,15 +369,14 @@ A left-bordered info callout. Variants: `"teal"` (info), `"amber"` (warning), `"
 
 CSS-animated spinning circle (border-based). Default size 14px. Uses a `@keyframes imSpin` animation injected inline.
 
-### `SelectionCard({ label, sublabel, description, selected, onClick, disabled, tag })`
+### `SelectionCard({ label, description, selected, onClick, disabled })`
 
-Radio-style selection card for choosing Direction and Method in Step 1. Features:
-- Blue border + blue background when selected
+Compact radio-style selection card for choosing Direction and Method in Step 1. Features:
+- Blue border + `C.blueBg` background when selected
 - Hover state with `C.border1` + `C.bg1`
-- Disabled state with 55% opacity and `not-allowed` cursor
-- Optional `tag` badge (e.g. "Coming Soon") in the top-right corner
+- Disabled state with 55% opacity and `not-allowed` cursor (`disabled` cards, e.g. File Import, convey state via their `description` subtitle — no badge overlay)
 - Radio dot indicator inside card
-- `sublabel` shown inline next to the main label
+- `description` shown as a compact subtitle line below the label (e.g. "Real-time events", "Scheduled sync", "Coming soon")
 
 ### `StepIndicator({ current, steps })`
 
@@ -415,7 +414,7 @@ Custom multi-select with checkbox rows. Key behaviors:
 
 ### `AIActionButton({ label, desc, running, result, onClick })`
 
-Visually distinct button for AI-assistive actions (Auto Map, Validate). Design: purple-blue gradient background, dashed `C.purpleBorder` border, ✦ icon (replaced by ⏳ while running). Shows `desc` text when idle, shows `result` text after completion. Disabled during running state.
+Visually distinct button for AI-assistive actions (Auto Map, Validate). Design: `C.blueBg` background, `C.blueBorder` border, `C.blue` text, ✦ icon (replaced by ⏳ while running). Shows `desc` text when idle, shows `result` text after completion. Disabled during running state.
 
 ---
 
@@ -472,9 +471,9 @@ Accessed by clicking a System Card or after saving a new system.
 | Tab key | Component | Content |
 |---|---|---|
 | `integrations` | `IntegrationsTab` | List of integration cards with Edit/Disable actions |
-| `activity` | `ActivityTab` | Static activity feed with colored status dots |
+| `activity` | `ActivityTab` | Semantic HTML table: STATUS (colored dot) · ACTIVITY (message) · TIMESTAMP (right-aligned mono) |
 | `dlq` | `DLQTab` | Dead-letter queue entries with Replay/Discard stubs |
-| `audit` | `AuditTab` | Audit log table (timestamp, user email, action) |
+| `audit` | `AuditTab` | Semantic HTML table: TIMESTAMP (mono, muted) · USER (mono, blue) · ACTION (fluid) |
 
 The Review Queue tab shows a red error count badge if `system.errorCount > 0`.
 
@@ -485,16 +484,16 @@ The Review Queue tab shows a red error count badge if `system.errorCount > 0`.
 - Status-specific callout: draft (amber), ready_to_publish (blue), disabled (grey), failed (red)
 - Edit and Enable/Disable buttons
 
-**`DLQTab`** — amber intro callout + list of failed records. Each entry shows:
+**`DLQTab`** — list of failed records. Each entry shows:
 - Plain-English description: "A record from {integration} failed {N}h ago after {retries} attempts."
 - Error message in a red callout box
 - Record ID + retry count badge
 - View record detail → opens `DLQInspectModal`
 - Replay and Discard buttons (rendered but stubbed as "Coming Soon")
 
-**`ActivityTab`** — static list of activity entries. Each row has a colored dot (green=success, amber=warning, blue=info, red=error), description text, and timestamp.
+**`ActivityTab`** — semantic `<table>` with fixed-width STATUS (52px, centered colored dot) and TIMESTAMP (190px, right-aligned mono) columns and a fluid ACTIVITY column. Dot colors: green=success, amber=warning, blue=info, red=error. Empty state: "No user activity for this system."
 
-**`AuditTab`** — 3-column table: Timestamp (monospace), User email (monospace blue), Action text.
+**`AuditTab`** — semantic `<table>` with fixed-width TIMESTAMP (190px, mono, `C.text3`) and USER (220px, mono, `C.blue`) columns and a fluid ACTION column. Header row uses `C.bg2`. Empty state: "No audit activity for this system."
 
 ---
 
@@ -552,15 +551,13 @@ The most complex component. 580px right drawer. Conditionally renders a 2-step f
 **Section order:**
 
 1. **Integration Name** — free text, required
-2. **Direction** — two `SelectionCard` options:
-   - "Bring data into Innovapptive" (Inbound)
-   - "Send data from Innovapptive" (Outbound)
-3. **Method** — shown after direction is selected. The framing question changes based on direction:
-   - Inbound: "How should data arrive from the external system?"
-   - Outbound: "How should Innovapptive deliver data to the external system?"
+2. **Direction** — two compact `SelectionCard` options:
+   - "Inbound" / subtitle: "External system → Innovapptive"
+   - "Outbound" / subtitle: "Innovapptive → external system"
+3. **Method** — shown after direction is selected:
 
-   Inbound options: Webhook (real-time event delivery), Polling (scheduled pull), File Import (disabled, Coming Soon)  
-   Outbound options: Webhook (real-time delivery), File Export (disabled, Coming Soon)
+   Inbound options: Webhook (subtitle: "Real-time events"), Polling (subtitle: "Scheduled sync"), File Import (disabled, subtitle: "Coming soon")  
+   Outbound options: Webhook (subtitle: "Real-time events"), File Export (disabled, subtitle: "Coming soon")
 
 4. **Product & Collections** — shown only for inbound after method is selected:
    - Product: single `FieldSelect` (PRODUCTS list)
@@ -943,8 +940,8 @@ No Step 2. No mapping required.
 | Disable / Re-enable integration | ✅ |
 | Review Queue (DLQ) tab — dead-letter record inspection | ✅ |
 | DLQ Inspect Modal — plain-English summary + raw payload + copy | ✅ |
-| Audit log tab | ✅ |
-| Activity feed on System Detail | ✅ |
+| Audit Log tab — semantic HTML table (TIMESTAMP · USER · ACTION) | ✅ |
+| User Activity tab — semantic HTML table (STATUS dot · ACTIVITY · TIMESTAMP) | ✅ |
 | Active data flows strip on System Detail | ✅ |
 | Integration summary sentence on cards | ✅ |
 
