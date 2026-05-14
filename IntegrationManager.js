@@ -2623,6 +2623,13 @@ function DLQTab({ systemId, onInspect }) {
   const [search,setSearch]=useState("");
   const [eventTypeFilter,setEventTypeFilter]=useState("All");
   const [hoveredRow,setHoveredRow]=useState(null);
+  useEffect(()=>{
+    if(!openMenu) return;
+    const close=()=>setOpenMenu(null);
+    window.addEventListener("scroll",close,true);
+    window.addEventListener("resize",close);
+    return ()=>{ window.removeEventListener("scroll",close,true); window.removeEventListener("resize",close); };
+  },[openMenu]);
   const allEntries=DLQ_ENTRIES.filter(d=>d.systemId===systemId);
   const eventTypes=["All",...Array.from(new Set(allEntries.map(e=>e.eventType||e.integrationName)))];
   const entries=allEntries.filter(e=>{
