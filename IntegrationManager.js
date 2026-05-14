@@ -433,8 +433,8 @@ const ACTIVITY = [
 // A DLQ is a standard data-pipeline pattern: instead of silently dropping failed records,
 // they are held here so a user can inspect, replay, or discard them.
 const DLQ_ENTRIES = [
-  { id:"dlq_001", systemId:"sys_seeq", integrationName:"Trend Sync", timestamp:"2025-04-14T07:12:00Z", retryCount:3, errorMessage:"Connection timeout after 30s — host unreachable", payload:'{"asset":"Pump-12","value":98.4,"timestamp":"2025-04-14T07:11:58Z"}' },
-  { id:"dlq_002", systemId:"sys_seeq", integrationName:"Trend Sync", timestamp:"2025-04-13T23:44:00Z", retryCount:3, errorMessage:"HTTP 503 — Service Unavailable",                  payload:'{"asset":"Pump-07","value":102.1,"timestamp":"2025-04-13T23:43:50Z"}' },
+  { id:"dlq_001", systemId:"sys_seeq", integrationName:"Trend Sync", eventType:"Sensor Reading", webhookUrl:"https://cmms.company.com/webhooks/seeq/trend", timestamp:"2025-04-14T07:12:00Z", retryCount:3, errorMessage:"Connection timeout after 30s — host unreachable", payload:'{"asset":"Pump-12","value":98.4,"timestamp":"2025-04-14T07:11:58Z"}' },
+  { id:"dlq_002", systemId:"sys_seeq", integrationName:"Trend Sync", eventType:"Sensor Reading", webhookUrl:"https://cmms.company.com/webhooks/seeq/trend", timestamp:"2025-04-13T23:44:00Z", retryCount:3, errorMessage:"HTTP 503 — Service Unavailable",                  payload:'{"asset":"Pump-07","value":102.1,"timestamp":"2025-04-13T23:43:50Z"}' },
 ];
 // Static audit log entries shown in the "Audit Log" tab on System Detail.
 // Each entry records who did what and when — for compliance and change tracking.
@@ -2565,41 +2565,44 @@ function IntegrationsTab({ system, integrations, onAddIntegration, onEditIntegra
   return <div style={{display:"flex",flexDirection:"column",gap:8}}>{intgs.map(i=><IntegrationCard key={i.id} integration={i} systemName={system.name} onEdit={onEditIntegration} onDisable={onDisableIntegration}/>)}</div>;
 }
 function ActivityTab() {
+  const [hoveredRow,setHoveredRow]=useState(null);
   const DOT={success:C.green,warning:C.amber,info:C.blue,error:C.red};
-  const TH={padding:"7px 16px",fontFamily:FONT,fontSize:10,fontWeight:700,color:C.text2,textTransform:"uppercase",letterSpacing:"0.08em",textAlign:"left",borderBottom:`1px solid ${C.border0}`,background:C.bg2,whiteSpace:"nowrap"};
-  const TD={padding:"10px 16px",fontFamily:FONT,fontSize:12,color:C.text0,verticalAlign:"middle",borderBottom:`1px solid ${C.border0}`};
+  const TH={padding:"9px 14px",fontFamily:FONT,fontSize:11,fontWeight:700,color:C.text2,textTransform:"uppercase",letterSpacing:"0.07em",textAlign:"left",borderBottom:`1px solid ${C.border0}`,background:C.bg1,whiteSpace:"nowrap"};
+  const TD={padding:"11px 14px",fontFamily:FONT,fontSize:13,color:C.text0,verticalAlign:"middle",borderBottom:`1px solid ${C.border0}`};
   return (
-    <div style={{border:`1px solid ${C.border0}`,background:C.bg0,overflow:"hidden"}}>
+    <div style={{border:`1px solid ${C.border0}`,borderRadius:8,background:C.bg0,overflow:"hidden"}}>
       {ACTIVITY.length===0
         ? <div style={{padding:"32px",textAlign:"center",fontFamily:FONT,fontSize:14,color:C.text3}}>No user activity for this system.</div>
-        : <table style={{width:"100%",borderCollapse:"collapse",tableLayout:"fixed"}}>
-            <colgroup>
-              <col style={{width:52}}/>
-              <col/>
-              <col style={{width:190}}/>
-            </colgroup>
-            <thead>
-              <tr>
-                <th style={{...TH,textAlign:"center"}}>Status</th>
-                <th style={TH}>Activity</th>
-                <th style={{...TH,textAlign:"right"}}>Timestamp</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ACTIVITY.map((a,idx)=>{
-                const isLast=idx===ACTIVITY.length-1;
-                return (
-                  <tr key={a.id} style={{background:C.bg0}}>
-                    <td style={{...TD,textAlign:"center",borderBottom:isLast?"none":`1px solid ${C.border0}`}}>
+        : <div style={{overflowX:"auto"}}>
+            <table style={{width:"100%",borderCollapse:"collapse",tableLayout:"fixed",minWidth:560}}>
+              <colgroup>
+                <col style={{width:70}}/>
+                <col/>
+                <col style={{width:200}}/>
+              </colgroup>
+              <thead>
+                <tr>
+                  <th style={{...TH,textAlign:"center",borderRight:`1px solid ${C.border0}`}}>Status</th>
+                  <th style={TH}>Activity</th>
+                  <th style={{...TH,textAlign:"right"}}>Timestamp</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ACTIVITY.map((a)=>(
+                  <tr key={a.id}
+                    onMouseEnter={()=>setHoveredRow(a.id)}
+                    onMouseLeave={()=>setHoveredRow(null)}
+                    style={{background:hoveredRow===a.id?C.bg1:C.bg0,transition:"background 0.1s"}}>
+                    <td style={{...TD,textAlign:"center",borderRight:`1px solid ${C.border0}`}}>
                       <span style={{display:"inline-block",width:8,height:8,borderRadius:9999,background:DOT[a.status]||C.text3}}/>
                     </td>
-                    <td style={{...TD,lineHeight:1.5,borderBottom:isLast?"none":`1px solid ${C.border0}`}}>{a.desc}</td>
-                    <td style={{...TD,fontFamily:MONO,color:C.text3,textAlign:"right",borderBottom:isLast?"none":`1px solid ${C.border0}`}}>{new Date(a.timestamp).toLocaleString()}</td>
+                    <td style={{...TD,lineHeight:1.6}}>{a.desc}</td>
+                    <td style={{...TD,fontFamily:MONO,fontSize:12,color:C.text3,textAlign:"right",whiteSpace:"nowrap"}}>{new Date(a.timestamp).toLocaleString()}</td>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                ))}
+              </tbody>
+            </table>
+          </div>
       }
     </div>
   );
@@ -2615,34 +2618,96 @@ function ActivityTab() {
 //
 // Replay and Discard are currently rendered but not wired (Coming Soon).
 function DLQTab({ systemId, onInspect }) {
-  const entries=DLQ_ENTRIES.filter(d=>d.systemId===systemId);
+  const [openMenu,setOpenMenu]=useState(null);
+  const [search,setSearch]=useState("");
+  const [eventTypeFilter,setEventTypeFilter]=useState("All");
+  const [hoveredRow,setHoveredRow]=useState(null);
+  const allEntries=DLQ_ENTRIES.filter(d=>d.systemId===systemId);
+  const eventTypes=["All",...Array.from(new Set(allEntries.map(e=>e.eventType||e.integrationName)))];
+  const entries=allEntries.filter(e=>{
+    const et=e.eventType||e.integrationName;
+    const matchType=eventTypeFilter==="All"||et===eventTypeFilter;
+    const q=search.toLowerCase();
+    const matchSearch=!q||et.toLowerCase().includes(q)||e.errorMessage.toLowerCase().includes(q)||(e.webhookUrl||"").toLowerCase().includes(q);
+    return matchType&&matchSearch;
+  });
+  const TH={padding:"9px 14px",fontFamily:FONT,fontSize:11,fontWeight:700,color:C.text2,textTransform:"uppercase",letterSpacing:"0.07em",textAlign:"left",borderBottom:`1px solid ${C.border0}`,background:C.bg1,whiteSpace:"nowrap"};
+  const TD={padding:"11px 14px",fontFamily:FONT,fontSize:13,color:C.text0,verticalAlign:"middle",borderBottom:`1px solid ${C.border0}`};
+  const SortIcon=()=><svg width="10" height="12" viewBox="0 0 10 12" fill="none" style={{marginLeft:4,verticalAlign:"middle",opacity:0.45}}><path d="M3 4.5L5 2.5L7 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M3 7.5L5 9.5L7 7.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+  if(allEntries.length===0) return <div style={{background:C.bg0,border:`1px solid ${C.border0}`,borderRadius:8,padding:"32px",textAlign:"center",fontFamily:FONT,fontSize:14,color:C.text3}}>No items in the review queue for this system.</div>;
   return (
-    <div>
-      {entries.length===0?<div style={{background:C.bg0,border:`1px solid ${C.border0}`,padding:"32px",textAlign:"center",fontFamily:FONT,fontSize:14,color:C.text3}}>No items in the review queue for this system.</div>:(
-        <div style={{display:"flex",flexDirection:"column",gap:8}}>
-          {entries.map(e=>{
-            // Plain-English what happened (Phase 3)
-            const ago=Math.round((Date.now()-new Date(e.timestamp).getTime())/(1000*60*60));
-            const when=ago<24?`${ago}h ago`:new Date(e.timestamp).toLocaleDateString();
-            return (
-              <div key={e.id} style={{background:C.bg0,border:`1px solid ${C.border0}`,borderLeft:`3px solid ${C.red}`,padding:"12px 16px"}}>
-                <div style={{fontFamily:FONT,fontSize:14,color:C.text0,marginBottom:6,lineHeight:1.5}}>
-                  A record from <strong>{e.integrationName}</strong> failed {when} after {e.retryCount} attempts.
-                </div>
-                <div style={{fontFamily:FONT,fontSize:12,color:C.red,marginBottom:8,padding:"5px 8px",background:C.redBg,border:`1px solid ${C.redBorder}`}}>{e.errorMessage}</div>
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                  <div style={{display:"flex",alignItems:"center",gap:8}}><MonoText color={C.text3} size={12}>{e.id.toUpperCase()}</MonoText><span style={{background:C.redBg,border:`1px solid ${C.redBorder}`,padding:"1px 8px",fontFamily:FONT,fontSize:12,fontWeight:600,color:C.red}}>{e.retryCount} retries</span></div>
-                  <div style={{display:"flex",gap:8}}>
-                    <button onClick={()=>onInspect&&onInspect(e)} style={{background:C.bg1,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"4px 10px",cursor:"pointer"}}>View record detail</button>
-                    <span title="Replay coming soon" style={{display:"inline-flex",alignItems:"center",background:C.bg2,border:`1px solid ${C.border0}`,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"4px 10px",color:C.text3,cursor:"not-allowed"}}>Replay</span>
-                    <span title="Discard coming soon" style={{display:"inline-flex",alignItems:"center",background:C.bg2,border:`1px solid ${C.border0}`,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"4px 10px",color:C.text3,cursor:"not-allowed"}}>Discard</span>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+    <div style={{border:`1px solid ${C.border0}`,borderRadius:8,background:C.bg0,overflow:"hidden"}}>
+      {/* Toolbar */}
+      <div style={{padding:"10px 14px",borderBottom:`1px solid ${C.border0}`,background:C.bg1,display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
+        <div style={{display:"flex",flexDirection:"column",gap:2}}>
+          <span style={{fontFamily:FONT,fontSize:10,color:C.text3,textTransform:"uppercase",letterSpacing:"0.06em"}}>Event Types</span>
+          <select value={eventTypeFilter} onChange={ev=>setEventTypeFilter(ev.target.value)} style={{fontFamily:FONT,fontSize:13,color:C.text0,background:C.bg0,border:`1px solid ${C.border1}`,borderRadius:4,padding:"3px 24px 3px 8px",cursor:"pointer",appearance:"auto"}}>
+            {eventTypes.map(t=><option key={t} value={t}>{t}</option>)}
+          </select>
         </div>
-      )}
+        <span style={{fontFamily:FONT,fontSize:13,color:C.text2,marginLeft:4}}>{entries.length} {entries.length===1?"entry":"entries"}</span>
+        <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:6,border:`1px solid ${C.border1}`,borderRadius:4,background:C.bg0,padding:"4px 10px"}}>
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="5.5" cy="5.5" r="4" stroke={C.text3} strokeWidth="1.5"/><path d="M9 9L12 12" stroke={C.text3} strokeWidth="1.5" strokeLinecap="round"/></svg>
+          <input value={search} onChange={ev=>setSearch(ev.target.value)} placeholder="Search" style={{fontFamily:FONT,fontSize:13,color:C.text0,border:"none",outline:"none",background:"transparent",width:140}} aria-label="Search review queue"/>
+        </div>
+      </div>
+      {entries.length===0
+        ? <div style={{padding:"32px",textAlign:"center",fontFamily:FONT,fontSize:14,color:C.text3}}>No entries match your filter.</div>
+        : <div style={{overflowX:"auto"}}>
+            <table style={{width:"100%",borderCollapse:"collapse",tableLayout:"fixed",minWidth:820}}>
+              <colgroup>
+                <col style={{width:150}}/>
+                <col style={{width:260}}/>
+                <col/>
+                <col style={{width:190}}/>
+                <col style={{width:120}}/>
+                <col style={{width:72}}/>
+              </colgroup>
+              <thead>
+                <tr>
+                  <th style={{...TH,borderRight:`1px solid ${C.border0}`}}>Event Type<SortIcon/></th>
+                  <th style={{...TH,borderRight:`1px solid ${C.border0}`}}>Webhook URL<SortIcon/></th>
+                  <th style={{...TH,borderRight:`1px solid ${C.border0}`}}>Failure Reason</th>
+                  <th style={{...TH,borderRight:`1px solid ${C.border0}`}}>Last Attempt<SortIcon/></th>
+                  <th style={{...TH,textAlign:"center",borderRight:`1px solid ${C.border0}`}}>Retry Attempts</th>
+                  <th style={{...TH,textAlign:"center"}}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {entries.map((e)=>{
+                  const isHovered=hoveredRow===e.id;
+                  const et=e.eventType||e.integrationName;
+                  return (
+                    <tr key={e.id}
+                      onMouseEnter={()=>setHoveredRow(e.id)}
+                      onMouseLeave={()=>setHoveredRow(null)}
+                      style={{background:isHovered?C.bg1:C.bg0,transition:"background 0.1s"}}>
+                      <td style={{...TD,fontWeight:500,borderRight:`1px solid ${C.border0}`}}>{et}</td>
+                      <td style={{...TD,fontFamily:MONO,fontSize:12,color:C.text1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",borderRight:`1px solid ${C.border0}`}} title={e.webhookUrl||"—"}>{e.webhookUrl||"—"}</td>
+                      <td style={{...TD,color:C.red,borderRight:`1px solid ${C.border0}`}}>{e.errorMessage}</td>
+                      <td style={{...TD,fontFamily:MONO,fontSize:12,color:C.text3,whiteSpace:"nowrap",borderRight:`1px solid ${C.border0}`}}>{new Date(e.timestamp).toLocaleString()}</td>
+                      <td style={{...TD,textAlign:"center",fontFamily:MONO,fontSize:12,borderRight:`1px solid ${C.border0}`}}>{e.retryCount}/{e.retryCount}</td>
+                      <td style={{...TD,textAlign:"center",position:"relative"}}>
+                        <button
+                          onClick={()=>setOpenMenu(openMenu===e.id?null:e.id)}
+                          aria-label="Row actions"
+                          style={{background:"none",border:`1px solid ${C.border0}`,borderRadius:4,padding:"3px 7px",cursor:"pointer",fontFamily:FONT,fontSize:15,color:C.text2,lineHeight:1}}>···</button>
+                        {openMenu===e.id&&(
+                          <div style={{position:"absolute",right:8,top:"calc(100% - 2px)",background:C.bg0,border:`1px solid ${C.border0}`,borderRadius:6,boxShadow:"0 4px 12px rgba(0,0,0,0.1)",zIndex:50,minWidth:170,overflow:"hidden"}}
+                            onMouseLeave={()=>setOpenMenu(null)}>
+                            <button onClick={()=>{onInspect&&onInspect(e);setOpenMenu(null);}} style={{display:"block",width:"100%",textAlign:"left",background:"none",border:"none",padding:"9px 14px",fontFamily:FONT,fontSize:13,color:C.text0,cursor:"pointer",borderBottom:`1px solid ${C.border0}`}}>View record detail</button>
+                            <span style={{display:"block",padding:"9px 14px",fontFamily:FONT,fontSize:13,color:C.text3,cursor:"not-allowed",borderBottom:`1px solid ${C.border0}`}} title="Coming soon">Replay</span>
+                            <span style={{display:"block",padding:"9px 14px",fontFamily:FONT,fontSize:13,color:C.text3,cursor:"not-allowed"}} title="Coming soon">Discard</span>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+      }
     </div>
   );
 }
@@ -2650,35 +2715,41 @@ function DLQTab({ systemId, onInspect }) {
 // Shows user email, timestamp, and the action taken (create, publish, edit).
 // In a real product, this would be a live query from a backend audit service.
 function AuditTab() {
-  const TH={padding:"7px 16px",fontFamily:FONT,fontSize:10,fontWeight:700,color:C.text2,textTransform:"uppercase",letterSpacing:"0.08em",textAlign:"left",borderBottom:`1px solid ${C.border0}`,background:C.bg2,whiteSpace:"nowrap"};
-  const TD={padding:"10px 16px",fontFamily:FONT,fontSize:12,color:C.text0,verticalAlign:"top",borderBottom:`1px solid ${C.border0}`};
+  const [hoveredRow,setHoveredRow]=useState(null);
+  const TH={padding:"9px 14px",fontFamily:FONT,fontSize:11,fontWeight:700,color:C.text2,textTransform:"uppercase",letterSpacing:"0.07em",textAlign:"left",borderBottom:`1px solid ${C.border0}`,background:C.bg1,whiteSpace:"nowrap"};
+  const TD={padding:"11px 14px",fontFamily:FONT,fontSize:13,color:C.text0,verticalAlign:"middle",borderBottom:`1px solid ${C.border0}`};
   return (
-    <div style={{border:`1px solid ${C.border0}`,background:C.bg0,overflow:"hidden"}}>
+    <div style={{border:`1px solid ${C.border0}`,borderRadius:8,background:C.bg0,overflow:"hidden"}}>
       {AUDIT_LOG.length===0
         ? <div style={{padding:"32px",textAlign:"center",fontFamily:FONT,fontSize:14,color:C.text3}}>No audit activity for this system.</div>
-        : <table style={{width:"100%",borderCollapse:"collapse",tableLayout:"fixed"}}>
-            <colgroup>
-              <col style={{width:190}}/>
-              <col style={{width:220}}/>
-              <col/>
-            </colgroup>
-            <thead>
-              <tr>
-                <th style={TH}>Timestamp</th>
-                <th style={TH}>User</th>
-                <th style={TH}>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {AUDIT_LOG.map((a,idx)=>(
-                <tr key={a.id} style={{background:C.bg0}}>
-                  <td style={{...TD,fontFamily:MONO,color:C.text3,borderBottom:idx<AUDIT_LOG.length-1?`1px solid ${C.border0}`:"none"}}>{new Date(a.timestamp).toLocaleString()}</td>
-                  <td style={{...TD,fontFamily:MONO,color:C.blue,borderBottom:idx<AUDIT_LOG.length-1?`1px solid ${C.border0}`:"none"}}>{a.userEmail}</td>
-                  <td style={{...TD,color:C.text0,lineHeight:1.5,borderBottom:idx<AUDIT_LOG.length-1?`1px solid ${C.border0}`:"none"}}>{a.action}</td>
+        : <div style={{overflowX:"auto"}}>
+            <table style={{width:"100%",borderCollapse:"collapse",tableLayout:"fixed",minWidth:600}}>
+              <colgroup>
+                <col style={{width:200}}/>
+                <col style={{width:230}}/>
+                <col/>
+              </colgroup>
+              <thead>
+                <tr>
+                  <th style={{...TH,borderRight:`1px solid ${C.border0}`}}>Timestamp</th>
+                  <th style={{...TH,borderRight:`1px solid ${C.border0}`}}>User</th>
+                  <th style={TH}>Action</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {AUDIT_LOG.map((a)=>(
+                  <tr key={a.id}
+                    onMouseEnter={()=>setHoveredRow(a.id)}
+                    onMouseLeave={()=>setHoveredRow(null)}
+                    style={{background:hoveredRow===a.id?C.bg1:C.bg0,transition:"background 0.1s"}}>
+                    <td style={{...TD,fontFamily:MONO,fontSize:12,color:C.text3,whiteSpace:"nowrap",borderRight:`1px solid ${C.border0}`}}>{new Date(a.timestamp).toLocaleString()}</td>
+                    <td style={{...TD,fontFamily:MONO,fontSize:12,color:C.blue,whiteSpace:"nowrap",borderRight:`1px solid ${C.border0}`}}>{a.userEmail}</td>
+                    <td style={{...TD,lineHeight:1.6}}>{a.action}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
       }
     </div>
   );
