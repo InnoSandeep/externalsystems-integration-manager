@@ -2619,6 +2619,7 @@ function ActivityTab() {
 // Replay and Discard are currently rendered but not wired (Coming Soon).
 function DLQTab({ systemId, onInspect }) {
   const [openMenu,setOpenMenu]=useState(null);
+  const [menuPos,setMenuPos]=useState({top:0,right:0});
   const [search,setSearch]=useState("");
   const [eventTypeFilter,setEventTypeFilter]=useState("All");
   const [hoveredRow,setHoveredRow]=useState(null);
@@ -2689,13 +2690,13 @@ function DLQTab({ systemId, onInspect }) {
                       <td style={{...TD,color:C.red,borderRight:`1px solid ${C.border0}`}}>{e.errorMessage}</td>
                       <td style={{...TD,fontFamily:MONO,fontSize:12,color:C.text3,whiteSpace:"nowrap",borderRight:`1px solid ${C.border0}`}}>{new Date(e.timestamp).toLocaleString()}</td>
                       <td style={{...TD,textAlign:"center",fontFamily:MONO,fontSize:12,borderRight:`1px solid ${C.border0}`}}>{e.retryCount}/{e.retryCount}</td>
-                      <td style={{...TD,textAlign:"center",position:"relative"}}>
+                      <td style={{...TD,textAlign:"center"}}>
                         <button
-                          onClick={()=>setOpenMenu(openMenu===e.id?null:e.id)}
+                          onClick={ev=>{const r=ev.currentTarget.getBoundingClientRect();setMenuPos({top:r.bottom+4,right:window.innerWidth-r.right});setOpenMenu(openMenu===e.id?null:e.id);}}
                           aria-label="Row actions"
                           style={{background:"none",border:`1px solid ${C.border0}`,borderRadius:4,padding:"3px 7px",cursor:"pointer",fontFamily:FONT,fontSize:15,color:C.text2,lineHeight:1}}>···</button>
                         {openMenu===e.id&&(
-                          <div style={{position:"absolute",right:8,top:"calc(100% - 2px)",background:C.bg0,border:`1px solid ${C.border0}`,borderRadius:6,boxShadow:"0 4px 12px rgba(0,0,0,0.1)",zIndex:50,minWidth:170,overflow:"hidden"}}
+                          <div style={{position:"fixed",top:menuPos.top,right:menuPos.right,background:C.bg0,border:`1px solid ${C.border0}`,borderRadius:6,boxShadow:"0 4px 12px rgba(0,0,0,0.1)",zIndex:9999,minWidth:170,overflow:"hidden"}}
                             onMouseLeave={()=>setOpenMenu(null)}>
                             <button onClick={()=>{onInspect&&onInspect(e);setOpenMenu(null);}} style={{display:"block",width:"100%",textAlign:"left",background:"none",border:"none",padding:"9px 14px",fontFamily:FONT,fontSize:13,color:C.text0,cursor:"pointer",borderBottom:`1px solid ${C.border0}`}}>View record detail</button>
                             <span style={{display:"block",padding:"9px 14px",fontFamily:FONT,fontSize:13,color:C.text3,cursor:"not-allowed",borderBottom:`1px solid ${C.border0}`}} title="Coming soon">Replay</span>
