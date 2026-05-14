@@ -436,6 +436,8 @@ const DLQ_ENTRIES = [
   { id:"dlq_001", systemId:"sys_seeq", integrationName:"Trend Sync", eventType:"Sensor Reading", webhookUrl:"https://cmms.company.com/webhooks/seeq/trend", timestamp:"2025-04-14T07:12:00Z", retryCount:3, errorMessage:"Connection timeout after 30s — host unreachable", payload:'{"asset":"Pump-12","value":98.4,"timestamp":"2025-04-14T07:11:58Z"}' },
   { id:"dlq_002", systemId:"sys_seeq", integrationName:"Trend Sync", eventType:"Sensor Reading", webhookUrl:"https://cmms.company.com/webhooks/seeq/trend", timestamp:"2025-04-13T23:44:00Z", retryCount:3, errorMessage:"HTTP 503 — Service Unavailable",                  payload:'{"asset":"Pump-07","value":102.1,"timestamp":"2025-04-13T23:43:50Z"}' },
 ];
+// Configured retry budget for DLQ entries — records land in the queue after this many attempts.
+const MAX_DLQ_RETRIES = 3;
 // Static audit log entries shown in the "Audit Log" tab on System Detail.
 // Each entry records who did what and when — for compliance and change tracking.
 const AUDIT_LOG = [
@@ -2696,7 +2698,7 @@ function DLQTab({ systemId, onInspect }) {
                       <td style={{...TD,fontFamily:MONO,fontSize:12,color:C.text1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",borderRight:`1px solid ${C.border0}`}} title={e.webhookUrl||"—"}>{e.webhookUrl||"—"}</td>
                       <td style={{...TD,color:C.red,borderRight:`1px solid ${C.border0}`}}>{e.errorMessage}</td>
                       <td style={{...TD,fontFamily:MONO,fontSize:12,color:C.text3,whiteSpace:"nowrap",borderRight:`1px solid ${C.border0}`}}>{new Date(e.timestamp).toLocaleString()}</td>
-                      <td style={{...TD,textAlign:"center",fontFamily:MONO,fontSize:12,borderRight:`1px solid ${C.border0}`}}>{e.retryCount}/{e.retryCount}</td>
+                      <td style={{...TD,textAlign:"center",fontFamily:MONO,fontSize:12,borderRight:`1px solid ${C.border0}`}}>{e.retryCount}/{MAX_DLQ_RETRIES}</td>
                       <td style={{...TD,textAlign:"center"}}>
                         <button
                           onClick={ev=>{const r=ev.currentTarget.getBoundingClientRect();setMenuPos({top:r.bottom+4,right:window.innerWidth-r.right});setOpenMenu(openMenu===e.id?null:e.id);}}
