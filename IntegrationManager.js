@@ -34,62 +34,63 @@ const { useState, useMemo, useEffect, useRef } = React;
 // Source: CWP Design System Storybook 2026 — see DESIGN_SYSTEM.md for full token reference.
 const C = {
   // Surfaces
-  pageBg:      "#EFF1F5",   // $color-bg-surface / Beta Grey-100
-  bg0:         "#FFFFFF",   // $color-bg-default / White
-  bg1:         "#EFF1F5",   // Grey-100 (same as pageBg in CWP 2.0)
-  bg2:         "#E2E4E9",   // Grey-200 — disabled fills, dividers
-  bg3:         "rgba(143,147,163,0.25)",  // $color-bg-chip — light chip/badge surface (~#D7D8DD on white)
+  pageBg:      "#F4F6F9",   // --bg
+  bg0:         "#FFFFFF",   // --surface
+  bg1:         "#F8F9FC",   // --s2
+  bg2:         "#EFF1F6",   // --s3
+  bg3:         "#EEF0FE",   // --primary-ss (chip surface)
 
   // Borders
-  border0:     "#E2E4E9",   // $color-border-default / Grey-200
-  border1:     "#8F93A3",   // Grey-300 — medium emphasis
-  border2:     "#666975",   // Grey-400 — strong border
+  border0:     "#E5E7EB",   // --border
+  border1:     "#D1D5DB",   // --border2
+  border2:     "#D1D5DB",
 
   // Text
-  text0:       "#2A2B30",   // $color-text-primary / Grey-600
-  text1:       "#525560",   // $color-text-secondary / Grey-500
-  text2:       "#8F93A3",   // $color-text-placeholder / Grey-300
-  text3:       "#8F93A3",   // $color-text-disabled / Grey-300
+  text0:       "#111827",   // --text
+  text1:       "#374151",   // --text2
+  text2:       "#6B7280",   // --text3
+  text3:       "#9CA3AF",   // --text4
 
-  // Navigation — retain dark nav surface
-  navBg:       "#1A2233",
-  navBorder:   "#2A3447",
-  navText:     "#C8D0DC",
+  // Sidebar — dark navy palette
+  navBg:       "#1A2352",   // --sb-bg
+  navBorder:   "rgba(255,255,255,0.08)",
+  navText:     "rgba(255,255,255,0.6)",
   navActive:   "#FFFFFF",
-  navActiveBg: "#2B40B4",   // Alpha/Primary-700
+  navActiveBg: "#2B40B4",   // active child pill
+  navActiveTint:"rgba(61,90,254,0.25)", // expanded group container tint
 
-  // Primary interactive — Alpha/Primary
-  blue:          "#3D5AFE",   // Alpha/Primary-500
-  blueHover:     "#2B40B4",   // Alpha/Primary-700
-  blueBg:        "#ECEFFF",   // Alpha/Primary-50
-  blueBorder:    "#C3CCFF",   // Alpha/Primary-100
-  blueFocus:     "#7D90FE",   // Alpha/Primary-300 — focused border
-  navActiveTint: "#DDE3FF",   // --local-color-primary-tint-light (reference app) — active sidebar row bg
+  // Primary — Alpha/Primary indigo
+  blue:          "#3D5AFE",  // --primary
+  blueHover:     "#2D4AEE",  // --primary-h
+  blueBg:        "#EEF0FE",  // --primary-s
+  blueBorder:    "#C7D2FE",  // --med-b
+  blueFocus:     "#7D90FE",
+  navActiveTint2:"#DDE3FF",
 
-  // Teal — inbound direction, info callouts
-  teal:        "#009688",   // Teal-500
-  tealBg:      "#E6F5F3",   // Teal-50
-  tealBorder:  "#54B9AF",   // Teal-300
+  // Teal — inbound direction
+  teal:        "#009688",
+  tealBg:      "#E6F5F3",
+  tealBorder:  "#54B9AF",
 
-  // Amber / Warning — Gamma/Orange
-  amber:       "#B5792D",   // Orange-700 — warning text
-  amberBg:     "rgba(255,171,64,0.25)",  // Orange-500 25%
-  amberBorder: "#FFAB40",   // Orange-500
+  // Amber / Major warning
+  amber:       "#D97706",   // --major
+  amberBg:     "#FFFBEB",   // --major-s
+  amberBorder: "#FDE68A",   // --major-b
 
-  // Red — error, failed
-  red:         "#B42318",   // Red-700 — error text
-  redBg:       "rgba(217,45,32,0.25)",   // Red-500 (#D92D20) 25%
-  redBorder:   "#D92D20",   // Red-500
+  // Red / Critical
+  red:         "#DC2626",   // --crit
+  redBg:       "#FEF2F2",   // --crit-s
+  redBorder:   "#FECACA",   // --crit-b
 
-  // Green — active, success
-  green:       "#1C8D4F",   // Green-700 — success text
-  greenBg:     "rgba(40,199,111,0.25)",  // Green-500 25%
-  greenBorder: "#28C76F",   // Green-500
+  // Green / Minor success
+  green:       "#16A34A",   // --minor
+  greenBg:     "#F0FDF4",   // --minor-s
+  greenBorder: "#A7F3D0",   // --minor-b
 
   // Purple — outbound direction
-  purple:      "#8A6CFF",   // Purple-500
-  purpleBg:    "#F3F0FF",   // Purple-50
-  purpleBorder:"#B19DFF",   // Purple-300
+  purple:      "#6D28D9",
+  purpleBg:    "#F5F3FF",
+  purpleBorder:"#C4B5FD",
 };
 const FONT = "'Roboto', 'Segoe UI', system-ui, sans-serif";
 const MONO = "'Roboto Mono', 'Fira Code', 'Consolas', monospace";
@@ -2226,7 +2227,7 @@ function PlatformLogo({ expanded }) {
   return (
     <div style={{display:"flex",alignItems:"center",gap:10,overflow:"hidden",flexShrink:0}}>
       {iconMark}
-      <span style={{fontFamily:FONT,fontSize:13,fontWeight:700,color:C.text0,whiteSpace:"nowrap",letterSpacing:"0.2px"}}>
+      <span style={{fontFamily:FONT,fontSize:13,fontWeight:700,color:"#FFFFFF",whiteSpace:"nowrap",letterSpacing:"0.2px"}}>
         Innovapptive
       </span>
     </div>
@@ -2236,24 +2237,25 @@ function PlatformLogo({ expanded }) {
 function PlatformSidebar({ expanded }) {
   const w = expanded ? SIDEBAR_EXPANDED_W : SIDEBAR_COLLAPSED_W;
   return (
-    <div style={{width:w,flexShrink:0,background:C.bg0,borderRight:`1px solid ${C.border0}`,display:"flex",flexDirection:"column",height:"100vh",position:"sticky",top:0,zIndex:50,overflow:"hidden",transition:"width 0.15s"}}>
+    <div style={{width:w,flexShrink:0,background:C.navBg,borderRight:`1px solid ${C.navBorder}`,display:"flex",flexDirection:"column",height:"100vh",position:"sticky",top:0,zIndex:50,overflow:"hidden",transition:"width 0.15s"}}>
       {/* Logo area — height matches PlatformHeader (64px) for horizontal alignment */}
-      <div style={{height:64,display:"flex",alignItems:"center",justifyContent:expanded?"flex-start":"center",borderBottom:`1px solid ${C.border0}`,flexShrink:0,padding:expanded?"0 16px":"0",overflow:"hidden"}}>
+      <div style={{height:64,display:"flex",alignItems:"center",justifyContent:expanded?"flex-start":"center",borderBottom:`1px solid ${C.navBorder}`,flexShrink:0,padding:expanded?"0 16px":"0",overflow:"hidden",background:C.navBg}}>
         <PlatformLogo expanded={expanded}/>
       </div>
       {/* Nav items */}
       <div style={{flex:1,overflowY:"auto",overflowX:"hidden",paddingTop:4,paddingBottom:4}}>
         {SIDEBAR_ITEMS.map(item=>{
           const active = item.key==="integration-manager";
-          const iconColor = active ? C.blue : "#727caf";
+          const iconColor = active ? "#FFFFFF" : "rgba(255,255,255,0.4)";
+          const labelColor = active ? "#FFFFFF" : "rgba(255,255,255,0.6)";
           return (
             <div key={item.key} title={!expanded?item.label:undefined}
               style={{
                 display:"flex",alignItems:"center",
                 padding:expanded?"8px 8px 8px 10px":"8px",
                 justifyContent:expanded?"flex-start":"center",
-                // Active bg: --local-color-primary-tint-light from reference app (C.navActiveTint)
-                background:active?C.navActiveTint:"transparent",
+                // Active bg: semi-transparent white highlight with blue left accent
+                background:active?"rgba(255,255,255,0.15)":"transparent",
                 // Left accent: 3px blue stripe in both collapsed and expanded active state
                 borderLeft:`3px solid ${active?C.blue:"transparent"}`,
                 cursor:active?"default":"not-allowed",
@@ -2262,16 +2264,16 @@ function PlatformSidebar({ expanded }) {
                 boxSizing:"border-box",
                 width:"100%",
               }}>
-              {/* Icon container — 24×24px / 6px radius / C.bg1 per Figma spec */}
-              <div style={{width:24,height:24,background:active?C.navActiveTint:C.bg1,borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+              {/* Icon container — 24×24px / 6px radius */}
+              <div style={{width:24,height:24,background:active?"rgba(255,255,255,0.15)":"rgba(255,255,255,0.08)",borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                 <PlatformIcon itemKey={item.key} size={14} color={iconColor}/>
               </div>
               {expanded&&(
                 <>
-                  <span style={{fontFamily:FONT,fontSize:12,fontWeight:700,color:iconColor,letterSpacing:"0.3px",flex:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{item.label}</span>
+                  <span style={{fontFamily:FONT,fontSize:12,fontWeight:700,color:labelColor,letterSpacing:"0.3px",flex:1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{item.label}</span>
                   {item.expandable&&(
                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style={{flexShrink:0,opacity:0.6}}>
-                      <path d="M4.5 2.5l3 3-3 3" stroke="#727caf" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M4.5 2.5l3 3-3 3" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   )}
                 </>
@@ -2471,7 +2473,7 @@ function FlowStrip({ system, integrations }) {
           const dst=isIn?(intg.product||"Innovapptive"):system.name;
           const obj=(intg.businessObjects||[])[0]||(intg.method==="webhook"?"Events":"Data");
           return (
-            <div key={intg.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:C.bg1,borderRadius:6,flexWrap:"wrap"}}>
+            <div key={intg.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:C.bg1,borderRadius:8,flexWrap:"wrap"}}>
               <span style={{fontFamily:FONT,fontSize:13,fontWeight:600,color:C.text0,flexShrink:0}}>{src}</span>
               <span style={{color:C.blue,fontSize:14,fontWeight:700,flexShrink:0}}>→</span>
               <span style={{fontFamily:FONT,fontSize:13,fontWeight:600,color:C.text0,flexShrink:0}}>{dst}</span>
@@ -2524,8 +2526,8 @@ function IntegrationCard({ integration, systemName, onEdit, onDisable }) {
           <MethodBadge method={integration.method}/>
         </div>
         <div style={{display:"flex",gap:6,flexShrink:0}}>
-          <button onClick={()=>onEdit&&onEdit(integration)} aria-label={`Edit ${integration.name}`} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"5px 12px",borderRadius:6,cursor:"pointer"}}>Edit</button>
-          <button onClick={()=>onDisable&&onDisable(integration.id)} aria-label={isDisabled?`Enable ${integration.name}`:`Disable ${integration.name}`} style={{background:isDisabled?C.greenBg:C.bg0,border:`1px solid ${isDisabled?C.greenBorder:C.border1}`,color:isDisabled?C.green:C.text1,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"5px 12px",borderRadius:6,cursor:"pointer"}}>{isDisabled?"Enable":"Disable"}</button>
+          <button onClick={()=>onEdit&&onEdit(integration)} aria-label={`Edit ${integration.name}`} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"5px 12px",borderRadius:8,cursor:"pointer"}}>Edit</button>
+          <button onClick={()=>onDisable&&onDisable(integration.id)} aria-label={isDisabled?`Enable ${integration.name}`:`Disable ${integration.name}`} style={{background:isDisabled?C.greenBg:C.bg0,border:`1px solid ${isDisabled?C.greenBorder:C.border1}`,color:isDisabled?C.green:C.text1,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"5px 12px",borderRadius:8,cursor:"pointer"}}>{isDisabled?"Enable":"Disable"}</button>
         </div>
       </div>
       {/* Description */}
@@ -2541,15 +2543,15 @@ function IntegrationCard({ integration, systemName, onEdit, onDisable }) {
         <span style={{fontFamily:FONT,fontSize:12,color:C.text3}}>{scheduleText}</span>
       </div>
       {/* Status callouts */}
-      {integration.status==="draft"&&<div style={{marginTop:10,background:C.amberBg,border:`1px solid ${C.amberBorder}`,borderRadius:6,padding:"8px 12px",fontFamily:FONT,fontSize:12,color:C.amber}}>Draft — edit to complete configuration and publish.</div>}
+      {integration.status==="draft"&&<div style={{marginTop:10,background:C.amberBg,border:`1px solid ${C.amberBorder}`,borderRadius:8,padding:"8px 12px",fontFamily:FONT,fontSize:12,color:C.amber}}>Draft — edit to complete configuration and publish.</div>}
       {isReadyToPublish&&(
-        <div style={{marginTop:10,background:C.blueBg,border:`1px solid ${C.blueBorder}`,borderRadius:6,padding:"10px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,flexWrap:"wrap"}}>
+        <div style={{marginTop:10,background:C.blueBg,border:`1px solid ${C.blueBorder}`,borderRadius:8,padding:"10px 14px",display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,flexWrap:"wrap"}}>
           <span style={{fontFamily:FONT,fontSize:12,color:C.blue}}>Ready to publish — review and activate this data flow.</span>
-          <button onClick={()=>onEdit&&onEdit(integration)} style={{background:C.blue,border:"none",color:"#fff",fontFamily:FONT,fontSize:12,fontWeight:700,padding:"6px 14px",borderRadius:6,cursor:"pointer",flexShrink:0}}>Review &amp; Activate</button>
+          <button onClick={()=>onEdit&&onEdit(integration)} style={{background:C.blue,border:"none",color:"#fff",fontFamily:FONT,fontSize:12,fontWeight:700,padding:"6px 14px",borderRadius:8,cursor:"pointer",flexShrink:0}}>Review &amp; Activate</button>
         </div>
       )}
-      {isDisabled&&<div style={{marginTop:10,background:C.bg2,border:`1px solid ${C.border0}`,borderRadius:6,padding:"8px 12px",fontFamily:FONT,fontSize:12,color:C.text2}}>Disabled — no data will flow until re-enabled.</div>}
-      {integration.status==="failed"&&<div style={{marginTop:10,background:C.redBg,border:`1px solid ${C.redBorder}`,borderRadius:6,padding:"8px 12px",fontFamily:FONT,fontSize:12,color:C.red}}>Failed — check the Review Queue for details.</div>}
+      {isDisabled&&<div style={{marginTop:10,background:C.bg2,border:`1px solid ${C.border0}`,borderRadius:8,padding:"8px 12px",fontFamily:FONT,fontSize:12,color:C.text2}}>Disabled — no data will flow until re-enabled.</div>}
+      {integration.status==="failed"&&<div style={{marginTop:10,background:C.redBg,border:`1px solid ${C.redBorder}`,borderRadius:8,padding:"8px 12px",fontFamily:FONT,fontSize:12,color:C.red}}>Failed — check the Review Queue for details.</div>}
     </div>
   );
 }
@@ -2561,7 +2563,7 @@ function IntegrationsTab({ system, integrations, onAddIntegration, onEditIntegra
       <div style={{fontFamily:FONT,fontSize:14,fontWeight:700,color:C.text0,marginBottom:6}}>No integrations yet</div>
       <div style={{fontFamily:FONT,fontSize:14,color:C.text2,maxWidth:460,margin:"0 auto 6px",lineHeight:1.6}}>An Integration defines one specific data flow under this system — its direction, method, connection, and runtime.</div>
       <div style={{fontFamily:FONT,fontSize:12,color:C.text3,maxWidth:400,margin:"0 auto 20px"}}>Example: pull sensor readings from {system.name} every 15 minutes, or receive real-time alerts as they happen.</div>
-      <button onClick={onAddIntegration} style={{background:C.blue,border:`1px solid ${C.blueHover}`,color:"#fff",fontFamily:FONT,fontWeight:700,fontSize:14,padding:"8px 18px",borderRadius:6,cursor:"pointer"}}>+ Add Integration</button>
+      <button onClick={onAddIntegration} style={{background:C.blue,border:`1px solid ${C.blueHover}`,color:"#fff",fontFamily:FONT,fontWeight:700,fontSize:14,padding:"8px 18px",borderRadius:8,cursor:"pointer"}}>+ Add Integration</button>
     </div>
   );
   return <div style={{display:"flex",flexDirection:"column",gap:8}}>{intgs.map(i=><IntegrationCard key={i.id} integration={i} systemName={system.name} onEdit={onEditIntegration} onDisable={onDisableIntegration}/>)}</div>;
@@ -2705,7 +2707,7 @@ function DLQTab({ systemId, onInspect }) {
                           aria-label="Row actions"
                           style={{background:"none",border:`1px solid ${C.border0}`,borderRadius:4,padding:"3px 7px",cursor:"pointer",fontFamily:FONT,fontSize:15,color:C.text2,lineHeight:1}}>···</button>
                         {openMenu===e.id&&(
-                          <div style={{position:"fixed",top:menuPos.top,right:menuPos.right,background:C.bg0,border:`1px solid ${C.border0}`,borderRadius:6,boxShadow:"0 4px 12px rgba(0,0,0,0.1)",zIndex:9999,minWidth:170,overflow:"hidden"}}
+                          <div style={{position:"fixed",top:menuPos.top,right:menuPos.right,background:C.bg0,border:`1px solid ${C.border0}`,borderRadius:8,boxShadow:"0 4px 12px rgba(0,0,0,0.1)",zIndex:9999,minWidth:170,overflow:"hidden"}}
                             onMouseLeave={()=>setOpenMenu(null)}>
                             <button onClick={()=>{onInspect&&onInspect(e);setOpenMenu(null);}} style={{display:"block",width:"100%",textAlign:"left",background:"none",border:"none",padding:"9px 14px",fontFamily:FONT,fontSize:13,color:C.text0,cursor:"pointer",borderBottom:`1px solid ${C.border0}`}}>View record detail</button>
                             <span style={{display:"block",padding:"9px 14px",fontFamily:FONT,fontSize:13,color:C.text3,cursor:"not-allowed",borderBottom:`1px solid ${C.border0}`}} title="Coming soon">Replay</span>
@@ -2888,13 +2890,13 @@ function SystemDetailPage({ system, integrations, onBack, onAddIntegration, onUp
             {system.description&&<p style={{fontFamily:FONT,fontSize:13,color:C.text2,margin:0,lineHeight:1.6}}>{system.description}</p>}
           </div>
           <div style={{display:"flex",gap:8,flexShrink:0,alignItems:"flex-start",flexWrap:"wrap"}}>
-            <button onClick={()=>setEditSys(true)} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text0,fontFamily:FONT,fontSize:13,fontWeight:600,padding:"7px 16px",borderRadius:6,cursor:"pointer"}}>Edit System</button>
-            <button onClick={onAddIntegration} style={{background:C.blue,border:`1px solid ${C.blueHover}`,color:"#fff",fontFamily:FONT,fontSize:13,fontWeight:700,padding:"7px 16px",borderRadius:6,cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>+ Add Integration</button>
+            <button onClick={()=>setEditSys(true)} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text0,fontFamily:FONT,fontSize:13,fontWeight:600,padding:"7px 16px",borderRadius:8,cursor:"pointer"}}>Edit System</button>
+            <button onClick={onAddIntegration} style={{background:C.blue,border:`1px solid ${C.blueHover}`,color:"#fff",fontFamily:FONT,fontSize:13,fontWeight:700,padding:"7px 16px",borderRadius:8,cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>+ Add Integration</button>
           </div>
         </div>
       </div>
 
-      {isIncomplete&&<div style={{background:C.amberBg,border:`1px solid ${C.amberBorder}`,borderRadius:6,padding:"10px 16px",marginBottom:12,display:"flex",gap:10,alignItems:"center"}}><span style={{color:C.amber,fontSize:14,flexShrink:0}}>▲</span><div style={{flex:1}}><span style={{fontFamily:FONT,fontWeight:700,fontSize:12,color:C.amber}}>Setup incomplete — </span><span style={{fontFamily:FONT,fontSize:12,color:C.text1}}>Error notification email not configured.</span></div><button onClick={()=>setEditSys(true)} style={{background:C.amber,border:"none",color:"#fff",fontFamily:FONT,fontSize:12,fontWeight:700,padding:"5px 12px",borderRadius:4,cursor:"pointer",flexShrink:0}}>Complete Setup</button></div>}
+      {isIncomplete&&<div style={{background:C.amberBg,border:`1px solid ${C.amberBorder}`,borderRadius:8,padding:"10px 16px",marginBottom:12,display:"flex",gap:10,alignItems:"center"}}><span style={{color:C.amber,fontSize:14,flexShrink:0}}>▲</span><div style={{flex:1}}><span style={{fontFamily:FONT,fontWeight:700,fontSize:12,color:C.amber}}>Setup incomplete — </span><span style={{fontFamily:FONT,fontSize:12,color:C.text1}}>Error notification email not configured.</span></div><button onClick={()=>setEditSys(true)} style={{background:C.amber,border:"none",color:"#fff",fontFamily:FONT,fontSize:12,fontWeight:700,padding:"5px 12px",borderRadius:8,cursor:"pointer",flexShrink:0}}>Complete Setup</button></div>}
 
       <FlowStrip system={system} integrations={integrations}/>
 
@@ -2957,7 +2959,6 @@ function App() {
 
   return (
     <div style={{background:C.pageBg,height:"100vh",display:"flex",fontFamily:FONT,overflow:"hidden"}}>
-      <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet"/>
       <PlatformSidebar expanded={sidebarExpanded}/>
       <button onClick={()=>setSidebarExpanded(e=>!e)} aria-label={sidebarExpanded?"Collapse sidebar":"Expand sidebar"} style={{position:"fixed",top:72,left:sidebarExpanded?SIDEBAR_EXPANDED_W-SIDEBAR_TOGGLE_SIZE/2:SIDEBAR_COLLAPSED_W-SIDEBAR_TOGGLE_SIZE/2,width:SIDEBAR_TOGGLE_SIZE,height:SIDEBAR_TOGGLE_SIZE,borderRadius:9999,background:C.blue,border:"none",color:"#fff",cursor:"pointer",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 8px rgba(0,0,0,0.18)",transition:"left 0.15s",padding:0,flexShrink:0}}>
         <svg viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
