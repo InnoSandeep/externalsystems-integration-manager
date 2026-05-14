@@ -2636,9 +2636,11 @@ function DLQTab({ systemId, onInspect }) {
   const SortIcon=()=><svg width="10" height="12" viewBox="0 0 10 12" fill="none" style={{marginLeft:4,verticalAlign:"middle",opacity:0.45}}><path d="M3 4.5L5 2.5L7 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M3 7.5L5 9.5L7 7.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>;
   if(allEntries.length===0) return <div style={{background:C.bg0,border:`1px solid ${C.border0}`,borderRadius:8,padding:"32px",textAlign:"center",fontFamily:FONT,fontSize:14,color:C.text3}}>No items in the review queue for this system.</div>;
   return (
-    <div style={{border:`1px solid ${C.border0}`,borderRadius:8,background:C.bg0,overflow:"hidden"}}>
+    // Outer wrapper provides border + borderRadius only — overflow must stay visible
+    // so absolutely positioned kebab menus can escape the card boundary.
+    <div style={{border:`1px solid ${C.border0}`,borderRadius:8,background:C.bg0}}>
       {/* Toolbar */}
-      <div style={{padding:"10px 14px",borderBottom:`1px solid ${C.border0}`,background:C.bg1,display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
+      <div style={{padding:"10px 14px",borderBottom:`1px solid ${C.border0}`,background:C.bg1,borderRadius:"8px 8px 0 0",display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
         <div style={{display:"flex",flexDirection:"column",gap:2}}>
           <span style={{fontFamily:FONT,fontSize:10,color:C.text3,textTransform:"uppercase",letterSpacing:"0.06em"}}>Event Types</span>
           <select value={eventTypeFilter} onChange={ev=>setEventTypeFilter(ev.target.value)} style={{fontFamily:FONT,fontSize:13,color:C.text0,background:C.bg0,border:`1px solid ${C.border1}`,borderRadius:4,padding:"3px 24px 3px 8px",cursor:"pointer",appearance:"auto"}}>
