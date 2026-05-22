@@ -1102,7 +1102,10 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
       const mp=f.fieldMappings;
       const mapped=mp.filter(m=>m.target).map(m=>m.target);
       const dups=mapped.filter((t,i)=>mapped.indexOf(t)!==i);
-      const allTargetFields=TARGET_SCHEMA.flatMap(g=>g.fields);
+      const knownGroups=new Set(TARGET_SCHEMA.map(g=>g.group));
+      const prodSchema=NESTED_TARGET_SCHEMA[f.product]||{};
+      const extraFields=(f.businessObjects||[]).filter(o=>!knownGroups.has(o)).flatMap(o=>prodSchema[o]||[]);
+      const allTargetFields=[...TARGET_SCHEMA.flatMap(g=>g.fields),...extraFields];
       const typeConflicts=mp.filter(m=>{
         if(!m.target) return false;
         const tf=allTargetFields.find(fd=>fd.path===m.target);
