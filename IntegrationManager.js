@@ -1073,16 +1073,16 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
     setAutoMapRunning(true); setAutoMapResult(null);
     setTimeout(()=>{
       const f = formRef.current;
+      const selectedObjs = new Set(f.businessObjects || []);
+      const STRUCTURAL_GROUPS = new Set(["Asset","Measurement"]);
+      const knownGroups = new Set(TARGET_SCHEMA.map(g=>g.group));
+      const allRecognized = [...selectedObjs].every(o=>knownGroups.has(o));
+      const allowedPaths = allRecognized
+        ? new Set(TARGET_SCHEMA.filter(g=>selectedObjs.has(g.group)||STRUCTURAL_GROUPS.has(g.group)).flatMap(g=>g.fields.map(fd=>fd.path)))
+        : new Set(TARGET_PATHS);
       const updated = f.fieldMappings.map(m=>{
         const rule = AUTO_MAP_RULES[m.src];
         if(!rule||m.target) return m.target?{...m,rowState:"manual"}:m;
-        const selectedObjs = new Set(f.businessObjects || []);
-        const STRUCTURAL_GROUPS = new Set(["Asset","Measurement"]);
-        const allowedPaths = new Set(
-          TARGET_SCHEMA
-            .filter(g=>selectedObjs.has(g.group)||STRUCTURAL_GROUPS.has(g.group))
-            .flatMap(g=>g.fields.map(fd=>fd.path))
-        );
         if(!allowedPaths.has(rule)) return m;
         const meta = AUTO_MAP_META[m.src];
         return {...m,target:rule,rowState:"auto-mapped",autoMapConfidence:meta?.confidence||null,autoMapReason:meta?.reason||null};
@@ -1336,17 +1336,18 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
                       style={{fontFamily:FONT,fontSize:12,background:C.bg0,border:`1px solid ${(!m.target&&m.required)?C.redBorder:dupTargets.includes(m.target)?C.amberBorder:C.border1}`,color:m.target?C.text0:C.text3,padding:"4px 6px",outline:"none",cursor:"pointer",width:"100%"}}
                     >
                       <option value="">— Select target —</option>
-                      {TARGET_SCHEMA.filter(g=>{
+                      {(()=>{
                         const sel=new Set(form.businessObjects||[]);
                         const structural=new Set(["Asset","Measurement"]);
-                        return sel.has(g.group)||structural.has(g.group);
-                      }).map(group=>(
+                        const known=new Set(TARGET_SCHEMA.map(g=>g.group));
+                        const allRec=[...sel].every(o=>known.has(o));
+                        return (allRec?TARGET_SCHEMA.filter(g=>sel.has(g.group)||structural.has(g.group)):TARGET_SCHEMA).map(group=>(
                         <optgroup key={group.group} label={group.group}>
                           {group.fields.map(f=>(
                             <option key={f.path} value={f.path}>{f.path}  ·  {f.label}</option>
                           ))}
                         </optgroup>
-                      ))}
+                      ))})()}
                     </select>
                   </div>
                 );
