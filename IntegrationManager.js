@@ -1042,7 +1042,13 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
   function updateMapping(idx, key, val) {
     setForm(f=>{
       const m=[...f.fieldMappings];
-      m[idx]={...m[idx],[key]:val,rowState:val?(m[idx].rowState==="auto-mapped"?"auto-mapped":"manual"):"unmapped"};
+      const row=m[idx];
+      const isManualTargetEdit = key==="target" && row.rowState==="auto-mapped";
+      m[idx]={...row,[key]:val,
+        rowState:val?(isManualTargetEdit?"manual":row.rowState==="auto-mapped"?"auto-mapped":"manual"):"unmapped",
+        autoMapConfidence:isManualTargetEdit?null:row.autoMapConfidence,
+        autoMapReason:isManualTargetEdit?null:row.autoMapReason,
+      };
       return {...f,fieldMappings:m};
     });
   }
