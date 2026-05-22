@@ -1043,9 +1043,9 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
     setForm(f=>{
       const m=[...f.fieldMappings];
       const row=m[idx];
-      const isManualTargetEdit = key==="target" && row.rowState==="auto-mapped";
+      const isManualTargetEdit = key==="target";
       m[idx]={...row,[key]:val,
-        rowState:val?(isManualTargetEdit?"manual":row.rowState==="auto-mapped"?"auto-mapped":"manual"):"unmapped",
+        rowState:val?(row.rowState==="auto-mapped"&&!isManualTargetEdit?"auto-mapped":"manual"):"unmapped",
         autoMapConfidence:isManualTargetEdit?null:row.autoMapConfidence,
         autoMapReason:isManualTargetEdit?null:row.autoMapReason,
       };
