@@ -1076,10 +1076,11 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
       const selectedObjs = new Set(f.businessObjects || []);
       const STRUCTURAL_GROUPS = new Set(["Asset","Measurement"]);
       const knownGroups = new Set(TARGET_SCHEMA.map(g=>g.group));
-      const allRecognized = [...selectedObjs].every(o=>knownGroups.has(o));
-      const allowedPaths = allRecognized
-        ? new Set(TARGET_SCHEMA.filter(g=>selectedObjs.has(g.group)||STRUCTURAL_GROUPS.has(g.group)).flatMap(g=>g.fields.map(fd=>fd.path)))
-        : new Set(TARGET_PATHS);
+      const productSchema = NESTED_TARGET_SCHEMA[f.product] || {};
+      const allowedPaths = new Set([
+        ...TARGET_SCHEMA.filter(g=>selectedObjs.has(g.group)||STRUCTURAL_GROUPS.has(g.group)).flatMap(g=>g.fields.map(fd=>fd.path)),
+        ...[...selectedObjs].filter(o=>!knownGroups.has(o)).flatMap(o=>(productSchema[o]||[]).map(fd=>fd.path)),
+      ]);
       const updated = f.fieldMappings.map(m=>{
         const rule = AUTO_MAP_RULES[m.src];
         if(!rule||m.target) return m.target?{...m,rowState:"manual"}:m;
@@ -1340,14 +1341,21 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
                         const sel=new Set(form.businessObjects||[]);
                         const structural=new Set(["Asset","Measurement"]);
                         const known=new Set(TARGET_SCHEMA.map(g=>g.group));
-                        const allRec=[...sel].every(o=>known.has(o));
-                        return (allRec?TARGET_SCHEMA.filter(g=>sel.has(g.group)||structural.has(g.group)):TARGET_SCHEMA).map(group=>(
-                        <optgroup key={group.group} label={group.group}>
-                          {group.fields.map(f=>(
-                            <option key={f.path} value={f.path}>{f.path}  ·  {f.label}</option>
-                          ))}
-                        </optgroup>
-                      ))})()}
+                        const prodSchema=NESTED_TARGET_SCHEMA[form.product]||{};
+                        const tsGroups=TARGET_SCHEMA.filter(g=>sel.has(g.group)||structural.has(g.group)).map(group=>(
+                          <optgroup key={group.group} label={group.group}>
+                            {group.fields.map(f=>(
+                              <option key={f.path} value={f.path}>{f.path}  ·  {f.label}</option>
+                            ))}
+                          </optgroup>
+                        ));
+                        const extraGroups=[...sel].filter(o=>!known.has(o)).flatMap(o=>{
+                          const fields=prodSchema[o]||[];
+                          if(!fields.length) return [];
+                          return [<optgroup key={o} label={o}>{fields.map(fd=><option key={fd.path} value={fd.path}>{fd.path}</option>)}</optgroup>];
+                        });
+                        return [...tsGroups,...extraGroups];
+                      })()}
                     </select>
                   </div>
                 );
