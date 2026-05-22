@@ -918,7 +918,7 @@ No Step 2. No mapping required.
 | Inbound webhook — listener URL + incoming auth (API Key, HMAC) | ✅ |
 | Inbound REST API — endpoint URL, HTTP method, filters, date range, query params | ✅ |
 | Inbound connection test gate in Step 1 (Webhook + REST API) | ✅ |
-| Step 2 sample pull from endpoint or paste JSON (REST API) | ✅ |
+| Step 2 sample pull from endpoint (REST API / polling) | ✅ |
 | Authentication configuration (API Key, Basic, Bearer, OAuth 2.0, HMAC) | ✅ |
 | Outbound webhook — Webhook Registry selection or creation | ✅ |
 | Product selection (single-select) | ✅ |
