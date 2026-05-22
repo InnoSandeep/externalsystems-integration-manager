@@ -1081,13 +1081,17 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
         ...TARGET_SCHEMA.filter(g=>selectedObjs.has(g.group)||STRUCTURAL_GROUPS.has(g.group)).flatMap(g=>g.fields.map(fd=>fd.path)),
         ...[...selectedObjs].flatMap(o=>(productSchema[o]||[]).map(fd=>`${o}.${fd.path}`)),
       ]);
+      const srcLastSeg=src=>src.split(".").pop().replace(/\[\]$/,"");
+      const PRESERVE_STATES=new Set(["auto-mapped","parent-dep-missing"]);
       const updated = f.fieldMappings.map(m=>{
-        const rule = AUTO_MAP_RULES[m.src];
-        const PRESERVE_STATES=new Set(["auto-mapped","parent-dep-missing"]);
-        if(!rule||m.target) return m.target?(PRESERVE_STATES.has(m.rowState)?m:{...m,rowState:"manual"}):m;
-        if(!allowedPaths.has(rule)) return m;
-        const meta = AUTO_MAP_META[m.src];
-        return {...m,target:rule,rowState:"auto-mapped",autoMapConfidence:meta?.confidence||null,autoMapReason:meta?.reason||null};
+        if(m.target) return PRESERVE_STATES.has(m.rowState)?m:{...m,rowState:"manual"};
+        const explicit = AUTO_MAP_RULES[m.src];
+        const resolved = explicit&&allowedPaths.has(explicit)
+          ? explicit
+          : [...allowedPaths].find(p=>srcLastSeg(p)===srcLastSeg(m.src))||null;
+        if(!resolved) return m;
+        const meta = explicit===resolved?AUTO_MAP_META[m.src]:null;
+        return {...m,target:resolved,rowState:"auto-mapped",autoMapConfidence:meta?.confidence||null,autoMapReason:meta?.reason||null};
       });
       const n = updated.filter((m,i)=>m.rowState==="auto-mapped"&&!f.fieldMappings[i].target).length;
       setForm(prev=>({...prev,fieldMappings:updated}));
