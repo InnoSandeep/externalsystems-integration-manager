@@ -1329,6 +1329,7 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
 
   // Reset all state when the drawer opens, ensuring no data lingers from a previous session.
   useEffect(()=>{
+    clearTimeout(inboundTestTimer.current);
     if(open){ setStep(1);setForm(blankIntegrationForm());setErrors({});setTouched({});setAdvOpen(false);setValOpen(false);setFetch("idle");setPublished(null);setWbModal(false);setMappingOpen(false); }
   },[open]);
   // Pre-fill the advanced error email from the parent system so the user doesn't have to re-enter it.
