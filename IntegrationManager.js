@@ -141,18 +141,18 @@ const PRODUCTS = Object.keys(PRODUCT_OBJECTS);
 // IMPORTANT: The "required" flag is fixed at initialization and must never be changed
 // when the user swaps the source field. This protects the publish gate from being bypassed.
 const SAMPLE_FIELDS = [
-  { src:"id",                    srcType:"string",   required:true,  refLookup:false, nested:false, arrayPath:false, target:"", rowState:"unmapped" },
-  { src:"timestamp",             srcType:"datetime", required:true,  refLookup:false, nested:false, arrayPath:false, target:"", rowState:"unmapped" },
-  { src:"asset.id",              srcType:"string",   required:true,  refLookup:true,  nested:true,  arrayPath:false, target:"", rowState:"unmapped" },
-  { src:"asset.name",            srcType:"string",   required:false, refLookup:true,  nested:true,  arrayPath:false, target:"", rowState:"unmapped" },
-  { src:"asset.location.site",   srcType:"string",   required:false, refLookup:false, nested:true,  arrayPath:false, target:"", rowState:"unmapped" },
-  { src:"measurements[].value",  srcType:"number",   required:true,  refLookup:false, nested:false, arrayPath:true,  target:"", rowState:"unmapped" },
-  { src:"measurements[].unit",   srcType:"string",   required:false, refLookup:false, nested:false, arrayPath:true,  target:"", rowState:"unmapped" },
-  { src:"severity",              srcType:"enum",     required:false, refLookup:false, nested:false, arrayPath:false, target:"", rowState:"unmapped" },
-  { src:"description",           srcType:"string",   required:false, refLookup:false, nested:false, arrayPath:false, target:"", rowState:"unmapped" },
-  { src:"links.workOrder.href",  srcType:"url",      required:false, refLookup:true,  nested:true,  arrayPath:false, target:"", rowState:"unmapped" },
-  { src:"metadata.source",       srcType:"string",   required:false, refLookup:false, nested:true,  arrayPath:false, target:"", rowState:"unmapped" },
-  { src:"metadata.version",      srcType:"string",   required:false, refLookup:false, nested:true,  arrayPath:false, target:"", rowState:"unmapped" },
+  { src:"id",                   srcType:"string",   required:true,  refLookup:false, nested:false, arrayPath:false, target:"", rowState:"unmapped", businessMeaning:"Observation ID",          sampleValue:"OBS-20240414-001" },
+  { src:"timestamp",            srcType:"datetime", required:true,  refLookup:false, nested:false, arrayPath:false, target:"", rowState:"unmapped", businessMeaning:"Event Timestamp",          sampleValue:"2024-04-14T08:30:00Z" },
+  { src:"asset.id",             srcType:"string",   required:true,  refLookup:true,  nested:true,  arrayPath:false, target:"", rowState:"unmapped", businessMeaning:"Asset External ID",        sampleValue:"PUMP-P-101A" },
+  { src:"asset.name",           srcType:"string",   required:false, refLookup:true,  nested:true,  arrayPath:false, target:"", rowState:"unmapped", businessMeaning:"Asset Name",               sampleValue:"Feed Pump P-101A" },
+  { src:"asset.location.site",  srcType:"string",   required:false, refLookup:false, nested:true,  arrayPath:false, target:"", rowState:"unmapped", businessMeaning:"Asset Site Location",      sampleValue:"Houston Plant" },
+  { src:"measurements[].value", srcType:"number",   required:true,  refLookup:false, nested:false, arrayPath:true,  target:"", rowState:"unmapped", businessMeaning:"Sensor Reading Value",     sampleValue:"98.4" },
+  { src:"measurements[].unit",  srcType:"string",   required:false, refLookup:false, nested:false, arrayPath:true,  target:"", rowState:"unmapped", businessMeaning:"Sensor Reading Unit",      sampleValue:"degC" },
+  { src:"severity",             srcType:"enum",     required:false, refLookup:false, nested:false, arrayPath:false, target:"", rowState:"unmapped", businessMeaning:"Observation Severity",     sampleValue:"high" },
+  { src:"description",          srcType:"string",   required:false, refLookup:false, nested:false, arrayPath:false, target:"", rowState:"unmapped", businessMeaning:"Observation Description",  sampleValue:"High vibration detected" },
+  { src:"links.workOrder.href", srcType:"url",      required:false, refLookup:true,  nested:true,  arrayPath:false, target:"", rowState:"unmapped", businessMeaning:"Linked Work Order URL",    sampleValue:"https://imaint.corp/wo/9921" },
+  { src:"metadata.source",      srcType:"string",   required:false, refLookup:false, nested:true,  arrayPath:false, target:"", rowState:"unmapped", businessMeaning:"Source System Identifier", sampleValue:"aveva-pi" },
+  { src:"metadata.version",     srcType:"string",   required:false, refLookup:false, nested:true,  arrayPath:false, target:"", rowState:"unmapped", businessMeaning:"Payload Schema Version",   sampleValue:"2.1.0" },
 ];
 
 // Defines the fields that Innovapptive products expect to receive — the "target" side of mapping.
@@ -377,19 +377,97 @@ const NESTED_TARGET_SCHEMA = {
 // The current simulation uses this flat rule table as a stand-in.
 // The visual pattern (distinct button style, inline result, no silent auto-commit)
 // is intentionally designed to stay compatible with a real AI layer.
+const TARGET_SCHEMA = [
+  {
+    group:"Observation",
+    fields:[
+      {path:"observation.id",           label:"ID",             type:"string"  },
+      {path:"observation.timestamp",    label:"Timestamp",      type:"datetime"},
+      {path:"observation.severity",     label:"Severity",       type:"enum"    },
+      {path:"observation.description",  label:"Description",    type:"string"  },
+      {path:"observation.status",       label:"Status",         type:"string"  },
+      {path:"observation.source",       label:"Source System",  type:"string"  },
+      {path:"observation.schemaVersion",label:"Schema Version", type:"string"  },
+    ]
+  },
+  {
+    group:"Asset",
+    fields:[
+      {path:"asset.externalId",label:"External ID",type:"string"},
+      {path:"asset.name",      label:"Name",       type:"string"},
+      {path:"asset.site",      label:"Site",       type:"string"},
+      {path:"asset.category",  label:"Category",   type:"string"},
+    ]
+  },
+  {
+    group:"Measurement",
+    fields:[
+      {path:"measurement.pointExternalId",   label:"Point External ID",type:"string"  },
+      {path:"measurement.reading.value",     label:"Reading Value",    type:"number"  },
+      {path:"measurement.reading.unit",      label:"Reading Unit",     type:"string"  },
+      {path:"measurement.reading.timestamp", label:"Reading Timestamp",type:"datetime"},
+    ]
+  },
+  {
+    group:"Work Order",
+    fields:[
+      {path:"workOrder.externalRef",label:"External Reference",type:"url"   },
+      {path:"workOrder.title",      label:"Title",             type:"string"},
+    ]
+  },
+];
+
+const TARGET_PATHS = TARGET_SCHEMA.flatMap(g=>g.fields.map(f=>f.path));
+
 const AUTO_MAP_RULES = {
-  "id":"id",
-  "timestamp":"observation_time",
-  "asset.id":"asset.id",
-  "asset.name":"asset.name",
-  "asset.location.site":"asset.location.site",
-  "measurements[].value":"measurements[].value",
-  "measurements[].unit":"measurements[].unit",
-  "severity":"severity",
-  "description":"description",
-  "links.workOrder.href":"work_order_ref",
-  "metadata.source":"source_system",
-  "metadata.version":"schema_version",
+  "id":                   "observation.id",
+  "timestamp":            "observation.timestamp",
+  "asset.id":             "asset.externalId",
+  "asset.name":           "asset.name",
+  "asset.location.site":  "asset.site",
+  "measurements[].value": "measurement.reading.value",
+  "measurements[].unit":  "measurement.reading.unit",
+  "severity":             "observation.severity",
+  "description":          "observation.description",
+  "links.workOrder.href": "workOrder.externalRef",
+  "metadata.source":      "observation.source",
+  "metadata.version":     "observation.schemaVersion",
+};
+
+const AUTO_MAP_META = {
+  "id":                   {confidence:91, reason:"Top-level ID maps to Observation ID"},
+  "timestamp":            {confidence:96, reason:"Datetime field maps to Observation timestamp"},
+  "asset.id":             {confidence:94, reason:"Asset object + ID pattern matches asset.externalId"},
+  "asset.name":           {confidence:92, reason:"Asset object + name label match"},
+  "asset.location.site":  {confidence:87, reason:"Location.site matches asset site field"},
+  "measurements[].value": {confidence:95, reason:"Array reading value matches measurement path"},
+  "measurements[].unit":  {confidence:93, reason:"Array reading unit matches measurement unit"},
+  "severity":             {confidence:98, reason:"Exact field name match on Observation"},
+  "description":          {confidence:97, reason:"Exact field name match on Observation"},
+  "links.workOrder.href": {confidence:82, reason:"URL type + workOrder context matches external ref"},
+  "metadata.source":      {confidence:85, reason:"metadata.source matches observation source system"},
+  "metadata.version":     {confidence:83, reason:"metadata.version matches observation schemaVersion"},
+};
+
+const PARENT_DEP_RULES = {
+  "measurement.reading.value":     ["asset.externalId","measurement.pointExternalId"],
+  "measurement.reading.unit":      ["asset.externalId","measurement.pointExternalId"],
+  "measurement.reading.timestamp": ["asset.externalId","measurement.pointExternalId"],
+  "workOrder.externalRef":         ["asset.externalId"],
+};
+// Maps qualified NESTED_TARGET_SCHEMA paths to their TARGET_SCHEMA canonical equivalents
+// Used in handleValidate to normalize targets before PARENT_DEP_RULES lookups.
+const TARGET_NORMALIZE = {
+  "Observation.measurements[].value":  "measurement.reading.value",
+  "Observation.measurements[].unit":   "measurement.reading.unit",
+  "Measurement Point.value":           "measurement.reading.value",
+  "Measurement Point.unit":            "measurement.reading.unit",
+  "Measurement Point.measured_at":     "measurement.reading.timestamp",
+  "Work Order.id":                     "workOrder.externalRef",
+  "Observation.asset.id":              "asset.externalId",
+  "Measurement Point.asset.id":        "asset.externalId",
+  "Work Order.asset.id":               "asset.externalId",
+  "Measurement Point.id":              "measurement.pointExternalId",
 };
 
 // ─── SEED DATA ────────────────────────────────────────────────────────────────
@@ -951,21 +1029,6 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
   const product        = form.product || "";
   const hasPullEndpoint = !!form.baseUrl; // true for polling integrations (has a URL to pull from)
 
-  // Build the list of available target fields from NESTED_TARGET_SCHEMA.
-  // Each option is formatted as: value = "Collection::path", label = "Collection.path"
-  // The "Collection." prefix in the label helps users know which Innovapptive object
-  // a field belongs to (e.g. "Observation.asset.id" vs "WorkOrder.asset.id").
-  function allTargetOpts() {
-    const all = [];
-    collections.forEach(col=>{
-      (NESTED_TARGET_SCHEMA[product]?.[col]||[]).forEach(f=>{
-        all.push({ value:`${col}::${f.path}`, label:`${col}.${f.path}` });
-      });
-    });
-    return all;
-  }
-  const targetOpts = allTargetOpts();
-
   // Source options from SAMPLE_FIELDS
   const srcOpts = SAMPLE_FIELDS.map(f=>f.src);
 
@@ -993,7 +1056,13 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
   function updateMapping(idx, key, val) {
     setForm(f=>{
       const m=[...f.fieldMappings];
-      m[idx]={...m[idx],[key]:val,rowState:val?(m[idx].rowState==="auto-mapped"?"auto-mapped":"manual"):"unmapped"};
+      const row=m[idx];
+      const isManualTargetEdit = key==="target";
+      m[idx]={...row,[key]:val,
+        rowState:val?(row.rowState==="auto-mapped"&&!isManualTargetEdit?"auto-mapped":"manual"):"unmapped",
+        autoMapConfidence:isManualTargetEdit?null:row.autoMapConfidence,
+        autoMapReason:isManualTargetEdit?null:row.autoMapReason,
+      };
       return {...f,fieldMappings:m};
     });
   }
@@ -1002,7 +1071,7 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
     // Preserve row.required — it reflects the target's constraint, not the source field's metadata.
     // Spreading sf without required ensures the mandatory mapping gate can't be bypassed by swapping sources.
     const { required: _ignored, ...srcMeta } = sf;
-    setForm(f=>{ const m=[...f.fieldMappings]; m[idx]={...m[idx],...srcMeta,target:"",rowState:"unmapped"}; return {...f,fieldMappings:m}; });
+    setForm(f=>{ const m=[...f.fieldMappings]; m[idx]={...m[idx],...srcMeta,target:"",rowState:"unmapped",autoMapConfidence:null,autoMapReason:null}; return {...f,fieldMappings:m}; });
   }
 
   function handleFetchSample() {
@@ -1017,21 +1086,30 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
   function handleAutoMap() {
     setAutoMapRunning(true); setAutoMapResult(null);
     setTimeout(()=>{
-      // Read latest state from ref — avoids stale closure without needing side effects
-      // inside the setForm updater (which React 18 may invoke asynchronously or
-      // more than once in Strict Mode, making mutable counters unreliable).
       const f = formRef.current;
+      const selectedObjs = new Set(f.businessObjects || []);
+      const STRUCTURAL_GROUPS = new Set(["Asset","Measurement","Work Order"]);
+      const knownGroups = new Set(TARGET_SCHEMA.map(g=>g.group));
+      const productSchema = NESTED_TARGET_SCHEMA[f.product] || {};
+      const allowedPaths = new Set([
+        ...TARGET_SCHEMA.filter(g=>selectedObjs.has(g.group)||STRUCTURAL_GROUPS.has(g.group)).flatMap(g=>g.fields.map(fd=>fd.path)),
+        ...[...selectedObjs].flatMap(o=>(productSchema[o]||[]).map(fd=>`${o}.${fd.path}`)),
+      ]);
+      const srcLastSeg=src=>src.split(".").pop().replace(/\[\]$/,"");
+      const PRESERVE_STATES=new Set(["auto-mapped","parent-dep-missing"]);
       const updated = f.fieldMappings.map(m=>{
-        const rule = AUTO_MAP_RULES[m.src];
-        if(!rule||m.target) return m.target?{...m,rowState:"manual"}:m;
-        let matched = null;
-        for(const col of (f.businessObjects||[])){
-          const fields = NESTED_TARGET_SCHEMA[f.product]?.[col]||[];
-          if(fields.some(fd=>fd.path===rule)){ matched=`${col}::${rule}`; break; }
-        }
-        return matched ? {...m,target:matched,rowState:"auto-mapped"} : m;
+        if(m.target) return PRESERVE_STATES.has(m.rowState)?m:{...m,rowState:"manual"};
+        const explicit = AUTO_MAP_RULES[m.src];
+        const fallbackMatches = explicit&&allowedPaths.has(explicit)
+          ? null
+          : [...allowedPaths].filter(p=>srcLastSeg(p)===srcLastSeg(m.src));
+        const resolved = explicit&&allowedPaths.has(explicit)
+          ? explicit
+          : (fallbackMatches&&fallbackMatches.length===1?fallbackMatches[0]:null);
+        if(!resolved) return m;
+        const meta = explicit===resolved?AUTO_MAP_META[m.src]:null;
+        return {...m,target:resolved,rowState:"auto-mapped",autoMapConfidence:meta?.confidence||null,autoMapReason:meta?.reason||null};
       });
-      // Pure derivation: rows that moved from unmapped → auto-mapped this run.
       const n = updated.filter((m,i)=>m.rowState==="auto-mapped"&&!f.fieldMappings[i].target).length;
       setForm(prev=>({...prev,fieldMappings:updated}));
       setAutoMapResult(`${n} field${n!==1?"s":""} mapped`);
@@ -1042,25 +1120,35 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
   function handleValidate() {
     setValidateRunning(true); setValidateResult(null);
     setTimeout(()=>{
-      // Read latest state from ref — same pattern as handleAutoMap, avoids stale
-      // closure in the 1s timeout window if the user edits mappings while waiting.
       const f = formRef.current;
       const mp=f.fieldMappings;
       const mapped=mp.filter(m=>m.target).map(m=>m.target);
       const dups=mapped.filter((t,i)=>mapped.indexOf(t)!==i);
-      // Real type-conflict check: compare each source field's type against the
-      // target field's declared type in NESTED_TARGET_SCHEMA.
-      // We allow compatible pairings (url→string, datetime→date) to avoid false alarms.
+      const knownGroups=new Set(TARGET_SCHEMA.map(g=>g.group));
+      const prodSchema=NESTED_TARGET_SCHEMA[f.product]||{};
+      const extraFields=(f.businessObjects||[]).flatMap(o=>(prodSchema[o]||[]).map(fd=>({...fd,path:`${o}.${fd.path}`})));
+      const allTargetFields=[...TARGET_SCHEMA.flatMap(g=>g.fields),...extraFields];
       const typeConflicts=mp.filter(m=>{
         if(!m.target) return false;
-        const [col,...rest]=m.target.split("::");
-        const targetPath=rest.join("::");
-        const tf=(NESTED_TARGET_SCHEMA[f.product]?.[col]||[]).find(fd=>fd.path===targetPath);
+        const tf=allTargetFields.find(fd=>fd.path===m.target);
         if(!tf) return false;
         if(m.srcType==="url"&&tf.type==="string") return false;
         if(m.srcType==="datetime"&&tf.type==="date") return false;
         return m.srcType!==tf.type;
       }).length;
+      const canon=t=>TARGET_NORMALIZE[t]||t;
+      const canonMappedSet=new Set(mapped.map(canon));
+      let parentDepMissing=0;
+      const updatedMappings=mp.map(m=>{
+        if(!m.target) return m;
+        const requiredParents=PARENT_DEP_RULES[canon(m.target)];
+        if(requiredParents&&requiredParents.some(p=>!canonMappedSet.has(canon(p)))){
+          parentDepMissing++;
+          return {...m,rowState:"parent-dep-missing"};
+        }
+        if(m.rowState==="parent-dep-missing") return {...m,rowState:m.autoMapConfidence?"auto-mapped":"manual"};
+        return m;
+      });
       const result={
         requiredMapped:mp.filter(m=>m.required&&m.target).length,
         requiredTotal:mp.filter(m=>m.required).length,
@@ -1069,11 +1157,12 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
         refLookups:mp.filter(m=>m.refLookup&&m.target).length,
         duplicateTargets:dups.length,
         unmappedRequired:mp.filter(m=>m.required&&!m.target).length,
+        parentDepMissing,
         ranAt:new Date().toISOString(),
       };
-      setForm(f=>({...f,validationResult:result}));
+      setForm(prev=>({...prev,validationResult:result,fieldMappings:updatedMappings}));
       setValidateRunning(false);
-      const issues = result.unmappedRequired + result.duplicateTargets + result.typeConflicts;
+      const issues=result.unmappedRequired+result.duplicateTargets+result.typeConflicts+parentDepMissing;
       setValidateResult(issues===0?"All checks passed":`${issues} issue${issues!==1?"s":""} found`);
     },1000);
   }
@@ -1215,6 +1304,7 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
                     {label:"Type conflicts",ok:form.validationResult.typeConflicts===0,detail:`${form.validationResult.typeConflicts}`},
                     {label:"Duplicates",ok:form.validationResult.duplicateTargets===0,detail:`${form.validationResult.duplicateTargets}`},
                     {label:"Ref lookups",ok:true,detail:`${form.validationResult.refLookups}`},
+                    {label:"Parent dep. gaps",ok:(form.validationResult.parentDepMissing??0)===0,detail:(form.validationResult.parentDepMissing??0)===0?"None":`${form.validationResult.parentDepMissing} mapping(s) missing parent fields`},
                   ].map(row=>(
                     <div key={row.label} style={{background:row.ok?C.greenBg:C.amberBg,border:`1px solid ${row.ok?C.greenBorder:C.amberBorder}`,padding:"3px 8px",display:"flex",alignItems:"center",gap:5}}>
                       <span style={{color:row.ok?C.green:C.amber,fontWeight:700,fontSize:12}}>{row.ok?"✓":"!"}</span>
@@ -1240,29 +1330,58 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
                 const idx = m._idx;
                 const rowBg=m.rowState==="auto-mapped"?"#F5FAF7":(!m.target&&m.required)?"#FFF8F8":visIdx%2===0?C.bg0:C.bg1;
                 const stateLabel={
-                  "auto-mapped":{label:"Auto",color:C.green,bg:C.greenBg,border:C.greenBorder},
-                  "manual":{label:"Manual",color:C.blue,bg:C.blueBg,border:C.blueBorder},
-                  "unmapped":{label:"—",color:C.text3,bg:"transparent",border:"transparent"},
+                  "auto-mapped":        {label:"Auto-mapped",        color:C.green, bg:C.greenBg,  border:C.greenBorder},
+                  "manual":             {label:"Mapped",              color:C.blue,  bg:C.blueBg,   border:C.blueBorder},
+                  "ref-lookup":         {label:"Needs lookup setup",  color:C.amber, bg:C.amberBg,  border:C.amberBorder},
+                  "needs-review":       {label:"Required — unmapped", color:C.red,   bg:C.redBg,    border:C.redBorder},
+                  "parent-dep-missing": {label:"Parent dep. missing", color:C.amber, bg:C.amberBg,  border:C.amberBorder},
+                  "type-mismatch":      {label:"Type mismatch",       color:C.amber, bg:C.amberBg,  border:C.amberBorder},
+                  "unmapped":           {label:"—",                   color:C.text3, bg:"transparent", border:"transparent"},
                 }[m.rowState]||{label:"—",color:C.text3,bg:"transparent",border:"transparent"};
                 return (
                   <div key={m.src+idx} style={{display:"grid",gridTemplateColumns:"minmax(150px,1.3fr) 60px 74px 82px minmax(200px,1.6fr)",padding:"4px 20px",borderBottom:`1px solid ${C.border0}`,background:rowBg,alignItems:"center",gap:0}}>
-                    <select
-                      value={m.src}
-                      onChange={e=>updateSrc(idx,e.target.value)}
-                      style={{fontFamily:MONO,fontSize:12,background:"transparent",border:`1px solid ${C.border0}`,color:C.text0,padding:"3px 5px",outline:"none",cursor:"pointer",width:"100%"}}
-                    >
-                      {srcOpts.map(s=><option key={s} value={s}>{s}</option>)}
-                    </select>
+                    <div style={{display:"flex",flexDirection:"column",gap:2}}>
+                      <select
+                        value={m.src}
+                        onChange={e=>updateSrc(idx,e.target.value)}
+                        style={{fontFamily:MONO,fontSize:12,background:"transparent",border:`1px solid ${C.border0}`,color:C.text0,padding:"3px 5px",outline:"none",cursor:"pointer",width:"100%"}}
+                      >
+                        {srcOpts.map(s=><option key={s} value={s}>{s}</option>)}
+                      </select>
+                      {m.businessMeaning&&<span style={{fontFamily:FONT,fontSize:10,fontStyle:"italic",color:C.text2,paddingLeft:2}}>{m.businessMeaning}</span>}
+                      {m.sampleValue&&<span style={{paddingLeft:2}}><span style={{fontFamily:FONT,fontSize:9,color:C.text3}}>eg.</span><span style={{fontFamily:MONO,fontSize:9,color:C.text3}}> {m.sampleValue}</span></span>}
+                    </div>
                     <span style={{fontFamily:MONO,fontSize:10,color:C.text2,paddingLeft:4}}>{m.srcType}</span>
                     <span style={{fontFamily:FONT,fontSize:10,fontWeight:700,color:m.required?C.red:C.text3,paddingLeft:4}}>{m.required?"Required":"Optional"}</span>
-                    <span style={{fontFamily:FONT,fontSize:10,fontWeight:600,color:stateLabel.color,background:stateLabel.bg,border:`1px solid ${stateLabel.border}`,padding:"1px 5px",whiteSpace:"nowrap"}}>{stateLabel.label}</span>
+                    <div style={{display:"flex",flexDirection:"column",gap:2,alignItems:"flex-start"}}>
+                      <span style={{fontFamily:FONT,fontSize:10,fontWeight:600,color:stateLabel.color,background:stateLabel.bg,border:`1px solid ${stateLabel.border}`,padding:"1px 5px",whiteSpace:"nowrap"}}>{stateLabel.label}</span>
+                      {m.rowState==="auto-mapped"&&m.autoMapConfidence&&<span title={m.autoMapReason||""} style={{fontFamily:FONT,fontSize:9,fontWeight:700,color:C.green,cursor:"default"}}>{m.autoMapConfidence}%</span>}
+                    </div>
                     <select
                       value={m.target}
                       onChange={e=>updateMapping(idx,"target",e.target.value)}
                       style={{fontFamily:FONT,fontSize:12,background:C.bg0,border:`1px solid ${(!m.target&&m.required)?C.redBorder:dupTargets.includes(m.target)?C.amberBorder:C.border1}`,color:m.target?C.text0:C.text3,padding:"4px 6px",outline:"none",cursor:"pointer",width:"100%"}}
                     >
                       <option value="">— Select target —</option>
-                      {targetOpts.map(t=><option key={t.value} value={t.value}>{t.label}</option>)}
+                      {(()=>{
+                        const sel=new Set(form.businessObjects||[]);
+                        const structural=new Set(["Asset","Measurement","Work Order"]);
+                        const known=new Set(TARGET_SCHEMA.map(g=>g.group));
+                        const prodSchema=NESTED_TARGET_SCHEMA[form.product]||{};
+                        const tsGroups=TARGET_SCHEMA.filter(g=>sel.has(g.group)||structural.has(g.group)).map(group=>(
+                          <optgroup key={`ts-${group.group}`} label={group.group}>
+                            {group.fields.map(f=>(
+                              <option key={f.path} value={f.path}>{f.path}  ·  {f.label}</option>
+                            ))}
+                          </optgroup>
+                        ));
+                        const nsGroups=[...sel].flatMap(o=>{
+                          const fields=prodSchema[o]||[];
+                          if(!fields.length) return [];
+                          return [<optgroup key={`ns-${o}`} label={`${o} — product fields`}>{fields.map(fd=><option key={fd.path} value={`${o}.${fd.path}`}>{`${o}.${fd.path}`}</option>)}</optgroup>];
+                        });
+                        return [...tsGroups,...nsGroups];
+                      })()}
                     </select>
                   </div>
                 );
