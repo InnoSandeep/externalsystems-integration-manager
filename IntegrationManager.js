@@ -1339,8 +1339,8 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
                   "unmapped":           {label:"—",                   color:C.text3, bg:"transparent", border:"transparent"},
                 }[m.rowState]||{label:"—",color:C.text3,bg:"transparent",border:"transparent"};
                 return (
-                  <div key={m.src+idx} style={{display:"grid",gridTemplateColumns:"minmax(150px,1.3fr) 60px 74px 82px minmax(200px,1.6fr)",padding:"4px 20px",borderBottom:`1px solid ${C.border0}`,background:rowBg,alignItems:"center",gap:0}}>
-                    <div style={{display:"flex",flexDirection:"column",gap:2}}>
+                  <div key={m.src+idx} style={{display:"grid",gridTemplateColumns:"minmax(150px,1.3fr) 60px 74px 82px minmax(200px,1.6fr)",padding:"4px 20px",borderBottom:`1px solid ${C.border0}`,background:rowBg,alignItems:"flex-start",gap:0}}>
+                    <div style={{display:"flex",flexDirection:"column",gap:2,alignSelf:"flex-start"}}>
                       <select
                         value={m.src}
                         onChange={e=>updateSrc(idx,e.target.value)}
@@ -1351,12 +1351,13 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
                       {m.businessMeaning&&<span style={{fontFamily:FONT,fontSize:10,fontStyle:"italic",color:C.text2,paddingLeft:2}}>{m.businessMeaning}</span>}
                       {m.sampleValue&&<span style={{paddingLeft:2}}><span style={{fontFamily:FONT,fontSize:9,color:C.text3}}>eg.</span><span style={{fontFamily:MONO,fontSize:9,color:C.text3}}> {m.sampleValue}</span></span>}
                     </div>
-                    <span style={{fontFamily:MONO,fontSize:10,color:C.text2,paddingLeft:4}}>{m.srcType}</span>
-                    <span style={{fontFamily:FONT,fontSize:10,fontWeight:700,color:m.required?C.red:C.text3,paddingLeft:4}}>{m.required?"Required":"Optional"}</span>
-                    <div style={{display:"flex",flexDirection:"column",gap:2,alignItems:"flex-start"}}>
+                    <span style={{fontFamily:MONO,fontSize:10,color:C.text2,paddingLeft:4,paddingTop:4}}>{m.srcType}</span>
+                    <span style={{fontFamily:FONT,fontSize:10,fontWeight:700,color:m.required?C.red:C.text3,paddingLeft:4,paddingTop:3}}>{m.required?"Required":"Optional"}</span>
+                    <div style={{display:"flex",flexDirection:"column",gap:2,alignItems:"flex-start",paddingTop:2}}>
                       <span style={{fontFamily:FONT,fontSize:10,fontWeight:600,color:stateLabel.color,background:stateLabel.bg,border:`1px solid ${stateLabel.border}`,padding:"1px 5px",whiteSpace:"nowrap"}}>{stateLabel.label}</span>
                       {m.rowState==="auto-mapped"&&m.autoMapConfidence&&<span title={m.autoMapReason||""} style={{fontFamily:FONT,fontSize:9,fontWeight:700,color:C.green,cursor:"default"}}>{m.autoMapConfidence}%</span>}
                     </div>
+                    <div style={{paddingTop:2}}>
                     <select
                       value={m.target}
                       onChange={e=>updateMapping(idx,"target",e.target.value)}
@@ -1383,6 +1384,7 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
                         return [...tsGroups,...nsGroups];
                       })()}
                     </select>
+                    </div>
                   </div>
                 );
               })}
