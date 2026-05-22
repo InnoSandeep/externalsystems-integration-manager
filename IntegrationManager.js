@@ -1383,16 +1383,25 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
   }
 
   function handleInboundTest() {
+    // Capture the URL and method being tested so the callback can discard stale results
+    // if the user edits the endpoint or switches method before the 1200ms resolves (P1/P2 fix).
+    const testedUrl    = form.method==="webhook" ? form.listenerEndpointUrl : form.baseUrl;
+    const testedMethod = form.method;
     set("inboundTestState","loading"); set("inboundTestResult",null);
     clearTimeout(inboundTestTimer.current);
     inboundTestTimer.current=setTimeout(()=>{
-      if(Math.random()>0.4){
-        set("inboundTestState","passed");
-        set("inboundTestResult",{statusCode:200,responseTimeMs:38,responseBody:'{\n  "received": true,\n  "eventId": "evt_8f3k2x",\n  "timestamp": "2026-05-22T09:22:33Z"\n}'});
-      } else {
-        set("inboundTestState","failed");
-        set("inboundTestResult",{statusCode:405,responseTimeMs:45,responseBody:'{\n  "success": false,\n  "statusCode": 405,\n  "error": "Not Allowed",\n  "responseBodySnippet": "<html>\\r\\n<head><title>405 Not Allowed</title></head>\\r\\n<body>\\r\\n<center><h1>405 Not Allowed</h1></center>\\r\\n<hr><center>nginx/1.31.0</center>\\r\\n</body>\\r\\n</html>\\r\\n"\n}'});
-      }
+      setForm(f=>{
+        const currentUrl = f.method==="webhook" ? f.listenerEndpointUrl : f.baseUrl;
+        if(f.method!==testedMethod || currentUrl!==testedUrl) return f; // stale — discard
+        const passed=Math.random()>0.4;
+        return {
+          ...f,
+          inboundTestState: passed?"passed":"failed",
+          inboundTestResult: passed
+            ? {statusCode:200,responseTimeMs:38,responseBody:'{\n  "received": true,\n  "eventId": "evt_8f3k2x",\n  "timestamp": "2026-05-22T09:22:33Z"\n}'}
+            : {statusCode:405,responseTimeMs:45,responseBody:'{\n  "success": false,\n  "statusCode": 405,\n  "error": "Not Allowed",\n  "responseBodySnippet": "<html>\\r\\n<head><title>405 Not Allowed</title></head>\\r\\n<body>\\r\\n<center><h1>405 Not Allowed</h1></center>\\r\\n<hr><center>nginx/1.31.0</center>\\r\\n</body>\\r\\n</html>\\r\\n"\n}'},
+        };
+      });
     },1200);
   }
 
@@ -1553,8 +1562,8 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
                 <SectionRule label="Direction"/>
                 <div style={{fontFamily:FONT,fontSize:12,color:C.text2,marginBottom:8}}>Choose how data moves.</div>
                 <div style={{display:"flex",gap:10}}>
-                  <SelectionCard label="Inbound" description="External system → Innovapptive" selected={form.direction==="inbound"} onClick={()=>{set("direction","inbound");set("method","");}}/>
-                  <SelectionCard label="Outbound" description="Innovapptive → external system" selected={form.direction==="outbound"} onClick={()=>{set("direction","outbound");set("method","");}}/>
+                  <SelectionCard label="Inbound" description="External system → Innovapptive" selected={form.direction==="inbound"} onClick={()=>{set("direction","inbound");set("method","");set("inboundTestState","idle");set("inboundTestResult",null);}}/>
+                  <SelectionCard label="Outbound" description="Innovapptive → external system" selected={form.direction==="outbound"} onClick={()=>{set("direction","outbound");set("method","");set("inboundTestState","idle");set("inboundTestResult",null);}}/>
                 </div>
                 <FieldError msg={touched.direction&&errors.direction}/>
               </div>
@@ -1566,8 +1575,8 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
                   <div style={{fontFamily:FONT,fontSize:12,color:C.text2,marginBottom:8}}>Choose the connection method.</div>
                   <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
                     {isInbound&&<>
-                      <SelectionCard label="Webhook" description="Real-time events" selected={form.method==="webhook"} onClick={()=>set("method","webhook")}/>
-                      <SelectionCard label="Polling" description="Scheduled sync" selected={form.method==="polling"} onClick={()=>set("method","polling")}/>
+                      <SelectionCard label="Webhook" description="Real-time events" selected={form.method==="webhook"} onClick={()=>{set("method","webhook");set("inboundTestState","idle");set("inboundTestResult",null);}}/>
+                      <SelectionCard label="Polling" description="Scheduled sync" selected={form.method==="polling"} onClick={()=>{set("method","polling");set("inboundTestState","idle");set("inboundTestResult",null);}}/>
                       <SelectionCard label="File Import" description="Coming soon" selected={false} disabled/>
                     </>}
                     {isOutbound&&<>
