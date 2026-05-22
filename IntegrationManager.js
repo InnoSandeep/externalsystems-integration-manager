@@ -1088,7 +1088,7 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
     setTimeout(()=>{
       const f = formRef.current;
       const selectedObjs = new Set(f.businessObjects || []);
-      const STRUCTURAL_GROUPS = new Set(["Asset","Measurement"]);
+      const STRUCTURAL_GROUPS = new Set(["Asset","Measurement","Work Order"]);
       const knownGroups = new Set(TARGET_SCHEMA.map(g=>g.group));
       const productSchema = NESTED_TARGET_SCHEMA[f.product] || {};
       const allowedPaths = new Set([
@@ -1365,7 +1365,7 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
                       <option value="">— Select target —</option>
                       {(()=>{
                         const sel=new Set(form.businessObjects||[]);
-                        const structural=new Set(["Asset","Measurement"]);
+                        const structural=new Set(["Asset","Measurement","Work Order"]);
                         const known=new Set(TARGET_SCHEMA.map(g=>g.group));
                         const prodSchema=NESTED_TARGET_SCHEMA[form.product]||{};
                         const tsGroups=TARGET_SCHEMA.filter(g=>sel.has(g.group)||structural.has(g.group)).map(group=>(
