@@ -1396,15 +1396,12 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
       setForm(f=>{
         const currentUrl = f.method==="webhook" ? f.listenerEndpointUrl : f.baseUrl;
         if(f.method!==testedMethod || currentUrl!==testedUrl || (testedMethod==="polling"&&f.httpMethod!==testedHttpMethod)) return f;
-        const passed=Math.random()>0.4;
         return {
           ...f,
-          inboundTestState:        passed?"passed":"failed",
-          inboundTestedMethod:     passed?testedMethod:null,
-          inboundTestedHttpMethod: passed?testedHttpMethod:null,
-          inboundTestResult: passed
-            ? {statusCode:200,responseTimeMs:38,responseBody:'{\n  "received": true,\n  "eventId": "evt_8f3k2x",\n  "timestamp": "2026-05-22T09:22:33Z"\n}'}
-            : {statusCode:405,responseTimeMs:45,responseBody:'{\n  "success": false,\n  "statusCode": 405,\n  "error": "Not Allowed",\n  "responseBodySnippet": "<html>\\r\\n<head><title>405 Not Allowed</title></head>\\r\\n<body>\\r\\n<center><h1>405 Not Allowed</h1></center>\\r\\n<hr><center>nginx/1.31.0</center>\\r\\n</body>\\r\\n</html>\\r\\n"\n}'},
+          inboundTestState:        "passed",
+          inboundTestedMethod:     testedMethod,
+          inboundTestedHttpMethod: testedHttpMethod,
+          inboundTestResult: {statusCode:200,responseTimeMs:38,responseBody:'{\n  "received": true,\n  "eventId": "evt_8f3k2x",\n  "timestamp": "2026-05-22T09:22:33Z"\n}'},
         };
       });
     },1200);
@@ -1427,7 +1424,7 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
         <div style={{background:C.bg1,border:`1px solid ${C.border0}`,padding:12}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
             <span style={{fontFamily:FONT,fontSize:12,fontWeight:600,color:C.text1}}>Response</span>
-            <button onClick={()=>navigator.clipboard?.writeText(r.responseBody).catch(()=>{})} style={{background:"none",border:`1px solid ${C.border1}`,fontFamily:FONT,fontSize:11,color:C.text2,padding:"2px 8px",cursor:"pointer"}}>⧉ Copy</button>
+            <button onClick={()=>navigator.clipboard?.writeText(r.responseBody)?.catch(()=>{})} style={{background:"none",border:`1px solid ${C.border1}`,fontFamily:FONT,fontSize:11,color:C.text2,padding:"2px 8px",cursor:"pointer"}}>⧉ Copy</button>
           </div>
           <pre style={{fontFamily:MONO,fontSize:11,color:C.text1,whiteSpace:"pre-wrap",margin:0,lineHeight:1.5}}>{r.responseBody}</pre>
         </div>
