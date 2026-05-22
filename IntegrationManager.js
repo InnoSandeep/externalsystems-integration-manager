@@ -1083,7 +1083,8 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
       ]);
       const updated = f.fieldMappings.map(m=>{
         const rule = AUTO_MAP_RULES[m.src];
-        if(!rule||m.target) return m.target?{...m,rowState:"manual"}:m;
+        const PRESERVE_STATES=new Set(["auto-mapped","parent-dep-missing"]);
+        if(!rule||m.target) return m.target?(PRESERVE_STATES.has(m.rowState)?m:{...m,rowState:"manual"}):m;
         if(!allowedPaths.has(rule)) return m;
         const meta = AUTO_MAP_META[m.src];
         return {...m,target:rule,rowState:"auto-mapped",autoMapConfidence:meta?.confidence||null,autoMapReason:meta?.reason||null};
