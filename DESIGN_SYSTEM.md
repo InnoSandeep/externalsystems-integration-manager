@@ -466,9 +466,11 @@ const FONT = "'Roboto', 'Segoe UI', system-ui, sans-serif";
 const MONO = "'Roboto Mono', 'Fira Code', 'Consolas', monospace";
 ```
 
-### What changed from the previous Figma-based spec
+### Migration Applied — Figma v2 → CWP 2.0
 
-| Token | Old (Figma v2) | New (CWP 2.0) | Note |
+The following token changes were applied when migrating from the Figma v2 spec to CWP 2.0 Design System. All values in the 'New' column are live in `IntegrationManager.js`.
+
+| Was (Figma v2) | Now (CWP 2.0 live) | What changed |
 |---|---|---|---|
 | `pageBg` | `#F5F5F5` | `#EFF1F5` | Grey-100 shifted to cooler tone |
 | `bg2` | `#EEEEEE` | `#E2E4E9` | Grey-200 shifted |

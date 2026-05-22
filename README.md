@@ -2,6 +2,8 @@
 
 A single-page, frontend-only prototype for the Integration Manager product. Built in React 18 (no build step), it lets users define and manage data flows between external systems (AVEVA PI, SEEQ, Augury, etc.) and Innovapptive products (iMaintenance, EHS, mRounds, etc.).
 
+- A guided two-step Add Integration flow for inbound and outbound integrations (Webhook and REST API), with a connection test gate before proceeding to Step 2 for all inbound configurations
+
 Live URL: `https://innosandeep.github.io/externalsystems-integration-manager/`
 
 ---
@@ -912,14 +914,15 @@ No Step 2. No mapping required.
 |---|---|
 | Create integration — two-step guided drawer | ✅ |
 | Direction selection: Inbound / Outbound | ✅ |
-| Method selection: Webhook / Polling | ✅ |
+| Method selection: Webhook / REST API | ✅ |
 | Inbound webhook — listener URL + incoming auth (API Key, HMAC) | ✅ |
-| Inbound polling — Base URL, HTTP method, params, headers, body | ✅ |
-| POST request test + sample pull simulation | ✅ |
+| Inbound REST API — endpoint URL, HTTP method, filters, date range, query params | ✅ |
+| Inbound connection test gate in Step 1 (Webhook + REST API) | ✅ |
+| Step 2 sample pull from endpoint or paste JSON (REST API) | ✅ |
 | Authentication configuration (API Key, Basic, Bearer, OAuth 2.0, HMAC) | ✅ |
 | Outbound webhook — Webhook Registry selection or creation | ✅ |
 | Product selection (single-select) | ✅ |
-| Collections multi-select dropdown | ✅ |
+| Collections — multi-select with chip summary (replaces single Business Object) | ✅ |
 | Behavior: trigger condition + failure handling | ✅ |
 | Runtime: frequency + start time (polling) | ✅ |
 | Readiness checklist in Step 2 | ✅ |
@@ -944,6 +947,19 @@ No Step 2. No mapping required.
 | User Activity tab — semantic HTML table (STATUS dot · ACTIVITY · TIMESTAMP) | ✅ |
 | Active data flows strip on System Detail | ✅ |
 | Integration summary sentence on cards | ✅ |
+
+---
+
+## Recent UX and Design Updates
+
+### Flow improvements
+
+- Activity and Audit tabs converted to semantic HTML table layout (fixed-width STATUS/TIMESTAMP columns, fluid ACTIVITY/ACTION column).
+- Sidebar converted to dark navy (`#1A2352`) with Figma-aligned nav tokens.
+- Design system updated to CWP 2.0 token set (Roboto font stack, revised color primitives, transparent badge backgrounds).
+- Disabled method cards (File Import, File Export) now convey Coming Soon state via subtitle text rather than a badge overlay.
+- Review Queue warning banner removed from DLQ tab.
+- Inbound integrations (Webhook and REST API) require a passing connection test in Step 1 before the Next button allows progression to Step 2. The test runs inline with a simulated result panel (status code, response time, JSON body). The gate resets if the endpoint or listener endpoint selection changes.
 
 ---
 
