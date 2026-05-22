@@ -9,7 +9,7 @@ Use this document to get up to speed at the start of a new session. Read it top 
 
 **Stack:** React 18 CDN + Babel standalone, inline styles only, no build step, no persistence.  
 **Fonts:** Roboto + Roboto Mono via Google Fonts CDN  
-**File:** `IntegrationManager.jsx` · ~3,078 lines · ~65 functions (approx — grown with inbound test gate, mapping workspace, and design system v2 updates)
+**File:** `IntegrationManager.js` · ~3,078 lines · ~65 functions (approx — grown with inbound test gate, mapping workspace, and design system v2 updates)
 
 **What a user can do end-to-end:**
 - Create and edit external systems (name, category, plant, code, error email)
