@@ -154,4 +154,4 @@ These are the highest-risk areas. Verify them before merging any change that tou
 
 8. **Inbound test gate** (`AddIntegrationDrawer.handleNext`): If `direction === 'inbound'`, `handleNext()` must check `inboundTestState === 'passed'` before setting `step(2)`. Do not remove this gate or apply it to outbound flows. The gate applies to both `method === 'webhook'` and `method === 'polling'` (the inbound REST API / scheduled pull flow).
 
-9. **`inboundTestState` reset on endpoint change**: The `onChange` handler for `webhookEndpointId` (webhook) and `endpointFullUrl` (REST API) must reset `inboundTestState` to `'idle'` and `inboundTestResult` to `null`. Do not allow a stale `'passed'` state to persist after an endpoint change.
+9. **`inboundTestState` reset on endpoint change**: The `onChange` handler for `listenerEndpointUrl` (webhook) and `baseUrl` (polling/REST API) must reset `inboundTestState` to `'idle'` and `inboundTestResult` to `null`. Do not allow a stale `'passed'` state to persist after an endpoint change.
