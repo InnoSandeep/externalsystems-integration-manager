@@ -1070,7 +1070,14 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
       const updated = f.fieldMappings.map(m=>{
         const rule = AUTO_MAP_RULES[m.src];
         if(!rule||m.target) return m.target?{...m,rowState:"manual"}:m;
-        if(!TARGET_PATHS.includes(rule)) return m;
+        const selectedObjs = new Set(f.businessObjects || []);
+        const STRUCTURAL_GROUPS = new Set(["Asset","Measurement"]);
+        const allowedPaths = new Set(
+          TARGET_SCHEMA
+            .filter(g=>selectedObjs.has(g.group)||STRUCTURAL_GROUPS.has(g.group))
+            .flatMap(g=>g.fields.map(fd=>fd.path))
+        );
+        if(!allowedPaths.has(rule)) return m;
         const meta = AUTO_MAP_META[m.src];
         return {...m,target:rule,rowState:"auto-mapped",autoMapConfidence:meta?.confidence||null,autoMapReason:meta?.reason||null};
       });
