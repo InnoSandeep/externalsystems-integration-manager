@@ -1396,12 +1396,15 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
       setForm(f=>{
         const currentUrl = f.method==="webhook" ? f.listenerEndpointUrl : f.baseUrl;
         if(f.method!==testedMethod || currentUrl!==testedUrl || (testedMethod==="polling"&&f.httpMethod!==testedHttpMethod)) return f;
+        const passed = isValidUrl(testedUrl);
         return {
           ...f,
-          inboundTestState:        "passed",
-          inboundTestedMethod:     testedMethod,
-          inboundTestedHttpMethod: testedHttpMethod,
-          inboundTestResult: {statusCode:200,responseTimeMs:38,responseBody:'{\n  "received": true,\n  "eventId": "evt_8f3k2x",\n  "timestamp": "2026-05-22T09:22:33Z"\n}'},
+          inboundTestState:        passed?"passed":"failed",
+          inboundTestedMethod:     passed?testedMethod:null,
+          inboundTestedHttpMethod: passed?testedHttpMethod:null,
+          inboundTestResult: passed
+            ? {statusCode:200,responseTimeMs:38,responseBody:'{\n  "received": true,\n  "eventId": "evt_8f3k2x",\n  "timestamp": "2026-05-22T09:22:33Z"\n}'}
+            : {statusCode:0,responseTimeMs:45,responseBody:`Connection failed — "${testedUrl}" is not a reachable endpoint. Check the URL and try again.`},
         };
       });
     },1200);
