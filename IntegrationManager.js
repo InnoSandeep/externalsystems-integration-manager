@@ -455,6 +455,20 @@ const PARENT_DEP_RULES = {
   "measurement.reading.timestamp": ["asset.externalId","measurement.pointExternalId"],
   "workOrder.externalRef":         ["asset.externalId"],
 };
+// Maps qualified NESTED_TARGET_SCHEMA paths to their TARGET_SCHEMA canonical equivalents
+// Used in handleValidate to normalize targets before PARENT_DEP_RULES lookups.
+const TARGET_NORMALIZE = {
+  "Observation.measurements[].value":  "measurement.reading.value",
+  "Observation.measurements[].unit":   "measurement.reading.unit",
+  "Measurement Point.value":           "measurement.reading.value",
+  "Measurement Point.unit":            "measurement.reading.unit",
+  "Measurement Point.measured_at":     "measurement.reading.timestamp",
+  "Work Order.id":                     "workOrder.externalRef",
+  "Observation.asset.id":              "asset.externalId",
+  "Measurement Point.asset.id":        "asset.externalId",
+  "Work Order.asset.id":               "asset.externalId",
+  "Measurement Point.id":              "measurement.pointExternalId",
+};
 
 // ─── SEED DATA ────────────────────────────────────────────────────────────────
 // Pre-loaded demo data that appears when the prototype first loads.
@@ -1122,12 +1136,13 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
         if(m.srcType==="datetime"&&tf.type==="date") return false;
         return m.srcType!==tf.type;
       }).length;
-      const mappedTargetSet=new Set(mapped);
+      const canon=t=>TARGET_NORMALIZE[t]||t;
+      const canonMappedSet=new Set(mapped.map(canon));
       let parentDepMissing=0;
       const updatedMappings=mp.map(m=>{
         if(!m.target) return m;
-        const requiredParents=PARENT_DEP_RULES[m.target];
-        if(requiredParents&&requiredParents.some(p=>!mappedTargetSet.has(p))){
+        const requiredParents=PARENT_DEP_RULES[canon(m.target)];
+        if(requiredParents&&requiredParents.some(p=>!canonMappedSet.has(canon(p)))){
           parentDepMissing++;
           return {...m,rowState:"parent-dep-missing"};
         }
