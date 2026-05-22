@@ -2,7 +2,7 @@
 
 A single-page, frontend-only prototype for the Integration Manager product. Built in React 18 (no build step), it lets users define and manage data flows between external systems (AVEVA PI, SEEQ, Augury, etc.) and Innovapptive products (iMaintenance, EHS, mRounds, etc.).
 
-- A guided two-step Add Integration flow for inbound and outbound integrations (Webhook and REST API), with a connection test gate before proceeding to Step 2 for all inbound configurations
+- A guided Add Integration flow: two-step for inbound integrations (connection test gate in Step 1, mapping in Step 2), one-step for outbound webhook (publishes directly from Step 1 once a webhook is selected)
 
 Live URL: `https://innosandeep.github.io/externalsystems-integration-manager/`
 
