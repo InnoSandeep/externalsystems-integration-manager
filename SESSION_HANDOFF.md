@@ -152,6 +152,6 @@ These are the highest-risk areas. Verify them before merging any change that tou
 
 7. **`Collections` reset on product change**: When `form.product` changes, `form.businessObjects` must reset to `[]`. The `NESTED_TARGET_SCHEMA` is keyed by product, so stale collection selections from a previous product would produce wrong target dropdowns in the Mapping Workspace.
 
-8. **Inbound test gate** (`AddIntegrationDrawer.handleNext`): If `direction === 'inbound'`, `handleNext()` must check `inboundTestState === 'passed'` before setting `step(2)`. Do not remove this gate or apply it to outbound flows. The gate applies to both `method === 'webhook'` and `method === 'rest_api'`.
+8. **Inbound test gate** (`AddIntegrationDrawer.handleNext`): If `direction === 'inbound'`, `handleNext()` must check `inboundTestState === 'passed'` before setting `step(2)`. Do not remove this gate or apply it to outbound flows. The gate applies to both `method === 'webhook'` and `method === 'polling'` (the inbound REST API / scheduled pull flow).
 
 9. **`inboundTestState` reset on endpoint change**: The `onChange` handler for `webhookEndpointId` (webhook) and `endpointFullUrl` (REST API) must reset `inboundTestState` to `'idle'` and `inboundTestResult` to `null`. Do not allow a stale `'passed'` state to persist after an endpoint change.

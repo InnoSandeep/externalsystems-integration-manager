@@ -17,7 +17,7 @@ Fields: `id`, `name`, `category`, `plant`, `code` (auto-generated, frozen after 
 
 Represents a configured data flow between an external system and an Innovapptive product.
 
-Fields: `id`, `systemId`, `name`, `direction` (`inbound` | `outbound`), `method` (`webhook` | `polling` | `rest_api` | `file_import` | `file_export`), `status`, `product`, `collections` (array, multi-select; was single "Business Object", now multi-select "Collections"), `triggerOn`, `failureBehavior`, `frequency`, `startTime`, `fieldMappings`, `inboundTestState` (`idle`|`loading`|`passed`|`failed` — transient, form-only, not persisted to the saved integration record), `inboundTestResult` (null or `{ statusCode, responseTimeMs, responseBody }` — transient, form-only)
+Fields: `id`, `systemId`, `name`, `direction` (`inbound` | `outbound`), `method` (`"webhook"` | `"polling"` | `"file_import"` | `"file_export"` — the inbound REST API / scheduled pull flow uses `"polling"` as the method constant), `status`, `product`, `collections` (array, multi-select; was single "Business Object", now multi-select "Collections"), `triggerOn`, `failureBehavior`, `frequency`, `startTime`, `fieldMappings`, `inboundTestState` (`idle`|`loading`|`passed`|`failed` — transient, form-only, not persisted to the saved integration record), `inboundTestResult` (null or `{ statusCode, responseTimeMs, responseBody }` — transient, form-only)
 
 Note: `inboundTestState` and `inboundTestResult` exist only during form editing. They are never written to the saved integration object.
 
@@ -182,10 +182,10 @@ Add Integration Drawer (Step 2 — continued)
 | Term | Definition |
 |---|---|
 | **System** | An external data source or destination registered in Integration Manager. Has a category (Historian, Analytics Platform, etc.) and a unique auto-generated System Code. |
-| **Integration** | A configured data flow under a System. Has a direction (Inbound/Outbound), a method (Webhook/REST API), and — for inbound — a field mapping to an Innovapptive collection. |
+| **Integration** | A configured data flow under a System. Has a direction (Inbound/Outbound), a method (`"webhook"` or `"polling"` — the latter covers the inbound REST API scheduled-pull flow), and — for inbound — a field mapping to an Innovapptive collection. |
 | **Collections** | A multi-select list of Innovapptive business object types (e.g. Observations, Work Orders) that a single integration maps to. Replaces the former single-select 'Business Object' field. |
 | **Mapping Workspace** | A full-screen surface opened from Step 2 of Add Integration. Provides a side-by-side source schema panel and mapping row editor. Replaces the former inline mapper inside the drawer. |
-| **Inbound test gate** | A simulated connection test required in Step 1 for all inbound integrations. Must pass (status 200 simulated) before the user can advance to Step 2. Applies to both Webhook and REST API inbound methods. |
+| **Inbound test gate** | A simulated connection test required in Step 1 for all inbound integrations. Must pass (status 200 simulated) before the user can advance to Step 2. Applies to both `method === 'webhook'` and `method === 'polling'` (the inbound REST API / scheduled pull flow). |
 | **`inboundTestState`** | Form-only field: `idle` \| `loading` \| `passed` \| `failed`. Tracks the live connection test status. Never persisted to the saved integration record. |
 | **Auto Map** | AI-simulated mapping action in the Workspace. Applies `AUTO_MAP_RULES` to unmapped rows, checks the result exists in `NESTED_TARGET_SCHEMA`, and sets `rowState: "auto-mapped"`. Only fills unmapped rows. |
 | **Validate** | AI-simulated validation action in the Workspace. Checks required fields mapped, duplicate targets, real type conflicts, and ref lookups. Stores result in `form.validationResult`. |
