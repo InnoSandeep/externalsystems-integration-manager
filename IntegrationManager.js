@@ -558,8 +558,9 @@ function blankIntegrationForm() {
     sampleMode:"pull", sampleJson:"", sampleFetched:false,
     schemaSummary:null, validationResult:null,
     // Inbound connection test gate (webhook + polling)
-    inboundTestState: "idle",   // "idle" | "loading" | "passed" | "failed"
-    inboundTestResult: null,    // { statusCode, responseTimeMs, responseBody } | null
+    inboundTestState: "idle",    // "idle" | "loading" | "passed" | "failed"
+    inboundTestResult: null,     // { statusCode, responseTimeMs, responseBody } | null
+    inboundTestedMethod: null,   // records form.method at the time the test passed
   };
 }
 
@@ -1362,7 +1363,7 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
   function handleNext() {
     setTouched({name:true,direction:true,method:true,listenerEndpointUrl:true,baseUrl:true,product:true,businessObjects:true});
     const e=validateStep1();
-    if(isInbound&&form.inboundTestState!=="passed") e.inboundTest="Connection test must pass before proceeding to mapping";
+    if(isInbound&&(form.inboundTestState!=="passed"||form.inboundTestedMethod!==form.method)) e.inboundTest="Connection test must pass before proceeding to mapping";
     setErrors(e);
     if(Object.keys(e).length!==0) return;
     // If POST request was already tested successfully, pre-seed fetchState so Step 2 skips the pull step
@@ -1383,11 +1384,11 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
   }
 
   function handleInboundTest() {
-    // Capture the URL and method being tested so the callback can discard stale results
-    // if the user edits the endpoint or switches method before the 1200ms resolves (P1/P2 fix).
+    // Capture URL + method at call time; callback discards result if either changed.
     const testedUrl    = form.method==="webhook" ? form.listenerEndpointUrl : form.baseUrl;
     const testedMethod = form.method;
-    set("inboundTestState","loading"); set("inboundTestResult",null);
+    set("inboundTestState","loading"); set("inboundTestResult",null); set("inboundTestedMethod",null);
+    setErrors(e=>({...e,inboundTest:undefined})); // clear stale gate error immediately
     clearTimeout(inboundTestTimer.current);
     inboundTestTimer.current=setTimeout(()=>{
       setForm(f=>{
@@ -1396,7 +1397,8 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
         const passed=Math.random()>0.4;
         return {
           ...f,
-          inboundTestState: passed?"passed":"failed",
+          inboundTestState:    passed?"passed":"failed",
+          inboundTestedMethod: passed?testedMethod:null,
           inboundTestResult: passed
             ? {statusCode:200,responseTimeMs:38,responseBody:'{\n  "received": true,\n  "eventId": "evt_8f3k2x",\n  "timestamp": "2026-05-22T09:22:33Z"\n}'}
             : {statusCode:405,responseTimeMs:45,responseBody:'{\n  "success": false,\n  "statusCode": 405,\n  "error": "Not Allowed",\n  "responseBodySnippet": "<html>\\r\\n<head><title>405 Not Allowed</title></head>\\r\\n<body>\\r\\n<center><h1>405 Not Allowed</h1></center>\\r\\n<hr><center>nginx/1.31.0</center>\\r\\n</body>\\r\\n</html>\\r\\n"\n}'},
@@ -1422,7 +1424,7 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
         <div style={{background:C.bg1,border:`1px solid ${C.border0}`,padding:12}}>
           <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
             <span style={{fontFamily:FONT,fontSize:12,fontWeight:600,color:C.text1}}>Response</span>
-            <button onClick={()=>navigator.clipboard?.writeText(r.responseBody)} style={{background:"none",border:`1px solid ${C.border1}`,fontFamily:FONT,fontSize:11,color:C.text2,padding:"2px 8px",cursor:"pointer"}}>⧉ Copy</button>
+            <button onClick={()=>navigator.clipboard?.writeText(r.responseBody).catch(()=>{})} style={{background:"none",border:`1px solid ${C.border1}`,fontFamily:FONT,fontSize:11,color:C.text2,padding:"2px 8px",cursor:"pointer"}}>⧉ Copy</button>
           </div>
           <pre style={{fontFamily:MONO,fontSize:11,color:C.text1,whiteSpace:"pre-wrap",margin:0,lineHeight:1.5}}>{r.responseBody}</pre>
         </div>
@@ -1562,8 +1564,8 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
                 <SectionRule label="Direction"/>
                 <div style={{fontFamily:FONT,fontSize:12,color:C.text2,marginBottom:8}}>Choose how data moves.</div>
                 <div style={{display:"flex",gap:10}}>
-                  <SelectionCard label="Inbound" description="External system → Innovapptive" selected={form.direction==="inbound"} onClick={()=>{set("direction","inbound");set("method","");set("inboundTestState","idle");set("inboundTestResult",null);}}/>
-                  <SelectionCard label="Outbound" description="Innovapptive → external system" selected={form.direction==="outbound"} onClick={()=>{set("direction","outbound");set("method","");set("inboundTestState","idle");set("inboundTestResult",null);}}/>
+                  <SelectionCard label="Inbound" description="External system → Innovapptive" selected={form.direction==="inbound"} onClick={()=>{set("direction","inbound");set("method","");set("inboundTestState","idle");set("inboundTestResult",null);set("inboundTestedMethod",null);}}/>
+                  <SelectionCard label="Outbound" description="Innovapptive → external system" selected={form.direction==="outbound"} onClick={()=>{set("direction","outbound");set("method","");set("inboundTestState","idle");set("inboundTestResult",null);set("inboundTestedMethod",null);}}/>
                 </div>
                 <FieldError msg={touched.direction&&errors.direction}/>
               </div>
@@ -1575,8 +1577,8 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
                   <div style={{fontFamily:FONT,fontSize:12,color:C.text2,marginBottom:8}}>Choose the connection method.</div>
                   <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>
                     {isInbound&&<>
-                      <SelectionCard label="Webhook" description="Real-time events" selected={form.method==="webhook"} onClick={()=>{set("method","webhook");set("inboundTestState","idle");set("inboundTestResult",null);}}/>
-                      <SelectionCard label="Polling" description="Scheduled sync" selected={form.method==="polling"} onClick={()=>{set("method","polling");set("inboundTestState","idle");set("inboundTestResult",null);}}/>
+                      <SelectionCard label="Webhook" description="Real-time events" selected={form.method==="webhook"} onClick={()=>{set("method","webhook");set("inboundTestState","idle");set("inboundTestResult",null);set("inboundTestedMethod",null);}}/>
+                      <SelectionCard label="Polling" description="Scheduled sync" selected={form.method==="polling"} onClick={()=>{set("method","polling");set("inboundTestState","idle");set("inboundTestResult",null);set("inboundTestedMethod",null);}}/>
                       <SelectionCard label="File Import" description="Coming soon" selected={false} disabled/>
                     </>}
                     {isOutbound&&<>
@@ -1628,7 +1630,7 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
                     <FieldLabel label="Receiving URL" required helper="Register this URL in the external system."/>
                     <FieldInput
                       value={form.listenerEndpointUrl}
-                      onChange={v=>{set("listenerEndpointUrl",v);touch("listenerEndpointUrl");set("inboundTestState","idle");set("inboundTestResult",null);}}
+                      onChange={v=>{set("listenerEndpointUrl",v);touch("listenerEndpointUrl");set("inboundTestState","idle");set("inboundTestResult",null);set("inboundTestedMethod",null);}}
                       placeholder="https://hooks.company.com/inno-listener"
                       mono
                       error={touched.listenerEndpointUrl&&errors.listenerEndpointUrl}
@@ -1678,7 +1680,7 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
                   <SectionRule label="Connection Settings"/>
                   <div style={{marginBottom:12}}>
                     <FieldLabel label="Base URL" required helper="Full URL of the endpoint to poll, e.g. https://pi.company.com/api/v2/observations"/>
-                    <FieldInput value={form.baseUrl} onChange={v=>{set("baseUrl",v);touch("baseUrl");set("inboundTestState","idle");set("inboundTestResult",null);}} placeholder="https://api.external-system.com/data/observations" mono error={touched.baseUrl&&errors.baseUrl}/>
+                    <FieldInput value={form.baseUrl} onChange={v=>{set("baseUrl",v);touch("baseUrl");set("inboundTestState","idle");set("inboundTestResult",null);set("inboundTestedMethod",null);}} placeholder="https://api.external-system.com/data/observations" mono error={touched.baseUrl&&errors.baseUrl}/>
                     <FieldError msg={touched.baseUrl&&errors.baseUrl}/>
                   </div>
                   {isInbound&&form.baseUrl.trim()&&(
@@ -1986,7 +1988,7 @@ function AddIntegrationDrawer({ open, system, onClose, onSave, onGoToSystem, web
           {step===1&&!isOutboundWebhook&&(
             <>
               <button onClick={()=>handleSave(false)} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:14,fontWeight:600,padding:"7px 16px",cursor:"pointer"}}>Save as Draft</button>
-              <button onClick={handleNext} title={isInbound&&form.inboundTestState!=="passed"?"Run and pass the connection test to continue":undefined} style={{background:C.blue,border:`1px solid ${C.blueHover}`,color:"#fff",fontFamily:FONT,fontSize:14,fontWeight:700,padding:"7px 18px",cursor:"pointer",opacity:isInbound&&form.inboundTestState!=="passed"?0.5:1}}>Next: Mapping & Runtime →</button>
+              <button onClick={handleNext} title={isInbound&&(form.inboundTestState!=="passed"||form.inboundTestedMethod!==form.method)?"Run and pass the connection test to continue":undefined} style={{background:C.blue,border:`1px solid ${C.blueHover}`,color:"#fff",fontFamily:FONT,fontSize:14,fontWeight:700,padding:"7px 18px",cursor:"pointer",opacity:isInbound&&(form.inboundTestState!=="passed"||form.inboundTestedMethod!==form.method)?0.5:1}}>Next: Mapping & Runtime →</button>
             </>
           )}
           {step===1&&isOutboundWebhook&&(
