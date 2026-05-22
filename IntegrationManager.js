@@ -1106,6 +1106,7 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
           parentDepMissing++;
           return {...m,rowState:"parent-dep-missing"};
         }
+        if(m.rowState==="parent-dep-missing") return {...m,rowState:m.autoMapConfidence?"auto-mapped":"manual"};
         return m;
       });
       const result={
