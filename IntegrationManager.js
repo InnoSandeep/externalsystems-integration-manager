@@ -1057,7 +1057,7 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
     // Preserve row.required — it reflects the target's constraint, not the source field's metadata.
     // Spreading sf without required ensures the mandatory mapping gate can't be bypassed by swapping sources.
     const { required: _ignored, ...srcMeta } = sf;
-    setForm(f=>{ const m=[...f.fieldMappings]; m[idx]={...m[idx],...srcMeta,target:"",rowState:"unmapped"}; return {...f,fieldMappings:m}; });
+    setForm(f=>{ const m=[...f.fieldMappings]; m[idx]={...m[idx],...srcMeta,target:"",rowState:"unmapped",autoMapConfidence:null,autoMapReason:null}; return {...f,fieldMappings:m}; });
   }
 
   function handleFetchSample() {
