@@ -1336,7 +1336,11 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
                       style={{fontFamily:FONT,fontSize:12,background:C.bg0,border:`1px solid ${(!m.target&&m.required)?C.redBorder:dupTargets.includes(m.target)?C.amberBorder:C.border1}`,color:m.target?C.text0:C.text3,padding:"4px 6px",outline:"none",cursor:"pointer",width:"100%"}}
                     >
                       <option value="">— Select target —</option>
-                      {TARGET_SCHEMA.map(group=>(
+                      {TARGET_SCHEMA.filter(g=>{
+                        const sel=new Set(form.businessObjects||[]);
+                        const structural=new Set(["Asset","Measurement"]);
+                        return sel.has(g.group)||structural.has(g.group);
+                      }).map(group=>(
                         <optgroup key={group.group} label={group.group}>
                           {group.fields.map(f=>(
                             <option key={f.path} value={f.path}>{f.path}  ·  {f.label}</option>
