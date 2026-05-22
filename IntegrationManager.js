@@ -1079,7 +1079,7 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
       const productSchema = NESTED_TARGET_SCHEMA[f.product] || {};
       const allowedPaths = new Set([
         ...TARGET_SCHEMA.filter(g=>selectedObjs.has(g.group)||STRUCTURAL_GROUPS.has(g.group)).flatMap(g=>g.fields.map(fd=>fd.path)),
-        ...[...selectedObjs].filter(o=>!knownGroups.has(o)).flatMap(o=>(productSchema[o]||[]).map(fd=>`${o}.${fd.path}`)),
+        ...[...selectedObjs].flatMap(o=>(productSchema[o]||[]).map(fd=>`${o}.${fd.path}`)),
       ]);
       const updated = f.fieldMappings.map(m=>{
         const rule = AUTO_MAP_RULES[m.src];
@@ -1105,7 +1105,7 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
       const dups=mapped.filter((t,i)=>mapped.indexOf(t)!==i);
       const knownGroups=new Set(TARGET_SCHEMA.map(g=>g.group));
       const prodSchema=NESTED_TARGET_SCHEMA[f.product]||{};
-      const extraFields=(f.businessObjects||[]).filter(o=>!knownGroups.has(o)).flatMap(o=>(prodSchema[o]||[]).map(fd=>({...fd,path:`${o}.${fd.path}`})));
+      const extraFields=(f.businessObjects||[]).flatMap(o=>(prodSchema[o]||[]).map(fd=>({...fd,path:`${o}.${fd.path}`})));
       const allTargetFields=[...TARGET_SCHEMA.flatMap(g=>g.fields),...extraFields];
       const typeConflicts=mp.filter(m=>{
         if(!m.target) return false;
@@ -1347,18 +1347,18 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
                         const known=new Set(TARGET_SCHEMA.map(g=>g.group));
                         const prodSchema=NESTED_TARGET_SCHEMA[form.product]||{};
                         const tsGroups=TARGET_SCHEMA.filter(g=>sel.has(g.group)||structural.has(g.group)).map(group=>(
-                          <optgroup key={group.group} label={group.group}>
+                          <optgroup key={`ts-${group.group}`} label={group.group}>
                             {group.fields.map(f=>(
                               <option key={f.path} value={f.path}>{f.path}  ·  {f.label}</option>
                             ))}
                           </optgroup>
                         ));
-                        const extraGroups=[...sel].filter(o=>!known.has(o)).flatMap(o=>{
+                        const nsGroups=[...sel].flatMap(o=>{
                           const fields=prodSchema[o]||[];
                           if(!fields.length) return [];
-                          return [<optgroup key={o} label={o}>{fields.map(fd=><option key={fd.path} value={`${o}.${fd.path}`}>{`${o}.${fd.path}`}</option>)}</optgroup>];
+                          return [<optgroup key={`ns-${o}`} label={`${o} — product fields`}>{fields.map(fd=><option key={fd.path} value={`${o}.${fd.path}`}>{`${o}.${fd.path}`}</option>)}</optgroup>];
                         });
-                        return [...tsGroups,...extraGroups];
+                        return [...tsGroups,...nsGroups];
                       })()}
                     </select>
                   </div>
