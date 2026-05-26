@@ -3271,6 +3271,11 @@ function SystemDetailPage({ system, integrations, onBack, onAddIntegration, onUp
   const [editSysOpen,setEditSys]=useState(false);
   const [editIntg,setEditIntg]=useState(null);
   const [dlqEntry,setDlqEntry]=useState(null);
+  const sysIntgs=integrations.filter(i=>i.systemId===system.id);
+  const activeCount=sysIntgs.filter(i=>i.status==="active").length;
+  const readyCount=sysIntgs.filter(i=>i.status==="ready_to_publish").length;
+  const realtimeCount=sysIntgs.filter(i=>i.method==="webhook").length;
+  const scheduledCount=sysIntgs.filter(i=>i.method==="polling").length;
   const dlqCount=DLQ_ENTRIES.filter(e=>e.systemId===system.id).length;
   const TABS=[
     {key:"integrations", label:"Integrations", count:sysIntgs.length},
@@ -3279,11 +3284,6 @@ function SystemDetailPage({ system, integrations, onBack, onAddIntegration, onUp
     {key:"audit",        label:"Audit Log",     count:AUDIT_LOG.length},
   ];
   const isIncomplete=system.status==="draft"&&!system.errorEmail;
-  const sysIntgs=integrations.filter(i=>i.systemId===system.id);
-  const activeCount=sysIntgs.filter(i=>i.status==="active").length;
-  const readyCount=sysIntgs.filter(i=>i.status==="ready_to_publish").length;
-  const realtimeCount=sysIntgs.filter(i=>i.method==="webhook").length;
-  const scheduledCount=sysIntgs.filter(i=>i.method==="polling").length;
   return (
     <div style={{padding:"24px 32px",maxWidth:1200,margin:"0 auto"}}>
       {/* Header Card */}
