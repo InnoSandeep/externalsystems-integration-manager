@@ -877,7 +877,7 @@ function AIActionButton({ label, desc, running, result, onClick, onClear }) {
 
 // Recursive JSON tree node — renders a JSON value (object/array/primitive) with expand/collapse.
 // Defined at module level so React doesn't recreate it on each MappingWorkspace render (would reset useState).
-function JsonNode({ val, depth }) {
+function JsonNode({ val, depth, highlightKeys }) {
   const [open, setOpen] = React.useState(depth < 2);
   if (val === null || val === undefined) return React.createElement("span",{style:{fontFamily:MONO,fontSize:11,color:C.text3}},"null");
   if (typeof val !== "object") {
@@ -898,12 +898,15 @@ function JsonNode({ val, depth }) {
         {!open&&<span>{isArr?"]":"}"}</span>}
       </div>
       {open&&<div style={{paddingLeft:14}}>
-        {entries.map(([k,v])=>(
-          <div key={k} style={{display:"flex",gap:4,alignItems:"flex-start"}}>
-            {!isArr&&<span style={{fontFamily:MONO,fontSize:11,color:C.amber,flexShrink:0}}>{k}:</span>}
-            <JsonNode val={v} depth={depth+1}/>
-          </div>
-        ))}
+        {entries.map(([k,v])=>{
+          const hl = !isArr && highlightKeys && highlightKeys.has(String(k));
+          return (
+            <div key={k} style={{display:"flex",gap:4,alignItems:"flex-start",background:hl?C.blueBg:"transparent",borderRadius:2,marginLeft:hl?-2:0,paddingLeft:hl?2:0}}>
+              {!isArr&&<span style={{fontFamily:MONO,fontSize:11,color:hl?C.blue:C.amber,flexShrink:0,fontWeight:hl?700:400}}>{k}:</span>}
+              <JsonNode val={v} depth={depth+1} highlightKeys={null}/>
+            </div>
+          );
+        })}
       </div>}
       {open&&<div style={{fontFamily:MONO,fontSize:11,color:C.text2}}>{isArr?"]":"}"}</div>}
     </div>
@@ -1060,6 +1063,7 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
   const [pasteJsonOpen, setPasteJsonOpen]   = useState(false);
   const [pasteJsonText, setPasteJsonText]   = useState("");
   const [pasteJsonError, setPasteJsonError] = useState(null);
+  const [selectedSrc, setSelectedSrc] = useState(null);
   const fetchTimer = useRef(null);
   // Always holds the latest form value so setTimeout callbacks can read current
   // state without a stale closure and without needing side effects inside updaters.
@@ -1069,7 +1073,7 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
   useEffect(()=>{
     if(!open){
       setAutoMapResult(null); setValidateResult(null); setValOpen(false);
-      setFetch("idle"); setFilterText(""); setCollapsedGrps({});
+      setFetch("idle"); setFilterText(""); setCollapsedGrps({}); setSelectedSrc(null);
       setSampleJsonOpen(false); setPasteJsonOpen(false); setPasteJsonText(""); setPasteJsonError(null);
     }
   },[open]);
@@ -1187,8 +1191,12 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
         return {...m,target:resolved,rowState:"auto-mapped",autoMapConfidence:meta?.confidence||null,autoMapReason:meta?.reason||null};
       });
       const n = updated.filter((m,i)=>m.rowState==="auto-mapped"&&!f.fieldMappings[i].target).length;
+      const stillNeeded = updated.filter(m=>m.required&&!m.target).length;
       setForm(prev=>({...prev,fieldMappings:updated}));
-      setAutoMapResult(`${n} field${n!==1?"s":""} mapped`);
+      setAutoMapResult(n===0
+        ? `No new fields mapped. ${stillNeeded} required field${stillNeeded!==1?"s":""} still need mapping.`
+        : `Auto-mapped ${n} field${n!==1?"s":""}. ${stillNeeded===0?"All required fields mapped.":`${stillNeeded} required field${stillNeeded!==1?"s":""} still need mapping.`}`
+      );
       setAutoMapRunning(false);
     },1200);
   }
@@ -1241,7 +1249,13 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
       setForm(prev=>({...prev,validationResult:result,fieldMappings:updatedMappings}));
       setValidateRunning(false);
       const issues=result.unmappedRequired+result.duplicateTargets+result.typeConflicts+parentDepMissing;
-      setValidateResult(issues===0?"All checks passed":`${issues} issue${issues!==1?"s":""} found`);
+      const failParts=[
+        result.unmappedRequired>0&&`${result.unmappedRequired} required field${result.unmappedRequired!==1?"s":""} unmapped`,
+        result.typeConflicts>0&&`${result.typeConflicts} type conflict${result.typeConflicts!==1?"s":""}`,
+        result.duplicateTargets>0&&`${result.duplicateTargets} duplicate target${result.duplicateTargets!==1?"s":""}`,
+        parentDepMissing>0&&`${parentDepMissing} parent dep. gap${parentDepMissing!==1?"s":""}`,
+      ].filter(Boolean).join(", ");
+      setValidateResult(issues===0?"All checks passed — ready to publish":`Validation failed: ${failParts}`);
     },1000);
   }
 
@@ -1270,12 +1284,16 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
     .filter(m=>!filterText.trim()||m.src.toLowerCase().includes(filterText.toLowerCase())||m.target.toLowerCase().includes(filterText.toLowerCase()));
 
   function FieldTreeRow({ f, indent }) {
+    const sel = selectedSrc === f.src;
     return (
-      <div style={{display:"flex",alignItems:"center",gap:8,padding:`5px ${indent?28:14}px 5px ${indent?28:14}px`,borderBottom:`1px solid ${C.border0}`,background:C.bg0}}>
-        <MonoText size={12} color={C.text0}>{f.src}</MonoText>
-        {f.arrayPath&&<span style={{fontSize:10,fontWeight:600,color:C.text1,background:C.bg2,border:`1px solid ${C.border1}`,padding:"0 3px"}}>array</span>}
+      <div
+        onClick={()=>setSelectedSrc(s=>s===f.src?null:f.src)}
+        style={{display:"flex",alignItems:"center",gap:8,padding:`5px ${indent?28:14}px 5px ${indent?28:14}px`,borderBottom:`1px solid ${C.border0}`,background:sel?C.blueBg:C.bg0,cursor:"pointer",userSelect:"none"}}
+      >
+        <MonoText size={12} color={sel?C.blue:C.text0}>{f.src}</MonoText>
+        {f.arrayPath&&<span title="Array field — ensure target collection mapping is configured" style={{fontFamily:MONO,fontSize:10,color:C.text3,cursor:"help"}}>[]</span>}
         {f.refLookup&&<span title="Requires a reference lookup — configure in target system settings" style={{color:C.amber,fontSize:12,cursor:"help"}}>⚠</span>}
-        {f.required&&<span style={{marginLeft:"auto",fontSize:10,fontWeight:700,color:C.red}}>req</span>}
+        {f.required&&<span style={{marginLeft:"auto",fontSize:10,fontWeight:700,color:C.text2,background:C.bg2,border:`1px solid ${C.border1}`,padding:"0 4px"}}>req</span>}
       </div>
     );
   }
@@ -1324,7 +1342,7 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
                   <button onClick={handleFetchSample} style={{background:C.greenBg,border:`1px solid ${C.greenBorder}`,color:C.green,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"4px 10px",cursor:"pointer"}}>✓ Re-pull</button>
                 ):null}
                 <button onClick={()=>{setPasteJsonOpen(o=>!o);setPasteJsonError(null);}} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"4px 10px",cursor:"pointer"}}>
-                  {pasteJsonOpen?"✕ Cancel":"📋 Paste JSON"}
+                  {pasteJsonOpen?"✕ Cancel":"Paste Sample JSON"}
                 </button>
               </div>
               {pasteJsonOpen&&(
@@ -1355,8 +1373,16 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
             </div>
             {/* JSON tree viewer */}
             {sampleJsonOpen&&form.sampleJson&&(
-              <div style={{borderBottom:`1px solid ${C.border0}`,background:C.bg1,overflowY:"auto",maxHeight:200,flexShrink:0,padding:"8px 14px"}}>
-                {(()=>{ try { return <JsonNode val={JSON.parse(form.sampleJson)} depth={0}/>; } catch { return <span style={{fontFamily:MONO,fontSize:11,color:C.red}}>Invalid JSON</span>; } })()}
+              <div style={{borderBottom:`1px solid ${C.border0}`,background:C.bg1,overflowY:"auto",maxHeight:240,flexShrink:0,padding:"8px 14px"}}>
+                {(()=>{
+                  // Highlight the top-level JSON key that corresponds to the selected source field.
+                  // e.g. selectedSrc="asset.id" → highlight "asset"; "measurements[].value" → "measurements"
+                  const hlKeys = selectedSrc
+                    ? new Set([selectedSrc.split(/[\.\[]/)[0]])
+                    : null;
+                  try { return <JsonNode val={JSON.parse(form.sampleJson)} depth={0} highlightKeys={hlKeys}/>; }
+                  catch { return <span style={{fontFamily:MONO,fontSize:11,color:C.red}}>Invalid JSON</span>; }
+                })()}
               </div>
             )}
 
@@ -1424,7 +1450,7 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
 
             {/* Table */}
             <div style={{flex:1,overflowY:"auto"}}>
-              <div style={{display:"grid",gridTemplateColumns:"minmax(150px,1.3fr) 60px 74px 82px minmax(200px,1.6fr)",padding:"6px 20px",background:C.bg2,borderBottom:`1px solid ${C.border0}`,position:"sticky",top:0,zIndex:1}}>
+              <div style={{display:"grid",gridTemplateColumns:"minmax(150px,1.3fr) 60px 74px minmax(82px,1fr) minmax(200px,1.6fr)",padding:"6px 20px",background:C.bg2,borderBottom:`1px solid ${C.border0}`,position:"sticky",top:0,zIndex:1}}>
                 {["Source Field","Type","Required","Status","Innovapptive Target"].map(h=>(
                   <div key={h} style={{fontFamily:FONT,fontSize:10,fontWeight:700,color:C.text2,textTransform:"uppercase",letterSpacing:"0.07em"}}>{h}</div>
                 ))}
@@ -1434,20 +1460,25 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
               )}
               {filteredRows.map((m,visIdx)=>{
                 const idx = m._idx;
-                const rowBg=m.rowState==="auto-mapped"||m.rowState==="valid"?"#F5FAF7":m.rowState==="needs-review"?"#FFF8F8":visIdx%2===0?C.bg0:C.bg1;
+                const isSelected = selectedSrc === m.src;
+                const rowBg=isSelected?C.blueBg:m.rowState==="auto-mapped"||m.rowState==="valid"?"#F5FAF7":m.rowState==="needs-review"?"#FFF8F8":visIdx%2===0?C.bg0:C.bg1;
                 const stateLabel={
-                  "auto-mapped":        {label:"Auto-mapped",        color:C.green, bg:C.greenBg,  border:C.greenBorder},
-                  "valid":              {label:"Valid",               color:C.green, bg:C.greenBg,  border:C.greenBorder},
-                  "manual":             {label:"Mapped",              color:C.blue,  bg:C.blueBg,   border:C.blueBorder},
-                  "ref-lookup":         {label:"Needs lookup setup",  color:C.amber, bg:C.amberBg,  border:C.amberBorder},
-                  "needs-review":       {label:"Required — unmapped", color:C.red,   bg:C.redBg,    border:C.redBorder},
-                  "parent-dep-missing": {label:"Parent dep. missing", color:C.amber, bg:C.amberBg,  border:C.amberBorder},
-                  "type-mismatch":      {label:"Type mismatch",       color:C.amber, bg:C.amberBg,  border:C.amberBorder},
-                  "dup-target":         {label:"Duplicate target",    color:C.amber, bg:C.amberBg,  border:C.amberBorder},
-                  "unmapped":           {label:"—",                   color:C.text3, bg:"transparent", border:"transparent"},
-                }[m.rowState]||{label:"—",color:C.text3,bg:"transparent",border:"transparent"};
+                  "auto-mapped":        {label:"Mapped",                   color:C.green, bg:C.greenBg,     border:C.greenBorder},
+                  "valid":              {label:"Valid",                     color:C.green, bg:C.greenBg,     border:C.greenBorder},
+                  "manual":             {label:"Mapped",                    color:C.blue,  bg:C.blueBg,      border:C.blueBorder},
+                  "ref-lookup":         {label:"Needs lookup setup",        color:C.amber, bg:C.amberBg,     border:C.amberBorder},
+                  "needs-review":       {label:"Missing Required Mapping",  color:C.red,   bg:C.redBg,       border:C.redBorder},
+                  "parent-dep-missing": {label:"Parent dep. missing",       color:C.amber, bg:C.amberBg,     border:C.amberBorder},
+                  "type-mismatch":      {label:"Type Mismatch",             color:C.amber, bg:C.amberBg,     border:C.amberBorder},
+                  "dup-target":         {label:"Duplicate target",          color:C.amber, bg:C.amberBg,     border:C.amberBorder},
+                  "unmapped":           {label:"Unmapped",                  color:C.text2, bg:C.bg1,         border:C.border0},
+                }[m.rowState]||{label:"Unmapped",color:C.text2,bg:C.bg1,border:C.border0};
+                // Only show error styling on Required column after validation has run (needs-review state)
+                const reqColor = m.rowState==="needs-review" ? C.red : C.text2;
+                const reqBg    = m.rowState==="needs-review" ? C.redBg : C.bg2;
+                const reqBorder= m.rowState==="needs-review" ? C.redBorder : C.border1;
                 return (
-                  <div key={m.src+idx} style={{display:"grid",gridTemplateColumns:"minmax(150px,1.3fr) 60px 74px 82px minmax(200px,1.6fr)",padding:"4px 20px",borderBottom:`1px solid ${C.border0}`,background:rowBg,alignItems:"flex-start",gap:0}}>
+                  <div key={m.src+idx} onMouseEnter={()=>setSelectedSrc(m.src)} onMouseLeave={()=>setSelectedSrc(null)} style={{display:"grid",gridTemplateColumns:"minmax(150px,1.3fr) 60px 74px minmax(82px,1fr) minmax(200px,1.6fr)",padding:"4px 20px",borderBottom:`1px solid ${C.border0}`,background:rowBg,alignItems:"flex-start",gap:0}}>
                     <div style={{display:"flex",flexDirection:"column",gap:2,alignSelf:"flex-start"}}>
                       <select
                         value={m.src}
@@ -1457,10 +1488,12 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
                         {srcOpts.map(s=><option key={s} value={s}>{s}</option>)}
                       </select>
                       {m.businessMeaning&&<span style={{fontFamily:FONT,fontSize:10,fontStyle:"italic",color:C.text2,paddingLeft:2}}>{m.businessMeaning}</span>}
-                      {m.sampleValue&&<span style={{paddingLeft:2}}><span style={{fontFamily:FONT,fontSize:9,color:C.text3}}>eg.</span><span style={{fontFamily:MONO,fontSize:9,color:C.text3}}> {m.sampleValue}</span></span>}
                     </div>
                     <span style={{fontFamily:MONO,fontSize:10,color:C.text2,paddingLeft:4,paddingTop:4}}>{m.srcType}</span>
-                    <span style={{fontFamily:FONT,fontSize:10,fontWeight:700,color:m.required?C.red:C.text3,paddingLeft:4,paddingTop:3}}>{m.required?"Required":"Optional"}</span>
+                    {m.required
+                      ? <span style={{fontFamily:FONT,fontSize:10,fontWeight:700,color:reqColor,background:reqBg,border:`1px solid ${reqBorder}`,padding:"1px 5px",display:"inline-block",marginTop:3,marginLeft:4,whiteSpace:"nowrap"}}>Required</span>
+                      : <span style={{fontFamily:FONT,fontSize:10,color:C.text3,paddingLeft:4,paddingTop:3}}></span>
+                    }
                     <div style={{display:"flex",flexDirection:"column",gap:2,alignItems:"flex-start",paddingTop:2}}>
                       <span style={{fontFamily:FONT,fontSize:10,fontWeight:600,color:stateLabel.color,background:stateLabel.bg,border:`1px solid ${stateLabel.border}`,padding:"1px 5px",whiteSpace:"nowrap"}}>{stateLabel.label}</span>
                       {m.rowState==="auto-mapped"&&m.autoMapConfidence&&<span title={m.autoMapReason||""} style={{fontFamily:FONT,fontSize:9,fontWeight:700,color:C.green,cursor:"default"}}>{m.autoMapConfidence}%</span>}
@@ -1506,7 +1539,11 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
           <button onClick={onBack} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:14,fontWeight:600,padding:"8px 20px",cursor:"pointer"}}>Back</button>
           <button onClick={()=>onSave(false)} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:14,fontWeight:600,padding:"8px 20px",cursor:"pointer"}}>Save as Draft</button>
           {!mappingComplete&&(
-            <span style={{fontFamily:FONT,fontSize:12,fontWeight:600,color:mappedCount===0?C.red:C.amber,maxWidth:220,lineHeight:1.3}}>{mappingStatus.label}</span>
+            <span style={{fontFamily:FONT,fontSize:12,fontWeight:600,color:mappedCount===0?C.red:C.amber,maxWidth:280,lineHeight:1.3}}>
+              {unmappedRequired>0
+                ? `Publish blocked — ${unmappedRequired} required field${unmappedRequired!==1?"s":""} not mapped`
+                : mappingStatus.label}
+            </span>
           )}
           <button
             onClick={()=>onSave(true)}
