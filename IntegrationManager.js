@@ -890,12 +890,13 @@ function JsonNode({ val, depth }) {
   const entries = isArr ? val.map((v,i)=>[i,v]) : Object.entries(val);
   if (!entries.length) return <span style={{fontFamily:MONO,fontSize:11,color:C.text2}}>{isArr?"[]":"{}"}</span>;
   return (
-    <span>
-      <span onClick={e=>{e.stopPropagation();setOpen(o=>!o)}} style={{cursor:"pointer",color:C.text2,fontFamily:MONO,fontSize:11,userSelect:"none"}}>
-        {open?"▾":"▸"} {isArr?"[":"{"}
-        {!open&&<span style={{color:C.text3,fontStyle:"italic"}}> {entries.length} {isArr?"item":"key"}{entries.length!==1?"s":""} </span>}
-        {!open&&(isArr?"]":"}")}
-      </span>
+    <div style={{display:"block"}}>
+      <div onClick={e=>{e.stopPropagation();setOpen(o=>!o)}} style={{cursor:"pointer",color:C.text2,fontFamily:MONO,fontSize:11,userSelect:"none",display:"flex",alignItems:"center",gap:3}}>
+        <span>{open?"▾":"▸"}</span>
+        <span>{isArr?"[":"{"}</span>
+        {!open&&<span style={{color:C.text3,fontStyle:"italic"}}>{entries.length} {isArr?"item":"key"}{entries.length!==1?"s":""}</span>}
+        {!open&&<span>{isArr?"]":"}"}</span>}
+      </div>
       {open&&<div style={{paddingLeft:14}}>
         {entries.map(([k,v])=>(
           <div key={k} style={{display:"flex",gap:4,alignItems:"flex-start"}}>
@@ -904,8 +905,8 @@ function JsonNode({ val, depth }) {
           </div>
         ))}
       </div>}
-      {open&&<span style={{fontFamily:MONO,fontSize:11,color:C.text2}}>{isArr?"]":"}"}</span>}
-    </span>
+      {open&&<div style={{fontFamily:MONO,fontSize:11,color:C.text2}}>{isArr?"]":"}"}</div>}
+    </div>
   );
 }
 
