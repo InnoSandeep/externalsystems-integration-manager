@@ -1468,7 +1468,6 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
                 style={{background:payloadOpen?"#1E3A5F":"none",border:`1px solid ${payloadOpen?"#2563EB":C.border1}`,color:payloadOpen?"#93C5FD":C.text1,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"4px 10px",cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
                 {payloadOpen?"◀ Payload":"▶ Payload"}
               </button>
-              <span style={{fontFamily:"monospace",fontSize:10,color:"#10B981",background:"#052e16",border:"1px solid #10B981",padding:"2px 6px",borderRadius:2,flexShrink:0}}>build:345383b</span>
               <div style={{flex:1}}/>
               {dupTargets.length>0&&<span style={{background:C.amberBg,border:`1px solid ${C.amberBorder}`,fontFamily:FONT,fontSize:12,fontWeight:700,color:C.amber,padding:"3px 8px"}}>Duplicate target</span>}
               {form.validationResult&&<button onClick={()=>setValOpen(o=>!o)} style={{background:"none",border:`1px solid ${C.border0}`,fontFamily:FONT,fontSize:12,fontWeight:600,color:C.text1,padding:"4px 10px",cursor:"pointer"}}>{valOpen?"Hide":"Show"} validation</button>}
