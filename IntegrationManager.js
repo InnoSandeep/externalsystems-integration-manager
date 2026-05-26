@@ -1063,7 +1063,9 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
   const [pasteJsonOpen, setPasteJsonOpen]   = useState(false);
   const [pasteJsonText, setPasteJsonText]   = useState("");
   const [pasteJsonError, setPasteJsonError] = useState(null);
-  const [selectedSrc, setSelectedSrc] = useState(null);
+  const [pinnedSrc, setPinnedSrc]     = useState(null); // set by clicking a field in the left panel
+  const [hoveredSrc, setHoveredSrc]   = useState(null); // set by hovering a row in the mapping table
+  const selectedSrc = hoveredSrc ?? pinnedSrc;           // hover takes priority; falls back to pinned
   const fetchTimer = useRef(null);
   // Always holds the latest form value so setTimeout callbacks can read current
   // state without a stale closure and without needing side effects inside updaters.
@@ -1073,7 +1075,7 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
   useEffect(()=>{
     if(!open){
       setAutoMapResult(null); setValidateResult(null); setValOpen(false);
-      setFetch("idle"); setFilterText(""); setCollapsedGrps({}); setSelectedSrc(null);
+      setFetch("idle"); setFilterText(""); setCollapsedGrps({}); setPinnedSrc(null); setHoveredSrc(null);
       setSampleJsonOpen(false); setPasteJsonOpen(false); setPasteJsonText(""); setPasteJsonError(null);
     }
   },[open]);
@@ -1287,7 +1289,7 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
     const sel = selectedSrc === f.src;
     return (
       <div
-        onClick={()=>setSelectedSrc(s=>s===f.src?null:f.src)}
+        onClick={()=>setPinnedSrc(s=>s===f.src?null:f.src)}
         style={{display:"flex",alignItems:"center",gap:8,padding:`5px ${indent?28:14}px 5px ${indent?28:14}px`,borderBottom:`1px solid ${C.border0}`,background:sel?C.blueBg:C.bg0,cursor:"pointer",userSelect:"none"}}
       >
         <MonoText size={12} color={sel?C.blue:C.text0}>{f.src}</MonoText>
@@ -1478,7 +1480,7 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
                 const reqBg    = m.rowState==="needs-review" ? C.redBg : C.bg2;
                 const reqBorder= m.rowState==="needs-review" ? C.redBorder : C.border1;
                 return (
-                  <div key={m.src+idx} onMouseEnter={()=>setSelectedSrc(m.src)} onMouseLeave={()=>setSelectedSrc(null)} style={{display:"grid",gridTemplateColumns:"minmax(150px,1.3fr) 60px 74px minmax(82px,1fr) minmax(200px,1.6fr)",padding:"4px 20px",borderBottom:`1px solid ${C.border0}`,background:rowBg,alignItems:"flex-start",gap:0}}>
+                  <div key={m.src+idx} onMouseEnter={()=>setHoveredSrc(m.src)} onMouseLeave={()=>setHoveredSrc(null)} style={{display:"grid",gridTemplateColumns:"minmax(150px,1.3fr) 60px 74px minmax(82px,1fr) minmax(200px,1.6fr)",padding:"4px 20px",borderBottom:`1px solid ${C.border0}`,background:rowBg,alignItems:"flex-start",gap:0}}>
                     <div style={{display:"flex",flexDirection:"column",gap:2,alignSelf:"flex-start"}}>
                       <select
                         value={m.src}
