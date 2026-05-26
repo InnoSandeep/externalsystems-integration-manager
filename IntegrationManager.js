@@ -1134,6 +1134,8 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
   }
 
   function handleApplyPaste() {
+    // Cancel any in-flight pull so it can't overwrite the pasted payload after its 1.8s delay.
+    clearTimeout(fetchTimer.current); setFetch("idle");
     setPasteJsonError(null);
     const txt = pasteJsonText.trim();
     if (!txt) { setPasteJsonError("Paste a JSON object or array first."); return; }
@@ -1141,14 +1143,16 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
     try { parsed = JSON.parse(txt); }
     catch(e) { setPasteJsonError("Invalid JSON: " + e.message); return; }
     if (typeof parsed !== "object" || parsed === null) { setPasteJsonError("Must be a JSON object or array."); return; }
-    let fields = 0, nested = 0, arrs = 0;
+    // Count unique leaf-key names (not total traversed values) to correctly report "fields detected".
+    const leafKeys = new Set();
+    let nested = 0, arrs = 0;
     function walk(v) {
       if (Array.isArray(v)) { arrs++; v.forEach(walk); }
-      else if (v && typeof v === "object") { nested++; Object.values(v).forEach(w => { fields++; walk(w); }); }
+      else if (v && typeof v === "object") { nested++; Object.keys(v).forEach(k => { leafKeys.add(k); walk(v[k]); }); }
     }
     walk(parsed);
     setForm(f=>({...f, sampleJson:JSON.stringify(parsed,null,2), sampleFetched:true,
-      schemaSummary:{recordsReturned:1,fieldsDetected:fields,nestedObjects:nested,arraysDetected:arrs,referenceLikeFields:0,pulledAt:new Date().toISOString()}}));
+      schemaSummary:{recordsReturned:1,fieldsDetected:leafKeys.size,nestedObjects:nested,arraysDetected:arrs,referenceLikeFields:0,pulledAt:new Date().toISOString()}}));
     setSampleJsonOpen(true); setPasteJsonOpen(false); setPasteJsonText("");
   }
 
