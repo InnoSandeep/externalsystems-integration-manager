@@ -166,12 +166,14 @@ def slack_get(method: str, params: dict) -> dict:
 
 
 def allow():
-    print(json.dumps({"decision": "allow"}))
+    print(json.dumps({"hookSpecificOutput": {"permissionDecision": "allow"}}))
     sys.exit(0)
 
 
 def deny(reason: str):
-    print(json.dumps({"decision": "deny", "reason": reason}))
+    print(json.dumps({
+        "hookSpecificOutput": {"permissionDecision": "deny", "permissionDecisionReason": reason},
+    }))
     sys.exit(2)
 
 

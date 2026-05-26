@@ -100,7 +100,7 @@ echo '{"tool_name":"Bash","tool_input":{"command":"rm -rf /tmp/test"},"session_i
 
 Expected output on stdout:
 ```json
-{"decision": "allow"}
+{"hookSpecificOutput": {"permissionDecision": "allow"}}
 ```
 (after a mocked wait — in dry-run the polling immediately approves to unblock)
 
@@ -109,7 +109,7 @@ Expected output on stdout:
 ```bash
 echo '{"tool_name":"Bash","tool_input":{"command":"git status"},"session_id":"test"}' \
   | python3 .claude/hooks/slack_approval.py --dry-run
-# Expected stdout: {"decision": "allow"}  — exits immediately
+# Expected stdout: {"hookSpecificOutput": {"permissionDecision": "allow"}}  — exits immediately
 ```
 
 ### Test: deny response
@@ -125,7 +125,7 @@ echo '{"tool_name":"Bash","tool_input":{"command":"sudo rm -rf /"},"session_id":
 ```bash
 echo '{"tool_name":"Bash","tool_input":{"command":"git push --force origin main"},"session_id":"t"}' \
   | SLACK_APPROVAL_TIMEOUT_SECONDS=5 python3 .claude/hooks/slack_approval.py
-# No reaction within 5s → stdout {"decision":"deny","reason":"Slack approval timed out…"}
+# No reaction within 5s → stdout {"hookSpecificOutput":{"permissionDecision":"deny","permissionDecisionReason":"…"}}
 ```
 
 ### Test: exit codes
