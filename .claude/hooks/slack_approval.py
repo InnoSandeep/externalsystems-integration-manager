@@ -174,7 +174,7 @@ def deny(reason: str):
     print(json.dumps({
         "hookSpecificOutput": {"permissionDecision": "deny", "permissionDecisionReason": reason},
     }))
-    sys.exit(2)
+    sys.exit(0)
 
 
 # ──────────────────────────────────────────────────────────────────────────────
