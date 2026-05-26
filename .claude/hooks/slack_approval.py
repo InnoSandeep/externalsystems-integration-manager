@@ -26,6 +26,7 @@ import re
 import time
 import urllib.request
 import urllib.error
+import urllib.parse
 import hashlib
 import datetime
 
@@ -166,7 +167,7 @@ def slack_get(method: str, params: dict) -> dict:
     if DRY_RUN:
         print(f"[dry-run] Slack GET {method}: {params}", file=sys.stderr)
         return {"ok": True, "message": {"reactions": []}}
-    qs = "&".join(f"{k}={urllib.request.quote(str(v))}" for k, v in params.items())
+    qs = "&".join(f"{k}={urllib.parse.quote(str(v))}" for k, v in params.items())
     req = urllib.request.Request(
         f"https://slack.com/api/{method}?{qs}",
         headers={"Authorization": f"Bearer {SLACK_BOT_TOKEN}"},
