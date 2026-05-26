@@ -69,14 +69,15 @@ Use the `Monitor` tool with `persistent: true`. Do NOT use `ScheduleWakeup` for 
 
 ```bash
 TARGET_COMMIT="<HEAD-commit-short-sha>"
+REVIEW_TRIGGERED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)  # anchors thread filter to this review round
 while true; do
   # Check 1: formal PR review on the target commit
   REVIEW=$(~/.local/bin/gh api repos/InnoSandeep/<repo>/pulls/<PR-number>/reviews \
     --jq 'sort_by(.submitted_at) | .[-1] | select(.user.login == "chatgpt-codex-connector[bot]") | select(.commit_id | startswith("'"$TARGET_COMMIT"'")) | {commit: .commit_id, submittedAt: .submitted_at}' 2>/dev/null || true)
 
-  # Check 2: free-form PR thread comment (Codex sometimes posts clean verdicts here instead)
+  # Check 2: free-form PR thread comment — scoped to after this review round was triggered
   THREAD=$(~/.local/bin/gh api repos/InnoSandeep/<repo>/issues/<PR-number>/comments \
-    --jq '[.[] | select(.user.login == "chatgpt-codex-connector[bot]")] | sort_by(.created_at) | .[-1] | {createdAt: .created_at, body: .body}' 2>/dev/null || true)
+    --jq '[.[] | select(.user.login == "chatgpt-codex-connector[bot]") | select(.created_at > "'"$REVIEW_TRIGGERED_AT"'")] | sort_by(.created_at) | .[-1] | {createdAt: .created_at, body: .body}' 2>/dev/null || true)
 
   if [ -n "$REVIEW" ] || [ -n "$THREAD" ]; then
     INLINE=$(~/.local/bin/gh api repos/InnoSandeep/<repo>/pulls/<PR-number>/comments \
