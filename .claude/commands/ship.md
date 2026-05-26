@@ -104,7 +104,9 @@ Parse the Codex comment body, then:
 
 - **Issues found** (any round with a P1/P2/P3 badge):
   - Print the full Codex comment in chat
-  - Send Slack DM immediately — one DM per round:
+  - **Before fixing, apply the loop-review check** (see below)
+  - If approved to fix: send Slack DM, fix, commit, push, re-trigger `@codex review`, re-arm Monitor — continue loop
+  - Slack DM format when fixing:
     ```
     ⚠️ *PR #<N> — Codex Round <R> finding*
     *<Severity>: <finding title>*
@@ -112,7 +114,17 @@ Parse the Codex comment body, then:
     Fixing now and re-triggering review…
     PR: <url>
     ```
-  - Then fix, commit, push, re-trigger `@codex review`, re-arm Monitor — continue loop
+
+#### Loop-review check (run before every fix)
+
+Before acting on a Codex finding, evaluate whether fixing it provides meaningful value or risks an infinite loop. Ask yourself:
+
+1. **Is this a structural/correctness bug?** (crash, wrong output, real security bypass with a concrete exploit path) → fix it.
+2. **Is this the same category of issue as a previous round?** (e.g., another safe-list entry flagged after already tightening the safe list) → likely diminishing returns, send a Slack DM asking for a decision instead of auto-fixing.
+3. **Has this PR already had 3+ fix rounds on the same component?** → send a Slack DM summarising the loop and ask whether to continue fixing or merge as-is.
+4. **Is the finding theoretical with no concrete exploit in this codebase?** (e.g., a safe-list entry that is always used read-only in this repo) → send a Slack DM noting the finding and recommending merge as-is, rather than auto-fixing.
+
+When in doubt, send a Slack DM with the finding, your assessment, and the two options (fix vs. merge as-is) — **do not auto-fix**.
 
 - **No critical issues** (body contains "no major issues", "looks good", "no critical", "LGTM"):
   - Print the full Codex comment in chat
