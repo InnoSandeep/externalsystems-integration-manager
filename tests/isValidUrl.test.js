@@ -4,7 +4,7 @@ const assert = require("assert");
 
 // Inline the same logic as IntegrationManager.js so tests run without a browser
 function isValidUrl(v) {
-  if (!v || !v.trim()) return false;
+  if (!v || typeof v !== "string" || !v.trim()) return false;
   const s = v.trim();
   if (!/^https?:\/\//i.test(s)) return false;
   try {
@@ -34,6 +34,12 @@ const invalid = [
   "   ",
   null,
   undefined,
+  0,
+  42,
+  true,
+  false,
+  {},
+  [],
   "//api.com",
   "https:/api.com",
 ];

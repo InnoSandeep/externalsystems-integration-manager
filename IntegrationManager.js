@@ -554,7 +554,7 @@ function generateCode(name, category) {
 }
 function genId(pfx="id") { return pfx+"_"+Math.random().toString(36).slice(2,8); }
 function isValidUrl(v) {
-  if (!v || !v.trim()) return false;
+  if (!v || typeof v !== "string" || !v.trim()) return false;
   const s = v.trim();
   // Require explicit // after the scheme — rejects malformed forms like https:api.com
   if (!/^https?:\/\//i.test(s)) return false;
