@@ -852,21 +852,61 @@ function MultiSelectDropdown({ options, value, onChange, placeholder, disabled, 
 // ─── AI ACTION BUTTON ────────────────────────────────────────────────────────
 // AI-assistive action button — blue styling signals it's a smart/assistive action.
 // Suggests or checks; never commits on the user's behalf.
-function AIActionButton({ label, desc, running, result, onClick }) {
+function AIActionButton({ label, desc, running, result, onClick, onClear }) {
   return (
-    <button onClick={onClick} disabled={running} style={{
-      display:"flex",flexDirection:"column",alignItems:"flex-start",
-      background:C.blueBg,
-      border:`1px solid ${C.blueBorder}`,padding:"7px 14px",
-      cursor:running?"wait":"pointer",minWidth:170,textAlign:"left",
-    }}>
-      <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:2}}>
-        <span style={{fontSize:12,color:C.blue}}>{running?"⏳":"✦"}</span>
-        <span style={{fontFamily:FONT,fontSize:12,fontWeight:700,color:C.blue}}>{running?`${label}…`:label}</span>
+    <div style={{position:"relative",display:"inline-flex"}}>
+      <button onClick={onClick} disabled={running} style={{
+        display:"flex",flexDirection:"column",alignItems:"flex-start",
+        background:C.blueBg,
+        border:`1px solid ${C.blueBorder}`,padding:"7px 14px",
+        cursor:running?"wait":"pointer",minWidth:170,textAlign:"left",
+      }}>
+        <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:2}}>
+          <span style={{fontSize:12,color:C.blue}}>{running?"⏳":"✦"}</span>
+          <span style={{fontFamily:FONT,fontSize:12,fontWeight:700,color:C.blue}}>{running?`${label}…`:label}</span>
+        </div>
+        {!result&&!running&&<span style={{fontFamily:FONT,fontSize:10,color:C.text3,lineHeight:1.3}}>{desc}</span>}
+        {result&&<span style={{fontFamily:FONT,fontSize:10,color:C.blue,lineHeight:1.3,paddingRight:14}}>{result}</span>}
+      </button>
+      {result&&onClear&&(
+        <span onClick={e=>{e.stopPropagation();onClear();}} title="Clear" style={{position:"absolute",top:5,right:6,fontSize:13,color:C.text2,cursor:"pointer",fontWeight:700,lineHeight:1}}>×</span>
+      )}
+    </div>
+  );
+}
+
+// Recursive JSON tree node — renders a JSON value (object/array/primitive) with expand/collapse.
+// Defined at module level so React doesn't recreate it on each MappingWorkspace render (would reset useState).
+function JsonNode({ val, depth }) {
+  const [open, setOpen] = React.useState(depth < 2);
+  if (val === null || val === undefined) return React.createElement("span",{style:{fontFamily:MONO,fontSize:11,color:C.text3}},"null");
+  if (typeof val !== "object") {
+    const isStr = typeof val === "string";
+    const color = isStr ? "#2D7D4F" : typeof val === "number" ? C.blue : C.text2;
+    const display = isStr ? `"${val.length>50?val.slice(0,50)+"…":val}"` : String(val);
+    return <span style={{fontFamily:MONO,fontSize:11,color}}>{display}</span>;
+  }
+  const isArr = Array.isArray(val);
+  const entries = isArr ? val.map((v,i)=>[i,v]) : Object.entries(val);
+  if (!entries.length) return <span style={{fontFamily:MONO,fontSize:11,color:C.text2}}>{isArr?"[]":"{}"}</span>;
+  return (
+    <div style={{display:"block"}}>
+      <div onClick={e=>{e.stopPropagation();setOpen(o=>!o)}} style={{cursor:"pointer",color:C.text2,fontFamily:MONO,fontSize:11,userSelect:"none",display:"flex",alignItems:"center",gap:3}}>
+        <span>{open?"▾":"▸"}</span>
+        <span>{isArr?"[":"{"}</span>
+        {!open&&<span style={{color:C.text3,fontStyle:"italic"}}>{entries.length} {isArr?"item":"key"}{entries.length!==1?"s":""}</span>}
+        {!open&&<span>{isArr?"]":"}"}</span>}
       </div>
-      {!result&&!running&&<span style={{fontFamily:FONT,fontSize:10,color:C.text3,lineHeight:1.3}}>{desc}</span>}
-      {result&&<span style={{fontFamily:FONT,fontSize:10,color:C.blue,lineHeight:1.3}}>{result}</span>}
-    </button>
+      {open&&<div style={{paddingLeft:14}}>
+        {entries.map(([k,v])=>(
+          <div key={k} style={{display:"flex",gap:4,alignItems:"flex-start"}}>
+            {!isArr&&<span style={{fontFamily:MONO,fontSize:11,color:C.amber,flexShrink:0}}>{k}:</span>}
+            <JsonNode val={v} depth={depth+1}/>
+          </div>
+        ))}
+      </div>}
+      {open&&<div style={{fontFamily:MONO,fontSize:11,color:C.text2}}>{isArr?"]":"}"}</div>}
+    </div>
   );
 }
 
@@ -1016,6 +1056,10 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
   const [fetchState, setFetch]              = useState("idle");
   const [filterText, setFilterText]         = useState("");
   const [collapsedGrps, setCollapsedGrps]   = useState({});
+  const [sampleJsonOpen, setSampleJsonOpen] = useState(false);
+  const [pasteJsonOpen, setPasteJsonOpen]   = useState(false);
+  const [pasteJsonText, setPasteJsonText]   = useState("");
+  const [pasteJsonError, setPasteJsonError] = useState(null);
   const fetchTimer = useRef(null);
   // Always holds the latest form value so setTimeout callbacks can read current
   // state without a stale closure and without needing side effects inside updaters.
@@ -1026,6 +1070,7 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
     if(!open){
       setAutoMapResult(null); setValidateResult(null); setValOpen(false);
       setFetch("idle"); setFilterText(""); setCollapsedGrps({});
+      setSampleJsonOpen(false); setPasteJsonOpen(false); setPasteJsonText(""); setPasteJsonError(null);
     }
   },[open]);
   useEffect(()=>()=>clearTimeout(fetchTimer.current),[]);
@@ -1085,8 +1130,33 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
     fetchTimer.current=setTimeout(()=>{
       const sample=`{\n  "id": "OBS-1042",\n  "timestamp": "2025-04-14T08:30:00Z",\n  "asset": {\n    "id": "PUMP-12",\n    "name": "Primary Feed Pump",\n    "location": { "site": "Houston Plant" }\n  },\n  "measurements": [\n    { "value": 98.4, "unit": "degC" }\n  ],\n  "severity": "warning",\n  "description": "Temperature threshold exceeded",\n  "links": { "workOrder": { "href": "/api/workorders/WO-9921" } },\n  "metadata": { "source": "PI-historian", "version": "2.1" }\n}`;
       setForm(f=>({...f,sampleJson:sample,sampleFetched:true,schemaSummary:{recordsReturned:1,fieldsDetected:12,nestedObjects:4,arraysDetected:1,referenceLikeFields:2,pulledAt:new Date().toISOString()}}));
-      setFetch("done");
+      setFetch("done"); setSampleJsonOpen(true);
     },1800);
+  }
+
+  function handleApplyPaste() {
+    // Cancel any in-flight pull so it can't overwrite the pasted payload after its 1.8s delay.
+    clearTimeout(fetchTimer.current); setFetch("idle");
+    setPasteJsonError(null);
+    const txt = pasteJsonText.trim();
+    if (!txt) { setPasteJsonError("Paste a JSON object or array first."); return; }
+    let parsed;
+    try { parsed = JSON.parse(txt); }
+    catch(e) { setPasteJsonError("Invalid JSON: " + e.message); return; }
+    if (typeof parsed !== "object" || parsed === null) { setPasteJsonError("Must be a JSON object or array."); return; }
+    // Count unique full dot-paths to leaf values so branches with the same key name
+    // (e.g. asset.id and measurement.id) are not collapsed, and container keys are excluded.
+    const leafPaths = new Set();
+    let nested = 0, arrs = 0;
+    function walk(v, path) {
+      if (Array.isArray(v)) { arrs++; v.forEach(item => walk(item, path + "[]")); }
+      else if (v && typeof v === "object") { nested++; Object.keys(v).forEach(k => walk(v[k], path ? path + "." + k : k)); }
+      else { leafPaths.add(path); }
+    }
+    walk(parsed, "");
+    setForm(f=>({...f, sampleJson:JSON.stringify(parsed,null,2), sampleFetched:true,
+      schemaSummary:{recordsReturned:1,fieldsDetected:leafPaths.size,nestedObjects:nested,arraysDetected:arrs,referenceLikeFields:0,pulledAt:new Date().toISOString()}}));
+    setSampleJsonOpen(true); setPasteJsonOpen(false); setPasteJsonText("");
   }
 
   function handleAutoMap() {
@@ -1130,30 +1200,32 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
       const mp=f.fieldMappings;
       const mapped=mp.filter(m=>m.target).map(m=>m.target);
       const dups=mapped.filter((t,i)=>mapped.indexOf(t)!==i);
-      const knownGroups=new Set(TARGET_SCHEMA.map(g=>g.group));
+      const dupSet=new Set(dups);
       const prodSchema=NESTED_TARGET_SCHEMA[f.product]||{};
       const extraFields=(f.businessObjects||[]).flatMap(o=>(prodSchema[o]||[]).map(fd=>({...fd,path:`${o}.${fd.path}`})));
       const allTargetFields=[...TARGET_SCHEMA.flatMap(g=>g.fields),...extraFields];
-      const typeConflicts=mp.filter(m=>{
+      const hasTypeConflict=m=>{
         if(!m.target) return false;
         const tf=allTargetFields.find(fd=>fd.path===m.target);
         if(!tf) return false;
         if(m.srcType==="url"&&tf.type==="string") return false;
         if(m.srcType==="datetime"&&tf.type==="date") return false;
         return m.srcType!==tf.type;
-      }).length;
+      };
+      const typeConflicts=mp.filter(hasTypeConflict).length;
       const canon=t=>TARGET_NORMALIZE[t]||t;
       const canonMappedSet=new Set(mapped.map(canon));
       let parentDepMissing=0;
       const updatedMappings=mp.map(m=>{
-        if(!m.target) return m;
+        if(!m.target) return {...m,rowState:m.required?"needs-review":"unmapped"};
+        if(hasTypeConflict(m)) return {...m,rowState:"type-mismatch"};
+        if(dupSet.has(m.target)) return {...m,rowState:"dup-target"};
         const requiredParents=PARENT_DEP_RULES[canon(m.target)];
         if(requiredParents&&requiredParents.some(p=>!canonMappedSet.has(canon(p)))){
           parentDepMissing++;
           return {...m,rowState:"parent-dep-missing"};
         }
-        if(m.rowState==="parent-dep-missing") return {...m,rowState:m.autoMapConfidence?"auto-mapped":"manual"};
-        return m;
+        return {...m,rowState:"valid"};
       });
       const result={
         requiredMapped:mp.filter(m=>m.required&&m.target).length,
@@ -1202,9 +1274,8 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
       <div style={{display:"flex",alignItems:"center",gap:8,padding:`5px ${indent?28:14}px 5px ${indent?28:14}px`,borderBottom:`1px solid ${C.border0}`,background:C.bg0}}>
         <MonoText size={12} color={C.text0}>{f.src}</MonoText>
         {f.arrayPath&&<span style={{fontSize:10,fontWeight:600,color:C.text1,background:C.bg2,border:`1px solid ${C.border1}`,padding:"0 3px"}}>array</span>}
-        {f.refLookup&&<span style={{color:C.amber,fontSize:12}}>⚠</span>}
-        <span style={{marginLeft:"auto",fontFamily:MONO,fontSize:10,color:C.text2}}>{f.srcType}</span>
-        {f.required&&<span style={{fontSize:10,fontWeight:700,color:C.red}}>req</span>}
+        {f.refLookup&&<span title="Requires a reference lookup — configure in target system settings" style={{color:C.amber,fontSize:12,cursor:"help"}}>⚠</span>}
+        {f.required&&<span style={{marginLeft:"auto",fontSize:10,fontWeight:700,color:C.red}}>req</span>}
       </div>
     );
   }
@@ -1246,19 +1317,48 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
             {/* Sample pull */}
             <div style={{padding:"10px 14px",borderBottom:`1px solid ${C.border0}`,flexShrink:0}}>
               <div style={{fontFamily:FONT,fontSize:10,fontWeight:700,color:C.text2,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>Sample Data</div>
-              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6,flexWrap:"wrap"}}>
                 {hasPullEndpoint?(
                   fetchState==="idle"?<button onClick={handleFetchSample} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.blue,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"4px 10px",cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>▶ Pull sample</button>:
                   fetchState==="loading"?<button disabled style={{background:C.bg0,border:`1px solid ${C.border0}`,color:C.text3,fontFamily:FONT,fontSize:12,padding:"4px 10px",display:"flex",alignItems:"center",gap:5}}><Spinner size={12}/> Pulling…</button>:
                   <button onClick={handleFetchSample} style={{background:C.greenBg,border:`1px solid ${C.greenBorder}`,color:C.green,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"4px 10px",cursor:"pointer"}}>✓ Re-pull</button>
-                ):(
-                  <span style={{fontFamily:FONT,fontSize:12,color:C.text3}}>Paste JSON in mapping row to inspect values</span>
-                )}
+                ):null}
+                <button onClick={()=>{setPasteJsonOpen(o=>!o);setPasteJsonError(null);}} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"4px 10px",cursor:"pointer"}}>
+                  {pasteJsonOpen?"✕ Cancel":"📋 Paste JSON"}
+                </button>
               </div>
+              {pasteJsonOpen&&(
+                <div style={{marginBottom:8}}>
+                  <textarea
+                    value={pasteJsonText}
+                    onChange={e=>setPasteJsonText(e.target.value)}
+                    placeholder='{ "id": "...", "value": 1.23 }'
+                    style={{width:"100%",height:90,fontFamily:MONO,fontSize:11,color:C.text0,background:C.bg1,border:`1px solid ${C.border1}`,padding:"6px 8px",resize:"vertical",outline:"none",boxSizing:"border-box"}}
+                  />
+                  {pasteJsonError&&<div style={{fontFamily:FONT,fontSize:11,color:C.red,marginTop:2}}>{pasteJsonError}</div>}
+                  <div style={{display:"flex",gap:6,marginTop:4}}>
+                    <button onClick={handleApplyPaste} style={{background:C.blue,border:"none",color:"#fff",fontFamily:FONT,fontSize:12,fontWeight:700,padding:"4px 12px",cursor:"pointer"}}>Apply</button>
+                    <button onClick={()=>{setPasteJsonOpen(false);setPasteJsonText("");setPasteJsonError(null);}} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:12,padding:"4px 10px",cursor:"pointer"}}>Cancel</button>
+                  </div>
+                </div>
+              )}
               {form.schemaSummary&&(
-                <div style={{fontFamily:FONT,fontSize:12,color:C.green}}>✓ {form.schemaSummary.fieldsDetected} fields detected</div>
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <span style={{fontFamily:FONT,fontSize:12,color:C.green}}>✓ {form.schemaSummary.fieldsDetected} fields detected</span>
+                  {form.sampleJson&&(
+                    <button onClick={()=>setSampleJsonOpen(o=>!o)} style={{background:"none",border:"none",color:C.blue,fontFamily:FONT,fontSize:11,fontWeight:600,cursor:"pointer",padding:"0 2px"}}>
+                      {sampleJsonOpen?"▼ Hide JSON":"▶ View JSON"}
+                    </button>
+                  )}
+                </div>
               )}
             </div>
+            {/* JSON tree viewer */}
+            {sampleJsonOpen&&form.sampleJson&&(
+              <div style={{borderBottom:`1px solid ${C.border0}`,background:C.bg1,overflowY:"auto",maxHeight:200,flexShrink:0,padding:"8px 14px"}}>
+                {(()=>{ try { return <JsonNode val={JSON.parse(form.sampleJson)} depth={0}/>; } catch { return <span style={{fontFamily:MONO,fontSize:11,color:C.red}}>Invalid JSON</span>; } })()}
+              </div>
+            )}
 
             {/* Payload field tree */}
             <div style={{flex:1,overflowY:"auto"}}>
@@ -1283,8 +1383,8 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
           <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
             {/* Toolbar */}
             <div style={{padding:"10px 20px",borderBottom:`1px solid ${C.border0}`,display:"flex",alignItems:"center",gap:10,flexShrink:0,background:C.bg0,flexWrap:"wrap"}}>
-              <AIActionButton label="Auto Map" desc="Match source fields to target paths automatically" running={autoMapRunning} result={autoMapResult} onClick={handleAutoMap}/>
-              <AIActionButton label="Validate" desc="Check required fields, types, and duplicates" running={validateRunning} result={validateResult} onClick={handleValidate}/>
+              <AIActionButton label="Auto Map" desc="Match source fields to target paths automatically" running={autoMapRunning} result={autoMapResult} onClick={handleAutoMap} onClear={()=>setAutoMapResult(null)}/>
+              <AIActionButton label="Validate" desc="Check required fields, types, and duplicates" running={validateRunning} result={validateResult} onClick={handleValidate} onClear={()=>setValidateResult(null)}/>
               <div style={{flex:1}}/>
               {dupTargets.length>0&&<span style={{background:C.amberBg,border:`1px solid ${C.amberBorder}`,fontFamily:FONT,fontSize:12,fontWeight:700,color:C.amber,padding:"3px 8px"}}>Duplicate target</span>}
               {form.validationResult&&<button onClick={()=>setValOpen(o=>!o)} style={{background:"none",border:`1px solid ${C.border0}`,fontFamily:FONT,fontSize:12,fontWeight:600,color:C.text1,padding:"4px 10px",cursor:"pointer"}}>{valOpen?"Hide":"Show"} validation</button>}
@@ -1334,14 +1434,16 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
               )}
               {filteredRows.map((m,visIdx)=>{
                 const idx = m._idx;
-                const rowBg=m.rowState==="auto-mapped"?"#F5FAF7":(!m.target&&m.required)?"#FFF8F8":visIdx%2===0?C.bg0:C.bg1;
+                const rowBg=m.rowState==="auto-mapped"||m.rowState==="valid"?"#F5FAF7":m.rowState==="needs-review"?"#FFF8F8":visIdx%2===0?C.bg0:C.bg1;
                 const stateLabel={
                   "auto-mapped":        {label:"Auto-mapped",        color:C.green, bg:C.greenBg,  border:C.greenBorder},
+                  "valid":              {label:"Valid",               color:C.green, bg:C.greenBg,  border:C.greenBorder},
                   "manual":             {label:"Mapped",              color:C.blue,  bg:C.blueBg,   border:C.blueBorder},
                   "ref-lookup":         {label:"Needs lookup setup",  color:C.amber, bg:C.amberBg,  border:C.amberBorder},
                   "needs-review":       {label:"Required — unmapped", color:C.red,   bg:C.redBg,    border:C.redBorder},
                   "parent-dep-missing": {label:"Parent dep. missing", color:C.amber, bg:C.amberBg,  border:C.amberBorder},
                   "type-mismatch":      {label:"Type mismatch",       color:C.amber, bg:C.amberBg,  border:C.amberBorder},
+                  "dup-target":         {label:"Duplicate target",    color:C.amber, bg:C.amberBg,  border:C.amberBorder},
                   "unmapped":           {label:"—",                   color:C.text3, bg:"transparent", border:"transparent"},
                 }[m.rowState]||{label:"—",color:C.text3,bg:"transparent",border:"transparent"};
                 return (
@@ -1403,6 +1505,9 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
           <div style={{flex:1}}/>
           <button onClick={onBack} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:14,fontWeight:600,padding:"8px 20px",cursor:"pointer"}}>Back</button>
           <button onClick={()=>onSave(false)} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:14,fontWeight:600,padding:"8px 20px",cursor:"pointer"}}>Save as Draft</button>
+          {!mappingComplete&&(
+            <span style={{fontFamily:FONT,fontSize:12,fontWeight:600,color:mappedCount===0?C.red:C.amber,maxWidth:220,lineHeight:1.3}}>{mappingStatus.label}</span>
+          )}
           <button
             onClick={()=>onSave(true)}
             disabled={!mappingComplete}
@@ -2676,48 +2781,6 @@ function SummaryCard({ system }) {
   );
 }
 
-
-// ─── FLOW STRIP ───────────────────────────────────────────────────────────────
-// A compact visual summary of what data is actively moving through this system.
-// Shows each active integration as a directional row: Source → data type → Destination
-//
-// Teal left border = inbound (data coming in from the external system).
-// Purple left border = outbound (data going out from Innovapptive to the external system).
-// Hidden entirely if there are no active or ready-to-publish integrations.
-//
-// Limited to 4 rows. If there are more, a "+N more" message appears at the bottom.
-function FlowStrip({ system, integrations }) {
-  const intgs = integrations.filter(i=>i.systemId===system.id&&i.status!=="disabled"&&i.status!=="draft");
-  if(intgs.length===0) return null;
-  const shown = intgs.slice(0,4);
-  return (
-    <div style={{background:C.bg0,border:`1px solid ${C.border0}`,borderRadius:8,padding:"16px 20px",marginBottom:12}}>
-      <h3 style={{fontFamily:FONT,fontSize:11,fontWeight:700,color:C.text3,textTransform:"uppercase",letterSpacing:"0.08em",margin:"0 0 12px"}}>Active Data Flows</h3>
-      <div style={{display:"flex",flexDirection:"column",gap:6}}>
-        {shown.map((intg)=>{
-          const isIn=intg.direction==="inbound";
-          const src=isIn?system.name:"Innovapptive";
-          const dst=isIn?(intg.product||"Innovapptive"):system.name;
-          const obj=(intg.businessObjects||[])[0]||(intg.method==="webhook"?"Events":"Data");
-          return (
-            <div key={intg.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:C.bg1,borderRadius:8,flexWrap:"wrap"}}>
-              <span style={{fontFamily:FONT,fontSize:13,fontWeight:600,color:C.text0,flexShrink:0}}>{src}</span>
-              <span style={{color:C.blue,fontSize:14,fontWeight:700,flexShrink:0}}>→</span>
-              <span style={{fontFamily:FONT,fontSize:13,fontWeight:600,color:C.text0,flexShrink:0}}>{dst}</span>
-              <span style={{fontFamily:FONT,fontSize:12,color:C.text2,flexShrink:0}}>{obj}</span>
-              <div style={{marginLeft:"auto",display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
-                <MethodBadge method={intg.method}/>
-                <StatusBadge status={intg.status}/>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-      {intgs.length>4&&<div style={{paddingTop:10,fontFamily:FONT,fontSize:12,color:C.text3}}>+{intgs.length-4} more integrations</div>}
-    </div>
-  );
-}
-
 // ─── INTEGRATION CARD ────────────────────────────────────────────────────────
 // Represents one integration in the Integrations tab of System Detail.
 //
@@ -3095,6 +3158,11 @@ function SystemDetailPage({ system, integrations, onBack, onAddIntegration, onUp
   // Phase 3: "Review Queue" tab label
   const TABS=[{key:"integrations",label:"Integrations"},{key:"activity",label:"User Activity"},{key:"dlq",label:"Review Queue"},{key:"audit",label:"Audit Log"}];
   const isIncomplete=system.status==="draft"&&!system.errorEmail;
+  const sysIntgs=integrations.filter(i=>i.systemId===system.id);
+  const activeCount=sysIntgs.filter(i=>i.status==="active").length;
+  const readyCount=sysIntgs.filter(i=>i.status==="ready_to_publish").length;
+  const realtimeCount=sysIntgs.filter(i=>i.method==="webhook").length;
+  const scheduledCount=sysIntgs.filter(i=>i.method==="polling").length;
   return (
     <div style={{padding:"24px 32px",maxWidth:1200,margin:"0 auto"}}>
       {/* Header Card */}
@@ -3115,6 +3183,7 @@ function SystemDetailPage({ system, integrations, onBack, onAddIntegration, onUp
               ))}
             </div>
             {system.description&&<p style={{fontFamily:FONT,fontSize:13,color:C.text2,margin:0,lineHeight:1.6}}>{system.description}</p>}
+            {sysIntgs.length>0&&<div style={{display:"flex",gap:0,marginTop:12,flexWrap:"wrap",paddingTop:10,borderTop:`1px solid ${C.border0}`}}>{[{label:"Total integrations",value:sysIntgs.length},{label:"Active",value:activeCount,color:C.green},{label:"Ready to Publish",value:readyCount,color:C.blue},{label:"Real-time",value:realtimeCount},{label:"Scheduled",value:scheduledCount}].filter(s=>s.value>0||s.label==="Total integrations").map((s,i,arr)=>(<div key={s.label} style={{paddingRight:16,marginRight:16,borderRight:i<arr.length-1?`1px solid ${C.border0}`:"none"}}><span style={{fontFamily:FONT,fontSize:12,fontWeight:700,color:s.color||C.text1}}>{s.value} </span><span style={{fontFamily:FONT,fontSize:12,color:C.text3}}>{s.label}</span></div>))}</div>}
           </div>
           <div style={{display:"flex",gap:8,flexShrink:0,alignItems:"flex-start",flexWrap:"wrap"}}>
             <button onClick={()=>setEditSys(true)} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text0,fontFamily:FONT,fontSize:13,fontWeight:600,padding:"7px 16px",borderRadius:8,cursor:"pointer"}}>Edit System</button>
@@ -3124,8 +3193,6 @@ function SystemDetailPage({ system, integrations, onBack, onAddIntegration, onUp
       </div>
 
       {isIncomplete&&<div style={{background:C.amberBg,border:`1px solid ${C.amberBorder}`,borderRadius:8,padding:"10px 16px",marginBottom:12,display:"flex",gap:10,alignItems:"center"}}><span style={{color:C.amber,fontSize:14,flexShrink:0}}>▲</span><div style={{flex:1}}><span style={{fontFamily:FONT,fontWeight:700,fontSize:12,color:C.amber}}>Setup incomplete — </span><span style={{fontFamily:FONT,fontSize:12,color:C.text1}}>Error notification email not configured.</span></div><button onClick={()=>setEditSys(true)} style={{background:C.amber,border:"none",color:"#fff",fontFamily:FONT,fontSize:12,fontWeight:700,padding:"5px 12px",borderRadius:8,cursor:"pointer",flexShrink:0}}>Complete Setup</button></div>}
-
-      <FlowStrip system={system} integrations={integrations}/>
 
       {/* Tab bar */}
       <div style={{display:"flex",borderBottom:`2px solid ${C.border0}`,marginBottom:14}}>
