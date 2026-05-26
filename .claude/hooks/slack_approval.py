@@ -210,12 +210,15 @@ def main():
         command = json.dumps(tool_input)
         input_summary = f"```{truncate(command, 300)}```"
 
-    # ── Fast-approve known-safe Bash commands ─────────────────────────────────
-    if tool_name == "Bash" and is_safe(command):
+    # ── Classify risk first — risky flags (e.g. --force) must not be overridden
+    # by a prefix-matching safe pattern (e.g. "git push origin HEAD --force")
+    high_risk, risk_label = risk_info(command)
+
+    # ── Fast-approve known-safe Bash commands (only if not high-risk) ──────────
+    if not high_risk and tool_name == "Bash" and is_safe(command):
         allow()
 
-    # ── Classify risk ─────────────────────────────────────────────────────────
-    high_risk, risk_label = risk_info(command)
+    # ── Label for Slack message ───────────────────────────────────────────────
     if high_risk:
         risk_emoji = "⛔"
         risk_text  = f"HIGH — {risk_label}"
