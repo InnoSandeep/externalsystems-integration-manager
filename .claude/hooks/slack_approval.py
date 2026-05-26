@@ -290,15 +290,7 @@ def main():
 
         reactions = {rx["name"] for rx in r.get("message", {}).get("reactions", [])}
 
-        if APPROVE_REACTION in reactions:
-            # Post a confirmation reply in the DM thread
-            slack_api("chat.postMessage", {
-                "channel": channel,
-                "thread_ts": msg_ts,
-                "text": f"✅ *Approved* `{uid}` — proceeding.",
-            })
-            allow()
-
+        # Check deny first — an explicit ❌ wins over any stale ✅
         if DENY_REACTION in reactions:
             slack_api("chat.postMessage", {
                 "channel": channel,
@@ -306,6 +298,14 @@ def main():
                 "text": f"❌ *Denied* `{uid}` — command blocked.",
             })
             deny(f"Denied via Slack reaction (id:{uid}).")
+
+        if APPROVE_REACTION in reactions:
+            slack_api("chat.postMessage", {
+                "channel": channel,
+                "thread_ts": msg_ts,
+                "text": f"✅ *Approved* `{uid}` — proceeding.",
+            })
+            allow()
 
     # ── Timeout ───────────────────────────────────────────────────────────────
     slack_api("chat.postMessage", {
