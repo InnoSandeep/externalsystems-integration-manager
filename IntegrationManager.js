@@ -554,8 +554,14 @@ function generateCode(name, category) {
 }
 function genId(pfx="id") { return pfx+"_"+Math.random().toString(36).slice(2,8); }
 function isValidUrl(v) {
-  if (!v) return false;
-  try { const u=new URL(v); return (u.protocol==="http:"||u.protocol==="https:")&&u.hostname.includes("."); } catch { return false; }
+  if (!v || !v.trim()) return false;
+  const s = v.trim();
+  // Require explicit // after the scheme — rejects malformed forms like https:api.com
+  if (!/^https?:\/\//i.test(s)) return false;
+  try {
+    const u = new URL(s);
+    return (u.protocol === "http:" || u.protocol === "https:") && !!u.hostname;
+  } catch { return false; }
 }
 
 // Generates the plain-English sentence shown at the top of each Integration Card.
