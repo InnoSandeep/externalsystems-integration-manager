@@ -261,6 +261,10 @@ def main():
     msg_ts   = post_resp["ts"]
     channel  = post_resp["channel"]
 
+    # ── Dry-run: skip real polling — immediately approve so tests are fast ─────
+    if DRY_RUN:
+        allow()
+
     # ── Poll for emoji reactions ──────────────────────────────────────────────
     deadline = time.time() + SLACK_APPROVAL_TIMEOUT
     while time.time() < deadline:
