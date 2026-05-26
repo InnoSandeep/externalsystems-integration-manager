@@ -3200,6 +3200,11 @@ function SystemDetailPage({ system, integrations, onBack, onAddIntegration, onUp
   // Phase 3: "Review Queue" tab label
   const TABS=[{key:"integrations",label:"Integrations"},{key:"activity",label:"User Activity"},{key:"dlq",label:"Review Queue"},{key:"audit",label:"Audit Log"}];
   const isIncomplete=system.status==="draft"&&!system.errorEmail;
+  const sysIntgs=integrations.filter(i=>i.systemId===system.id);
+  const activeCount=sysIntgs.filter(i=>i.status==="active").length;
+  const readyCount=sysIntgs.filter(i=>i.status==="ready_to_publish").length;
+  const realtimeCount=sysIntgs.filter(i=>i.method==="webhook").length;
+  const scheduledCount=sysIntgs.filter(i=>i.method==="polling").length;
   return (
     <div style={{padding:"24px 32px",maxWidth:1200,margin:"0 auto"}}>
       {/* Header Card */}
@@ -3220,6 +3225,7 @@ function SystemDetailPage({ system, integrations, onBack, onAddIntegration, onUp
               ))}
             </div>
             {system.description&&<p style={{fontFamily:FONT,fontSize:13,color:C.text2,margin:0,lineHeight:1.6}}>{system.description}</p>}
+            {sysIntgs.length>0&&<div style={{display:"flex",gap:0,marginTop:12,flexWrap:"wrap",paddingTop:10,borderTop:`1px solid ${C.border0}`}}>{[{label:"Total integrations",value:sysIntgs.length},{label:"Active",value:activeCount,color:C.green},{label:"Ready to Publish",value:readyCount,color:C.blue},{label:"Real-time",value:realtimeCount},{label:"Scheduled",value:scheduledCount}].filter(s=>s.value>0||s.label==="Total integrations").map((s,i,arr)=>(<div key={s.label} style={{paddingRight:16,marginRight:16,borderRight:i<arr.length-1?`1px solid ${C.border0}`:"none"}}><span style={{fontFamily:FONT,fontSize:12,fontWeight:700,color:s.color||C.text1}}>{s.value} </span><span style={{fontFamily:FONT,fontSize:12,color:C.text3}}>{s.label}</span></div>))}</div>}
           </div>
           <div style={{display:"flex",gap:8,flexShrink:0,alignItems:"flex-start",flexWrap:"wrap"}}>
             <button onClick={()=>setEditSys(true)} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text0,fontFamily:FONT,fontSize:13,fontWeight:600,padding:"7px 16px",borderRadius:8,cursor:"pointer"}}>Edit System</button>
@@ -3229,8 +3235,6 @@ function SystemDetailPage({ system, integrations, onBack, onAddIntegration, onUp
       </div>
 
       {isIncomplete&&<div style={{background:C.amberBg,border:`1px solid ${C.amberBorder}`,borderRadius:8,padding:"10px 16px",marginBottom:12,display:"flex",gap:10,alignItems:"center"}}><span style={{color:C.amber,fontSize:14,flexShrink:0}}>▲</span><div style={{flex:1}}><span style={{fontFamily:FONT,fontWeight:700,fontSize:12,color:C.amber}}>Setup incomplete — </span><span style={{fontFamily:FONT,fontSize:12,color:C.text1}}>Error notification email not configured.</span></div><button onClick={()=>setEditSys(true)} style={{background:C.amber,border:"none",color:"#fff",fontFamily:FONT,fontSize:12,fontWeight:700,padding:"5px 12px",borderRadius:8,cursor:"pointer",flexShrink:0}}>Complete Setup</button></div>}
-
-      <FlowStrip system={system} integrations={integrations}/>
 
       {/* Tab bar */}
       <div style={{display:"flex",borderBottom:`2px solid ${C.border0}`,marginBottom:14}}>
