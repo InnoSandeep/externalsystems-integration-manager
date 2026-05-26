@@ -52,9 +52,9 @@ SAFE_PATTERNS = [
     r"^git\s+add\b",
     r"^git\s+commit\b",
     r"^git\s+stash\b",
-    # git push — safe: push to origin HEAD or develop, NOT force
-    r"^git\s+push\s+origin\s+HEAD(\s|$)",
-    r"^git\s+push\s+origin\s+develop(\s|$)",
+    # git push — safe: push to origin HEAD or develop only, no extra refspecs
+    r"^git\s+push\s+origin\s+HEAD$",
+    r"^git\s+push\s+origin\s+develop$",
     # gh CLI — read operations and PR management (non-destructive)
     r"^(~/.local/bin/)?gh\s+pr\s+(create|view|list|comment|checks|status)\b",
     r"^(~/.local/bin/)?gh\s+api\s+repos/",
