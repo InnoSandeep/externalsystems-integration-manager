@@ -1468,6 +1468,7 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
                 style={{background:payloadOpen?"#1E3A5F":"none",border:`1px solid ${payloadOpen?"#2563EB":C.border1}`,color:payloadOpen?"#93C5FD":C.text1,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"4px 10px",cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
                 {payloadOpen?"◀ Payload":"▶ Payload"}
               </button>
+              <span style={{fontFamily:"monospace",fontSize:10,color:"#10B981",background:"#052e16",border:"1px solid #10B981",padding:"2px 6px",borderRadius:2,flexShrink:0}}>build:345383b</span>
               <div style={{flex:1}}/>
               {dupTargets.length>0&&<span style={{background:C.amberBg,border:`1px solid ${C.amberBorder}`,fontFamily:FONT,fontSize:12,fontWeight:700,color:C.amber,padding:"3px 8px"}}>Duplicate target</span>}
               {form.validationResult&&<button onClick={()=>setValOpen(o=>!o)} style={{background:"none",border:`1px solid ${C.border0}`,fontFamily:FONT,fontSize:12,fontWeight:600,color:C.text1,padding:"4px 10px",cursor:"pointer"}}>{valOpen?"Hide":"Show"} validation</button>}
@@ -3271,8 +3272,13 @@ function SystemDetailPage({ system, integrations, onBack, onAddIntegration, onUp
   const [editSysOpen,setEditSys]=useState(false);
   const [editIntg,setEditIntg]=useState(null);
   const [dlqEntry,setDlqEntry]=useState(null);
-  // Phase 3: "Review Queue" tab label
-  const TABS=[{key:"integrations",label:"Integrations"},{key:"activity",label:"User Activity"},{key:"dlq",label:"Review Queue"},{key:"audit",label:"Audit Log"}];
+  const dlqCount=DLQ_ENTRIES.filter(e=>e.systemId===system.id).length;
+  const TABS=[
+    {key:"integrations", label:"Integrations", count:sysIntgs.length},
+    {key:"activity",     label:"User Activity", count:ACTIVITY.length},
+    {key:"dlq",          label:"Review Queue",  count:dlqCount},
+    {key:"audit",        label:"Audit Log",     count:AUDIT_LOG.length},
+  ];
   const isIncomplete=system.status==="draft"&&!system.errorEmail;
   const sysIntgs=integrations.filter(i=>i.systemId===system.id);
   const activeCount=sysIntgs.filter(i=>i.status==="active").length;
@@ -3315,9 +3321,9 @@ function SystemDetailPage({ system, integrations, onBack, onAddIntegration, onUp
         {TABS.map(tab=>{
           const active=activeTab===tab.key;
           return (
-            <button key={tab.key} onClick={()=>setTab(tab.key)} style={{background:"none",border:"none",borderBottom:active?`2px solid ${C.blue}`:"2px solid transparent",marginBottom:-2,color:active?C.blue:C.text2,fontFamily:FONT,fontSize:14,fontWeight:active?700:400,padding:"10px 20px",cursor:"pointer"}}>
+            <button key={tab.key} onClick={()=>setTab(tab.key)} style={{background:"none",border:"none",borderBottom:active?`2px solid ${C.blue}`:"2px solid transparent",marginBottom:-2,color:active?C.blue:C.text2,fontFamily:FONT,fontSize:14,fontWeight:active?700:400,padding:"10px 20px",cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
               {tab.label}
-              {tab.key==="dlq"&&system.errorCount>0&&<span style={{marginLeft:6,background:C.redBg,border:`1px solid ${C.redBorder}`,borderRadius:9999,fontSize:10,color:C.red,padding:"1px 6px",fontWeight:700}}>{system.errorCount}</span>}
+              <span style={{background:active?C.blueBg:C.bg2,border:`1px solid ${active?C.blueBorder:C.border1}`,borderRadius:9999,fontSize:10,fontWeight:700,color:active?C.blue:C.text3,padding:"1px 6px",lineHeight:"14px"}}>{tab.count}</span>
             </button>
           );
         })}
