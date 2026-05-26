@@ -1,0 +1,12 @@
+# Claude Code local settings (may contain secrets / personal paths)
+.claude/settings.local.json
+
+# Slack approval temp files (none generated currently, reserved for future use)
+.claude/hooks/.approval-pending-*
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/settings.json
+*.swp
