@@ -13,7 +13,7 @@ Flow:
 
 Environment variables (set in shell profile or .claude/settings.local.json → env block):
   SLACK_BOT_TOKEN              required  xoxb-… bot token with reactions:read, reactions:write, chat:write
-  SLACK_APPROVER_USER_ID       optional  Slack user-id to DM (default: U07SX2XTY86)
+  SLACK_APPROVER_USER_ID       required  Slack user-id to DM (no default — hook passes through if unset)
   SLACK_APPROVAL_TIMEOUT_SECONDS optional  seconds to wait (default: 120)
   APPROVE_REACTION             optional  emoji name for approval    (default: white_check_mark)
   DENY_REACTION                optional  emoji name for denial      (default: x)
@@ -34,7 +34,7 @@ import datetime
 # Config
 # ──────────────────────────────────────────────────────────────────────────────
 SLACK_BOT_TOKEN        = os.environ.get("SLACK_BOT_TOKEN", "")
-SLACK_APPROVER_USER_ID = os.environ.get("SLACK_APPROVER_USER_ID", "U07SX2XTY86")
+SLACK_APPROVER_USER_ID = os.environ.get("SLACK_APPROVER_USER_ID", "")
 SLACK_APPROVAL_TIMEOUT = int(os.environ.get("SLACK_APPROVAL_TIMEOUT_SECONDS", "120"))
 APPROVE_REACTION       = os.environ.get("APPROVE_REACTION", "white_check_mark")
 DENY_REACTION          = os.environ.get("DENY_REACTION", "x")
@@ -202,8 +202,8 @@ def deny(reason: str):
 # ──────────────────────────────────────────────────────────────────────────────
 
 def main():
-    # ── No token → pass through silently ──────────────────────────────────────
-    if not SLACK_BOT_TOKEN and not DRY_RUN:
+    # ── Missing required config → pass through silently ──────────────────────
+    if not DRY_RUN and (not SLACK_BOT_TOKEN or not SLACK_APPROVER_USER_ID):
         sys.exit(0)
 
     # ── Parse stdin ───────────────────────────────────────────────────────────
