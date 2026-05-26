@@ -852,21 +852,60 @@ function MultiSelectDropdown({ options, value, onChange, placeholder, disabled, 
 // ─── AI ACTION BUTTON ────────────────────────────────────────────────────────
 // AI-assistive action button — blue styling signals it's a smart/assistive action.
 // Suggests or checks; never commits on the user's behalf.
-function AIActionButton({ label, desc, running, result, onClick }) {
+function AIActionButton({ label, desc, running, result, onClick, onClear }) {
   return (
-    <button onClick={onClick} disabled={running} style={{
-      display:"flex",flexDirection:"column",alignItems:"flex-start",
-      background:C.blueBg,
-      border:`1px solid ${C.blueBorder}`,padding:"7px 14px",
-      cursor:running?"wait":"pointer",minWidth:170,textAlign:"left",
-    }}>
-      <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:2}}>
-        <span style={{fontSize:12,color:C.blue}}>{running?"⏳":"✦"}</span>
-        <span style={{fontFamily:FONT,fontSize:12,fontWeight:700,color:C.blue}}>{running?`${label}…`:label}</span>
-      </div>
-      {!result&&!running&&<span style={{fontFamily:FONT,fontSize:10,color:C.text3,lineHeight:1.3}}>{desc}</span>}
-      {result&&<span style={{fontFamily:FONT,fontSize:10,color:C.blue,lineHeight:1.3}}>{result}</span>}
-    </button>
+    <div style={{position:"relative",display:"inline-flex"}}>
+      <button onClick={onClick} disabled={running} style={{
+        display:"flex",flexDirection:"column",alignItems:"flex-start",
+        background:C.blueBg,
+        border:`1px solid ${C.blueBorder}`,padding:"7px 14px",
+        cursor:running?"wait":"pointer",minWidth:170,textAlign:"left",
+      }}>
+        <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:2}}>
+          <span style={{fontSize:12,color:C.blue}}>{running?"⏳":"✦"}</span>
+          <span style={{fontFamily:FONT,fontSize:12,fontWeight:700,color:C.blue}}>{running?`${label}…`:label}</span>
+        </div>
+        {!result&&!running&&<span style={{fontFamily:FONT,fontSize:10,color:C.text3,lineHeight:1.3}}>{desc}</span>}
+        {result&&<span style={{fontFamily:FONT,fontSize:10,color:C.blue,lineHeight:1.3,paddingRight:14}}>{result}</span>}
+      </button>
+      {result&&onClear&&(
+        <span onClick={e=>{e.stopPropagation();onClear();}} title="Clear" style={{position:"absolute",top:5,right:6,fontSize:13,color:C.text2,cursor:"pointer",fontWeight:700,lineHeight:1}}>×</span>
+      )}
+    </div>
+  );
+}
+
+// Recursive JSON tree node — renders a JSON value (object/array/primitive) with expand/collapse.
+// Defined at module level so React doesn't recreate it on each MappingWorkspace render (would reset useState).
+function JsonNode({ val, depth }) {
+  const [open, setOpen] = React.useState(depth < 2);
+  if (val === null || val === undefined) return React.createElement("span",{style:{fontFamily:MONO,fontSize:11,color:C.text3}},"null");
+  if (typeof val !== "object") {
+    const isStr = typeof val === "string";
+    const color = isStr ? "#2D7D4F" : typeof val === "number" ? C.blue : C.text2;
+    const display = isStr ? `"${val.length>50?val.slice(0,50)+"…":val}"` : String(val);
+    return <span style={{fontFamily:MONO,fontSize:11,color}}>{display}</span>;
+  }
+  const isArr = Array.isArray(val);
+  const entries = isArr ? val.map((v,i)=>[i,v]) : Object.entries(val);
+  if (!entries.length) return <span style={{fontFamily:MONO,fontSize:11,color:C.text2}}>{isArr?"[]":"{}"}</span>;
+  return (
+    <span>
+      <span onClick={e=>{e.stopPropagation();setOpen(o=>!o)}} style={{cursor:"pointer",color:C.text2,fontFamily:MONO,fontSize:11,userSelect:"none"}}>
+        {open?"▾":"▸"} {isArr?"[":"{"}
+        {!open&&<span style={{color:C.text3,fontStyle:"italic"}}> {entries.length} {isArr?"item":"key"}{entries.length!==1?"s":""} </span>}
+        {!open&&(isArr?"]":"}")}
+      </span>
+      {open&&<div style={{paddingLeft:14}}>
+        {entries.map(([k,v])=>(
+          <div key={k} style={{display:"flex",gap:4,alignItems:"flex-start"}}>
+            {!isArr&&<span style={{fontFamily:MONO,fontSize:11,color:C.amber,flexShrink:0}}>{k}:</span>}
+            <JsonNode val={v} depth={depth+1}/>
+          </div>
+        ))}
+      </div>}
+      {open&&<span style={{fontFamily:MONO,fontSize:11,color:C.text2}}>{isArr?"]":"}"}</span>}
+    </span>
   );
 }
 
@@ -1016,6 +1055,10 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
   const [fetchState, setFetch]              = useState("idle");
   const [filterText, setFilterText]         = useState("");
   const [collapsedGrps, setCollapsedGrps]   = useState({});
+  const [sampleJsonOpen, setSampleJsonOpen] = useState(false);
+  const [pasteJsonOpen, setPasteJsonOpen]   = useState(false);
+  const [pasteJsonText, setPasteJsonText]   = useState("");
+  const [pasteJsonError, setPasteJsonError] = useState(null);
   const fetchTimer = useRef(null);
   // Always holds the latest form value so setTimeout callbacks can read current
   // state without a stale closure and without needing side effects inside updaters.
@@ -1026,6 +1069,7 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
     if(!open){
       setAutoMapResult(null); setValidateResult(null); setValOpen(false);
       setFetch("idle"); setFilterText(""); setCollapsedGrps({});
+      setSampleJsonOpen(false); setPasteJsonOpen(false); setPasteJsonText(""); setPasteJsonError(null);
     }
   },[open]);
   useEffect(()=>()=>clearTimeout(fetchTimer.current),[]);
@@ -1085,8 +1129,27 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
     fetchTimer.current=setTimeout(()=>{
       const sample=`{\n  "id": "OBS-1042",\n  "timestamp": "2025-04-14T08:30:00Z",\n  "asset": {\n    "id": "PUMP-12",\n    "name": "Primary Feed Pump",\n    "location": { "site": "Houston Plant" }\n  },\n  "measurements": [\n    { "value": 98.4, "unit": "degC" }\n  ],\n  "severity": "warning",\n  "description": "Temperature threshold exceeded",\n  "links": { "workOrder": { "href": "/api/workorders/WO-9921" } },\n  "metadata": { "source": "PI-historian", "version": "2.1" }\n}`;
       setForm(f=>({...f,sampleJson:sample,sampleFetched:true,schemaSummary:{recordsReturned:1,fieldsDetected:12,nestedObjects:4,arraysDetected:1,referenceLikeFields:2,pulledAt:new Date().toISOString()}}));
-      setFetch("done");
+      setFetch("done"); setSampleJsonOpen(true);
     },1800);
+  }
+
+  function handleApplyPaste() {
+    setPasteJsonError(null);
+    const txt = pasteJsonText.trim();
+    if (!txt) { setPasteJsonError("Paste a JSON object or array first."); return; }
+    let parsed;
+    try { parsed = JSON.parse(txt); }
+    catch(e) { setPasteJsonError("Invalid JSON: " + e.message); return; }
+    if (typeof parsed !== "object" || parsed === null) { setPasteJsonError("Must be a JSON object or array."); return; }
+    let fields = 0, nested = 0, arrs = 0;
+    function walk(v) {
+      if (Array.isArray(v)) { arrs++; v.forEach(walk); }
+      else if (v && typeof v === "object") { nested++; Object.values(v).forEach(w => { fields++; walk(w); }); }
+    }
+    walk(parsed);
+    setForm(f=>({...f, sampleJson:JSON.stringify(parsed,null,2), sampleFetched:true,
+      schemaSummary:{recordsReturned:1,fieldsDetected:fields,nestedObjects:nested,arraysDetected:arrs,referenceLikeFields:0,pulledAt:new Date().toISOString()}}));
+    setSampleJsonOpen(true); setPasteJsonOpen(false); setPasteJsonText("");
   }
 
   function handleAutoMap() {
@@ -1130,30 +1193,32 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
       const mp=f.fieldMappings;
       const mapped=mp.filter(m=>m.target).map(m=>m.target);
       const dups=mapped.filter((t,i)=>mapped.indexOf(t)!==i);
-      const knownGroups=new Set(TARGET_SCHEMA.map(g=>g.group));
+      const dupSet=new Set(dups);
       const prodSchema=NESTED_TARGET_SCHEMA[f.product]||{};
       const extraFields=(f.businessObjects||[]).flatMap(o=>(prodSchema[o]||[]).map(fd=>({...fd,path:`${o}.${fd.path}`})));
       const allTargetFields=[...TARGET_SCHEMA.flatMap(g=>g.fields),...extraFields];
-      const typeConflicts=mp.filter(m=>{
+      const hasTypeConflict=m=>{
         if(!m.target) return false;
         const tf=allTargetFields.find(fd=>fd.path===m.target);
         if(!tf) return false;
         if(m.srcType==="url"&&tf.type==="string") return false;
         if(m.srcType==="datetime"&&tf.type==="date") return false;
         return m.srcType!==tf.type;
-      }).length;
+      };
+      const typeConflicts=mp.filter(hasTypeConflict).length;
       const canon=t=>TARGET_NORMALIZE[t]||t;
       const canonMappedSet=new Set(mapped.map(canon));
       let parentDepMissing=0;
       const updatedMappings=mp.map(m=>{
-        if(!m.target) return m;
+        if(!m.target) return {...m,rowState:m.required?"needs-review":"unmapped"};
+        if(hasTypeConflict(m)) return {...m,rowState:"type-mismatch"};
+        if(dupSet.has(m.target)) return {...m,rowState:"dup-target"};
         const requiredParents=PARENT_DEP_RULES[canon(m.target)];
         if(requiredParents&&requiredParents.some(p=>!canonMappedSet.has(canon(p)))){
           parentDepMissing++;
           return {...m,rowState:"parent-dep-missing"};
         }
-        if(m.rowState==="parent-dep-missing") return {...m,rowState:m.autoMapConfidence?"auto-mapped":"manual"};
-        return m;
+        return {...m,rowState:"valid"};
       });
       const result={
         requiredMapped:mp.filter(m=>m.required&&m.target).length,
@@ -1202,9 +1267,8 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
       <div style={{display:"flex",alignItems:"center",gap:8,padding:`5px ${indent?28:14}px 5px ${indent?28:14}px`,borderBottom:`1px solid ${C.border0}`,background:C.bg0}}>
         <MonoText size={12} color={C.text0}>{f.src}</MonoText>
         {f.arrayPath&&<span style={{fontSize:10,fontWeight:600,color:C.text1,background:C.bg2,border:`1px solid ${C.border1}`,padding:"0 3px"}}>array</span>}
-        {f.refLookup&&<span style={{color:C.amber,fontSize:12}}>⚠</span>}
-        <span style={{marginLeft:"auto",fontFamily:MONO,fontSize:10,color:C.text2}}>{f.srcType}</span>
-        {f.required&&<span style={{fontSize:10,fontWeight:700,color:C.red}}>req</span>}
+        {f.refLookup&&<span title="Requires a reference lookup — configure in target system settings" style={{color:C.amber,fontSize:12,cursor:"help"}}>⚠</span>}
+        {f.required&&<span style={{marginLeft:"auto",fontSize:10,fontWeight:700,color:C.red}}>req</span>}
       </div>
     );
   }
@@ -1246,19 +1310,48 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
             {/* Sample pull */}
             <div style={{padding:"10px 14px",borderBottom:`1px solid ${C.border0}`,flexShrink:0}}>
               <div style={{fontFamily:FONT,fontSize:10,fontWeight:700,color:C.text2,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>Sample Data</div>
-              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
+              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6,flexWrap:"wrap"}}>
                 {hasPullEndpoint?(
                   fetchState==="idle"?<button onClick={handleFetchSample} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.blue,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"4px 10px",cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>▶ Pull sample</button>:
                   fetchState==="loading"?<button disabled style={{background:C.bg0,border:`1px solid ${C.border0}`,color:C.text3,fontFamily:FONT,fontSize:12,padding:"4px 10px",display:"flex",alignItems:"center",gap:5}}><Spinner size={12}/> Pulling…</button>:
                   <button onClick={handleFetchSample} style={{background:C.greenBg,border:`1px solid ${C.greenBorder}`,color:C.green,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"4px 10px",cursor:"pointer"}}>✓ Re-pull</button>
-                ):(
-                  <span style={{fontFamily:FONT,fontSize:12,color:C.text3}}>Paste JSON in mapping row to inspect values</span>
-                )}
+                ):null}
+                <button onClick={()=>{setPasteJsonOpen(o=>!o);setPasteJsonError(null);}} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"4px 10px",cursor:"pointer"}}>
+                  {pasteJsonOpen?"✕ Cancel":"📋 Paste JSON"}
+                </button>
               </div>
+              {pasteJsonOpen&&(
+                <div style={{marginBottom:8}}>
+                  <textarea
+                    value={pasteJsonText}
+                    onChange={e=>setPasteJsonText(e.target.value)}
+                    placeholder='{ "id": "...", "value": 1.23 }'
+                    style={{width:"100%",height:90,fontFamily:MONO,fontSize:11,color:C.text0,background:C.bg1,border:`1px solid ${C.border1}`,padding:"6px 8px",resize:"vertical",outline:"none",boxSizing:"border-box"}}
+                  />
+                  {pasteJsonError&&<div style={{fontFamily:FONT,fontSize:11,color:C.red,marginTop:2}}>{pasteJsonError}</div>}
+                  <div style={{display:"flex",gap:6,marginTop:4}}>
+                    <button onClick={handleApplyPaste} style={{background:C.blue,border:"none",color:"#fff",fontFamily:FONT,fontSize:12,fontWeight:700,padding:"4px 12px",cursor:"pointer"}}>Apply</button>
+                    <button onClick={()=>{setPasteJsonOpen(false);setPasteJsonText("");setPasteJsonError(null);}} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:12,padding:"4px 10px",cursor:"pointer"}}>Cancel</button>
+                  </div>
+                </div>
+              )}
               {form.schemaSummary&&(
-                <div style={{fontFamily:FONT,fontSize:12,color:C.green}}>✓ {form.schemaSummary.fieldsDetected} fields detected</div>
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <span style={{fontFamily:FONT,fontSize:12,color:C.green}}>✓ {form.schemaSummary.fieldsDetected} fields detected</span>
+                  {form.sampleJson&&(
+                    <button onClick={()=>setSampleJsonOpen(o=>!o)} style={{background:"none",border:"none",color:C.blue,fontFamily:FONT,fontSize:11,fontWeight:600,cursor:"pointer",padding:"0 2px"}}>
+                      {sampleJsonOpen?"▼ Hide JSON":"▶ View JSON"}
+                    </button>
+                  )}
+                </div>
               )}
             </div>
+            {/* JSON tree viewer */}
+            {sampleJsonOpen&&form.sampleJson&&(
+              <div style={{borderBottom:`1px solid ${C.border0}`,background:C.bg1,overflowY:"auto",maxHeight:200,flexShrink:0,padding:"8px 14px"}}>
+                {(()=>{ try { return <JsonNode val={JSON.parse(form.sampleJson)} depth={0}/>; } catch { return <span style={{fontFamily:MONO,fontSize:11,color:C.red}}>Invalid JSON</span>; } })()}
+              </div>
+            )}
 
             {/* Payload field tree */}
             <div style={{flex:1,overflowY:"auto"}}>
@@ -1283,8 +1376,8 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
           <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
             {/* Toolbar */}
             <div style={{padding:"10px 20px",borderBottom:`1px solid ${C.border0}`,display:"flex",alignItems:"center",gap:10,flexShrink:0,background:C.bg0,flexWrap:"wrap"}}>
-              <AIActionButton label="Auto Map" desc="Match source fields to target paths automatically" running={autoMapRunning} result={autoMapResult} onClick={handleAutoMap}/>
-              <AIActionButton label="Validate" desc="Check required fields, types, and duplicates" running={validateRunning} result={validateResult} onClick={handleValidate}/>
+              <AIActionButton label="Auto Map" desc="Match source fields to target paths automatically" running={autoMapRunning} result={autoMapResult} onClick={handleAutoMap} onClear={()=>setAutoMapResult(null)}/>
+              <AIActionButton label="Validate" desc="Check required fields, types, and duplicates" running={validateRunning} result={validateResult} onClick={handleValidate} onClear={()=>setValidateResult(null)}/>
               <div style={{flex:1}}/>
               {dupTargets.length>0&&<span style={{background:C.amberBg,border:`1px solid ${C.amberBorder}`,fontFamily:FONT,fontSize:12,fontWeight:700,color:C.amber,padding:"3px 8px"}}>Duplicate target</span>}
               {form.validationResult&&<button onClick={()=>setValOpen(o=>!o)} style={{background:"none",border:`1px solid ${C.border0}`,fontFamily:FONT,fontSize:12,fontWeight:600,color:C.text1,padding:"4px 10px",cursor:"pointer"}}>{valOpen?"Hide":"Show"} validation</button>}
@@ -1334,14 +1427,16 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
               )}
               {filteredRows.map((m,visIdx)=>{
                 const idx = m._idx;
-                const rowBg=m.rowState==="auto-mapped"?"#F5FAF7":(!m.target&&m.required)?"#FFF8F8":visIdx%2===0?C.bg0:C.bg1;
+                const rowBg=m.rowState==="auto-mapped"||m.rowState==="valid"?"#F5FAF7":m.rowState==="needs-review"?"#FFF8F8":visIdx%2===0?C.bg0:C.bg1;
                 const stateLabel={
                   "auto-mapped":        {label:"Auto-mapped",        color:C.green, bg:C.greenBg,  border:C.greenBorder},
+                  "valid":              {label:"Valid",               color:C.green, bg:C.greenBg,  border:C.greenBorder},
                   "manual":             {label:"Mapped",              color:C.blue,  bg:C.blueBg,   border:C.blueBorder},
                   "ref-lookup":         {label:"Needs lookup setup",  color:C.amber, bg:C.amberBg,  border:C.amberBorder},
                   "needs-review":       {label:"Required — unmapped", color:C.red,   bg:C.redBg,    border:C.redBorder},
                   "parent-dep-missing": {label:"Parent dep. missing", color:C.amber, bg:C.amberBg,  border:C.amberBorder},
                   "type-mismatch":      {label:"Type mismatch",       color:C.amber, bg:C.amberBg,  border:C.amberBorder},
+                  "dup-target":         {label:"Duplicate target",    color:C.amber, bg:C.amberBg,  border:C.amberBorder},
                   "unmapped":           {label:"—",                   color:C.text3, bg:"transparent", border:"transparent"},
                 }[m.rowState]||{label:"—",color:C.text3,bg:"transparent",border:"transparent"};
                 return (
@@ -1403,6 +1498,9 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
           <div style={{flex:1}}/>
           <button onClick={onBack} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:14,fontWeight:600,padding:"8px 20px",cursor:"pointer"}}>Back</button>
           <button onClick={()=>onSave(false)} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:14,fontWeight:600,padding:"8px 20px",cursor:"pointer"}}>Save as Draft</button>
+          {!mappingComplete&&(
+            <span style={{fontFamily:FONT,fontSize:12,fontWeight:600,color:mappedCount===0?C.red:C.amber,maxWidth:220,lineHeight:1.3}}>{mappingStatus.label}</span>
+          )}
           <button
             onClick={()=>onSave(true)}
             disabled={!mappingComplete}
