@@ -42,41 +42,46 @@ POLL_INTERVAL          = 3   # seconds between reaction checks
 DRY_RUN                = "--dry-run" in sys.argv  # test mode: no real Slack calls
 
 # ──────────────────────────────────────────────────────────────────────────────
-# Known-safe Bash command patterns — these auto-approve without a Slack DM.
-# Mirror the allow list in .claude/settings.json so already-whitelisted commands
-# are handled instantly by the hook rather than causing a second approval step.
+# Safe-command allowlist — checked via re.fullmatch (whole-string match).
+#
+# Design rules:
+#   • Patterns that allow trailing flags use ".*" explicitly.
+#   • Patterns for commands where trailing content is dangerous (git push)
+#     have NO trailing ".*" — fullmatch then rejects any extra tokens.
+#   • Compound-operator and risky-pattern checks always run first (in main),
+#     so ".*" here cannot match chained commands or risky flags.
 # ──────────────────────────────────────────────────────────────────────────────
 SAFE_PATTERNS = [
-    # git read operations
-    r"^git\s+(status|diff|log|show|remote|config|stash\s+list|branch|fetch|tag|rev-parse|ls-files|ls-remote)\b",
-    r"^git\s+(pull|fetch)\b",
-    r"^git\s+add\b",
-    r"^git\s+commit\b",
-    r"^git\s+stash\b",
-    # git push — safe: push to origin HEAD or develop only, no extra refspecs
-    r"^git\s+push\s+origin\s+HEAD$",
-    r"^git\s+push\s+origin\s+develop$",
-    # gh CLI — read operations and PR management (non-destructive)
-    r"^(~/.local/bin/)?gh\s+pr\s+(create|view|list|comment|checks|status)\b",
-    r"^(~/.local/bin/)?gh\s+api\s+repos/",
-    r"^(~/.local/bin/)?gh\s+auth\s+status\b",
-    # filesystem reads
-    r"^(find|grep|ls|cat|head|tail|wc|xxd|md5|shasum|stat)\b",
+    # git read operations — trailing flags/paths are safe
+    r"git\s+(status|diff|log|show|remote|config|branch|fetch|pull|tag|rev-parse|ls-files|ls-remote)(\s.*)?",
+    r"git\s+stash(\s+(list|show|pop|drop|apply).*)?",
+    r"git\s+add(\s.*)?",
+    r"git\s+commit(\s.*)?",
+    # git push — EXACT forms only; no trailing tokens allowed
+    r"git\s+push\s+origin\s+HEAD",
+    r"git\s+push\s+origin\s+develop",
+    # gh CLI — trailing flags/args are safe for these subcommands
+    r"(~/.local/bin/)?gh\s+pr\s+(create|view|list|comment|checks|status)(\s.*)?",
+    r"(~/.local/bin/)?gh\s+api\s+repos/.*",
+    r"(~/.local/bin/)?gh\s+auth\s+status(\s.*)?",
+    # filesystem reads — trailing paths/flags are safe
+    r"(grep|ls|cat|head|tail|wc|xxd|md5|shasum|stat)(\s.*)?",
+    r"find(\s.*)?",
     # computation
-    r"^node\s+(--check|--input-type|-e)\b",
-    r"^python3\s+-c\b",
-    r"^npx\s+--yes\s+acorn\b",
-    # directory / file ops — low risk
-    r"^mkdir\b",
-    r"^cp\b",
-    r"^chmod\b",
-    r"^unzip\b",
+    r"node\s+(--check|--input-type|-e)(\s.*)?",
+    r"python3\s+-c(\s.*)?",
+    r"npx\s+--yes\s+acorn(\s.*)?",
+    # directory / file ops
+    r"mkdir(\s.*)?",
+    r"cp(\s.*)?",
+    r"chmod(\s.*)?",
+    r"unzip(\s.*)?",
     # shell utilities
-    r"^(echo|printf|date|which|type|env|printenv|pwd|id)\b",
-    r"^(sleep|true|false)\b",
-    r"^(open|code|pbcopy|pbpaste)\b",
+    r"(echo|printf|date|which|type|env|printenv|pwd|id)(\s.*)?",
+    r"(sleep|true|false)(\s.*)?",
+    r"(open|code|pbcopy|pbpaste)(\s.*)?",
     # process inspection (read-only)
-    r"^(ps|top|htop|lsof|pgrep)\b",
+    r"(ps|top|htop|lsof|pgrep)(\s.*)?",
 ]
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -118,16 +123,18 @@ RISKY_PATTERNS = [
 # Helpers
 # ──────────────────────────────────────────────────────────────────────────────
 
-# Shell metacharacters that introduce compound/chained commands.
-# A command containing any of these cannot be matched as safe by a prefix pattern.
-_COMPOUND_RE = re.compile(r"&&|\|\||\||;|`|\$\(", re.MULTILINE)
+# Shell operators that chain or inject additional commands.
+# Newline is included because bash treats it identically to semicolon.
+_COMPOUND_RE = re.compile(r"&&|\|\||\||;|\n|`|\$\(")
 
 
 def is_safe(cmd: str) -> bool:
     if _COMPOUND_RE.search(cmd):
-        return False  # compound command — never fast-approve
+        return False  # compound/chained command — never fast-approve
+    stripped = cmd.strip()
     for pat in SAFE_PATTERNS:
-        if re.match(pat, cmd.strip(), re.IGNORECASE):
+        # fullmatch: the entire string must match — no silent prefix bypass
+        if re.fullmatch(pat, stripped, re.IGNORECASE | re.DOTALL):
             return True
     return False
 
