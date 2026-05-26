@@ -155,6 +155,20 @@ const SAMPLE_FIELDS = [
   { src:"metadata.version",     srcType:"string",   required:false, refLookup:false, nested:true,  arrayPath:false, target:"", rowState:"unmapped", businessMeaning:"Payload Schema Version",   sampleValue:"2.1.0" },
 ];
 
+// Canonical sample payload — built from the sampleValues in SAMPLE_FIELDS above.
+// Pre-loaded into the mapping workspace so users see real JSON immediately on open,
+// without having to pull or paste first.
+const DEFAULT_SAMPLE_JSON = JSON.stringify({
+  id: "OBS-20240414-001",
+  timestamp: "2024-04-14T08:30:00Z",
+  severity: "high",
+  description: "High vibration detected",
+  asset: { id: "PUMP-P-101A", name: "Feed Pump P-101A", location: { site: "Houston Plant" } },
+  measurements: [{ value: 98.4, unit: "degC" }],
+  links: { workOrder: { href: "https://imaint.corp/wo/9921" } },
+  metadata: { source: "aveva-pi", version: "2.1.0" },
+}, null, 2);
+
 // Defines the fields that Innovapptive products expect to receive — the "target" side of mapping.
 // Structure: Product name → Collection name → list of target fields
 //
@@ -1077,6 +1091,14 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
       setAutoMapResult(null); setValidateResult(null); setValOpen(false);
       setFetch("idle"); setFilterText(""); setCollapsedGrps({}); setPinnedSrc(null); setHoveredSrc(null);
       setSampleJsonOpen(false); setPasteJsonOpen(false); setPasteJsonText(""); setPasteJsonError(null);
+    } else {
+      // Always open the JSON viewer when the workspace opens
+      setSampleJsonOpen(true);
+      // Pre-populate with the canonical sample payload if no JSON has been fetched/pasted yet
+      if(!formRef.current.sampleJson){
+        setForm(f=>({...f, sampleJson:DEFAULT_SAMPLE_JSON, sampleFetched:true,
+          schemaSummary:{recordsReturned:1,fieldsDetected:12,nestedObjects:4,arraysDetected:1,referenceLikeFields:2,pulledAt:new Date().toISOString()}}));
+      }
     }
   },[open]);
   useEffect(()=>()=>clearTimeout(fetchTimer.current),[]);
@@ -1334,10 +1356,13 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
               </div>
             </div>
 
-            {/* Sample pull */}
+            {/* Sample Data — header + controls */}
             <div style={{padding:"10px 14px",borderBottom:`1px solid ${C.border0}`,flexShrink:0}}>
-              <div style={{fontFamily:FONT,fontSize:10,fontWeight:700,color:C.text2,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:8}}>Sample Data</div>
-              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6,flexWrap:"wrap"}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+                <div style={{fontFamily:FONT,fontSize:10,fontWeight:700,color:C.text2,textTransform:"uppercase",letterSpacing:"0.08em"}}>Sample Data</div>
+                {form.sampleJson&&<button onClick={()=>setSampleJsonOpen(o=>!o)} style={{background:"none",border:"none",color:C.blue,fontFamily:FONT,fontSize:11,fontWeight:600,cursor:"pointer",padding:0}}>{sampleJsonOpen?"Collapse ▲":"Expand ▼"}</button>}
+              </div>
+              <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
                 {hasPullEndpoint?(
                   fetchState==="idle"?<button onClick={handleFetchSample} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.blue,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"4px 10px",cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>▶ Pull sample</button>:
                   fetchState==="loading"?<button disabled style={{background:C.bg0,border:`1px solid ${C.border0}`,color:C.text3,fontFamily:FONT,fontSize:12,padding:"4px 10px",display:"flex",alignItems:"center",gap:5}}><Spinner size={12}/> Pulling…</button>:
@@ -1348,7 +1373,7 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
                 </button>
               </div>
               {pasteJsonOpen&&(
-                <div style={{marginBottom:8}}>
+                <div style={{marginTop:8}}>
                   <textarea
                     value={pasteJsonText}
                     onChange={e=>setPasteJsonText(e.target.value)}
@@ -1362,29 +1387,23 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
                   </div>
                 </div>
               )}
-              {form.schemaSummary&&(
-                <div style={{display:"flex",alignItems:"center",gap:8}}>
-                  <span style={{fontFamily:FONT,fontSize:12,color:C.green}}>✓ {form.schemaSummary.fieldsDetected} fields detected</span>
-                  {form.sampleJson&&(
-                    <button onClick={()=>setSampleJsonOpen(o=>!o)} style={{background:"none",border:"none",color:C.blue,fontFamily:FONT,fontSize:11,fontWeight:600,cursor:"pointer",padding:"0 2px"}}>
-                      {sampleJsonOpen?"▼ Hide JSON":"▶ View JSON"}
-                    </button>
-                  )}
-                </div>
-              )}
             </div>
-            {/* JSON tree viewer */}
-            {sampleJsonOpen&&form.sampleJson&&(
-              <div style={{borderBottom:`1px solid ${C.border0}`,background:C.bg1,overflowY:"auto",maxHeight:240,flexShrink:0,padding:"8px 14px"}}>
-                {(()=>{
-                  // Highlight the top-level JSON key that corresponds to the selected source field.
-                  // e.g. selectedSrc="asset.id" → highlight "asset"; "measurements[].value" → "measurements"
-                  const hlKeys = selectedSrc
-                    ? new Set([selectedSrc.split(/[\.\[]/)[0]])
-                    : null;
-                  try { return <JsonNode val={JSON.parse(form.sampleJson)} depth={0} highlightKeys={hlKeys}/>; }
-                  catch { return <span style={{fontFamily:MONO,fontSize:11,color:C.red}}>Invalid JSON</span>; }
-                })()}
+            {/* JSON tree viewer — always visible when sample data exists */}
+            {form.sampleJson?(
+              sampleJsonOpen&&(
+                <div style={{borderBottom:`1px solid ${C.border0}`,background:C.bg1,overflowY:"auto",maxHeight:260,flexShrink:0,padding:"8px 14px"}}>
+                  {form.schemaSummary&&<div style={{fontFamily:FONT,fontSize:11,color:C.green,marginBottom:6}}>✓ {form.schemaSummary.fieldsDetected} fields detected</div>}
+                  {(()=>{
+                    const hlKeys = selectedSrc ? new Set([selectedSrc.split(/[\.\[]/)[0]]) : null;
+                    try { return <JsonNode val={JSON.parse(form.sampleJson)} depth={0} highlightKeys={hlKeys}/>; }
+                    catch { return <span style={{fontFamily:MONO,fontSize:11,color:C.red}}>Invalid JSON</span>; }
+                  })()}
+                </div>
+              )
+            ):(
+              <div style={{padding:"14px",borderBottom:`1px solid ${C.border0}`,background:C.bg1,flexShrink:0,display:"flex",flexDirection:"column",gap:8,alignItems:"flex-start"}}>
+                <span style={{fontFamily:FONT,fontSize:12,color:C.text3}}>No sample JSON available.</span>
+                <button onClick={()=>{setPasteJsonOpen(true);setPasteJsonError(null);}} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.blue,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"4px 10px",cursor:"pointer"}}>Paste Sample JSON</button>
               </div>
             )}
 
