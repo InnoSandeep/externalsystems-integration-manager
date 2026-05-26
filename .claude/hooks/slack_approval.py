@@ -104,6 +104,12 @@ RISKY_PATTERNS = [
     (r"\bchown\b",                   "chown — ownership change"),
     (r"\bchmod\s+777\b",             "chmod 777 — world-writable"),
     (r"\bmv\b.*\s/",                 "mv — moving files (possibly to /"),
+    # find with action flags that modify/delete files or execute commands
+    (r"\bfind\b.*\s-delete\b",       "find -delete — filesystem deletion"),
+    (r"\bfind\b.*\s-exec\b",         "find -exec — arbitrary command execution"),
+    (r"\bfind\b.*\s-execdir\b",      "find -execdir — arbitrary command execution"),
+    (r"\bfind\b.*\s-ok\b",           "find -ok — interactive command execution"),
+    (r"\bfind\b.*\s-okdir\b",        "find -okdir — interactive command execution"),
 ]
 
 
