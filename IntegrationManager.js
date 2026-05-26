@@ -2781,48 +2781,6 @@ function SummaryCard({ system }) {
   );
 }
 
-
-// ─── FLOW STRIP ───────────────────────────────────────────────────────────────
-// A compact visual summary of what data is actively moving through this system.
-// Shows each active integration as a directional row: Source → data type → Destination
-//
-// Teal left border = inbound (data coming in from the external system).
-// Purple left border = outbound (data going out from Innovapptive to the external system).
-// Hidden entirely if there are no active or ready-to-publish integrations.
-//
-// Limited to 4 rows. If there are more, a "+N more" message appears at the bottom.
-function FlowStrip({ system, integrations }) {
-  const intgs = integrations.filter(i=>i.systemId===system.id&&i.status!=="disabled"&&i.status!=="draft");
-  if(intgs.length===0) return null;
-  const shown = intgs.slice(0,4);
-  return (
-    <div style={{background:C.bg0,border:`1px solid ${C.border0}`,borderRadius:8,padding:"16px 20px",marginBottom:12}}>
-      <h3 style={{fontFamily:FONT,fontSize:11,fontWeight:700,color:C.text3,textTransform:"uppercase",letterSpacing:"0.08em",margin:"0 0 12px"}}>Active Data Flows</h3>
-      <div style={{display:"flex",flexDirection:"column",gap:6}}>
-        {shown.map((intg)=>{
-          const isIn=intg.direction==="inbound";
-          const src=isIn?system.name:"Innovapptive";
-          const dst=isIn?(intg.product||"Innovapptive"):system.name;
-          const obj=(intg.businessObjects||[])[0]||(intg.method==="webhook"?"Events":"Data");
-          return (
-            <div key={intg.id} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",background:C.bg1,borderRadius:8,flexWrap:"wrap"}}>
-              <span style={{fontFamily:FONT,fontSize:13,fontWeight:600,color:C.text0,flexShrink:0}}>{src}</span>
-              <span style={{color:C.blue,fontSize:14,fontWeight:700,flexShrink:0}}>→</span>
-              <span style={{fontFamily:FONT,fontSize:13,fontWeight:600,color:C.text0,flexShrink:0}}>{dst}</span>
-              <span style={{fontFamily:FONT,fontSize:12,color:C.text2,flexShrink:0}}>{obj}</span>
-              <div style={{marginLeft:"auto",display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
-                <MethodBadge method={intg.method}/>
-                <StatusBadge status={intg.status}/>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-      {intgs.length>4&&<div style={{paddingTop:10,fontFamily:FONT,fontSize:12,color:C.text3}}>+{intgs.length-4} more integrations</div>}
-    </div>
-  );
-}
-
 // ─── INTEGRATION CARD ────────────────────────────────────────────────────────
 // Represents one integration in the Integrations tab of System Detail.
 //
