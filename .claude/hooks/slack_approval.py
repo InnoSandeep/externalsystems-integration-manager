@@ -67,9 +67,8 @@ SAFE_PATTERNS = [
     # filesystem reads — trailing paths/flags are safe
     r"(grep|ls|cat|head|tail|wc|xxd|md5|shasum|stat)(\s.*)?",
     r"find(\s.*)?",
-    # computation
-    r"node\s+(--check|--input-type|-e)(\s.*)?",
-    r"python3\s+-c(\s.*)?",
+    # computation — node --check/--input-type are read-only; -e executes code so excluded
+    r"node\s+(--check|--input-type)(\s.*)?",
     r"npx\s+--yes\s+acorn(\s.*)?",
     # directory / file ops
     r"mkdir(\s.*)?",
