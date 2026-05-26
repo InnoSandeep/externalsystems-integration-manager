@@ -1144,16 +1144,18 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
     try { parsed = JSON.parse(txt); }
     catch(e) { setPasteJsonError("Invalid JSON: " + e.message); return; }
     if (typeof parsed !== "object" || parsed === null) { setPasteJsonError("Must be a JSON object or array."); return; }
-    // Count unique leaf-key names (not total traversed values) to correctly report "fields detected".
-    const leafKeys = new Set();
+    // Count unique full dot-paths to leaf values so branches with the same key name
+    // (e.g. asset.id and measurement.id) are not collapsed, and container keys are excluded.
+    const leafPaths = new Set();
     let nested = 0, arrs = 0;
-    function walk(v) {
-      if (Array.isArray(v)) { arrs++; v.forEach(walk); }
-      else if (v && typeof v === "object") { nested++; Object.keys(v).forEach(k => { leafKeys.add(k); walk(v[k]); }); }
+    function walk(v, path) {
+      if (Array.isArray(v)) { arrs++; v.forEach(item => walk(item, path + "[]")); }
+      else if (v && typeof v === "object") { nested++; Object.keys(v).forEach(k => walk(v[k], path ? path + "." + k : k)); }
+      else { leafPaths.add(path); }
     }
-    walk(parsed);
+    walk(parsed, "");
     setForm(f=>({...f, sampleJson:JSON.stringify(parsed,null,2), sampleFetched:true,
-      schemaSummary:{recordsReturned:1,fieldsDetected:leafKeys.size,nestedObjects:nested,arraysDetected:arrs,referenceLikeFields:0,pulledAt:new Date().toISOString()}}));
+      schemaSummary:{recordsReturned:1,fieldsDetected:leafPaths.size,nestedObjects:nested,arraysDetected:arrs,referenceLikeFields:0,pulledAt:new Date().toISOString()}}));
     setSampleJsonOpen(true); setPasteJsonOpen(false); setPasteJsonText("");
   }
 
