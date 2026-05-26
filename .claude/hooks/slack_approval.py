@@ -111,7 +111,14 @@ RISKY_PATTERNS = [
 # Helpers
 # ──────────────────────────────────────────────────────────────────────────────
 
+# Shell metacharacters that introduce compound/chained commands.
+# A command containing any of these cannot be matched as safe by a prefix pattern.
+_COMPOUND_RE = re.compile(r"&&|\|\||\||;|`|\$\(", re.MULTILINE)
+
+
 def is_safe(cmd: str) -> bool:
+    if _COMPOUND_RE.search(cmd):
+        return False  # compound command — never fast-approve
     for pat in SAFE_PATTERNS:
         if re.match(pat, cmd.strip(), re.IGNORECASE):
             return True
