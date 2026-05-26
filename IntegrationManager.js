@@ -3271,14 +3271,19 @@ function SystemDetailPage({ system, integrations, onBack, onAddIntegration, onUp
   const [editSysOpen,setEditSys]=useState(false);
   const [editIntg,setEditIntg]=useState(null);
   const [dlqEntry,setDlqEntry]=useState(null);
-  // Phase 3: "Review Queue" tab label
-  const TABS=[{key:"integrations",label:"Integrations"},{key:"activity",label:"User Activity"},{key:"dlq",label:"Review Queue"},{key:"audit",label:"Audit Log"}];
-  const isIncomplete=system.status==="draft"&&!system.errorEmail;
   const sysIntgs=integrations.filter(i=>i.systemId===system.id);
   const activeCount=sysIntgs.filter(i=>i.status==="active").length;
   const readyCount=sysIntgs.filter(i=>i.status==="ready_to_publish").length;
   const realtimeCount=sysIntgs.filter(i=>i.method==="webhook").length;
   const scheduledCount=sysIntgs.filter(i=>i.method==="polling").length;
+  const dlqCount=DLQ_ENTRIES.filter(e=>e.systemId===system.id).length;
+  const TABS=[
+    {key:"integrations", label:"Integrations", count:sysIntgs.length},
+    {key:"activity",     label:"User Activity", count:ACTIVITY.length},
+    {key:"dlq",          label:"Review Queue",  count:dlqCount},
+    {key:"audit",        label:"Audit Log",     count:AUDIT_LOG.length},
+  ];
+  const isIncomplete=system.status==="draft"&&!system.errorEmail;
   return (
     <div style={{padding:"24px 32px",maxWidth:1200,margin:"0 auto"}}>
       {/* Header Card */}
@@ -3315,9 +3320,9 @@ function SystemDetailPage({ system, integrations, onBack, onAddIntegration, onUp
         {TABS.map(tab=>{
           const active=activeTab===tab.key;
           return (
-            <button key={tab.key} onClick={()=>setTab(tab.key)} style={{background:"none",border:"none",borderBottom:active?`2px solid ${C.blue}`:"2px solid transparent",marginBottom:-2,color:active?C.blue:C.text2,fontFamily:FONT,fontSize:14,fontWeight:active?700:400,padding:"10px 20px",cursor:"pointer"}}>
+            <button key={tab.key} onClick={()=>setTab(tab.key)} style={{background:"none",border:"none",borderBottom:active?`2px solid ${C.blue}`:"2px solid transparent",marginBottom:-2,color:active?C.blue:C.text2,fontFamily:FONT,fontSize:14,fontWeight:active?700:400,padding:"10px 20px",cursor:"pointer",display:"flex",alignItems:"center",gap:6}}>
               {tab.label}
-              {tab.key==="dlq"&&system.errorCount>0&&<span style={{marginLeft:6,background:C.redBg,border:`1px solid ${C.redBorder}`,borderRadius:9999,fontSize:10,color:C.red,padding:"1px 6px",fontWeight:700}}>{system.errorCount}</span>}
+              <span style={{background:active?C.blueBg:C.bg2,border:`1px solid ${active?C.blueBorder:C.border1}`,borderRadius:9999,fontSize:10,fontWeight:700,color:active?C.blue:C.text3,padding:"1px 6px",lineHeight:"14px"}}>{tab.count}</span>
             </button>
           );
         })}
