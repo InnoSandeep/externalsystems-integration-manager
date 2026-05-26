@@ -927,6 +927,74 @@ function JsonNode({ val, depth, highlightKeys }) {
   );
 }
 
+// ─── PAYLOAD PREVIEW PANEL ────────────────────────────────────────────────────
+// Dark code-editor panel rendered between the left sidebar and the mapping table.
+// Shows the raw source payload so users can inspect field paths while mapping.
+//
+// JSON mode  — line-numbered monospace pre block, full fidelity, no truncation.
+// Tree mode  — uses the existing JsonNode component with key-level highlighting.
+// Empty state — shown when no payload has been fetched/pasted yet.
+// Defined at module level (not inside MappingWorkspace) so it never remounts on re-renders.
+function PayloadPreviewPanel({ sampleJson, mode, onSetMode, onPasteClick, onClose, highlightKeys, hasPullEndpoint, fetchState, onFetchSample }) {
+  const BG     = "#0D1117";
+  const BG2    = "#090C14";
+  const BORDER = "#21262D";
+  const LNUM   = "#4B5563";
+  const TEXT   = "#CDD6F4";
+  return (
+    <div style={{width:320,flexShrink:0,borderRight:`1px solid ${BORDER}`,background:BG,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+      {/* Header */}
+      <div style={{padding:"8px 12px",borderBottom:`1px solid ${BORDER}`,display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0,background:BG2}}>
+        <span style={{fontFamily:FONT,fontSize:10,fontWeight:700,color:"#4B5563",textTransform:"uppercase",letterSpacing:"0.1em"}}>Payload Preview</span>
+        <div style={{display:"flex",gap:4,alignItems:"center"}}>
+          {hasPullEndpoint&&(
+            fetchState==="loading"
+              ? <span style={{fontFamily:FONT,fontSize:10,color:"#4B5563"}}>Pulling…</span>
+              : <button onClick={onFetchSample} style={{background:"transparent",border:`1px solid ${BORDER}`,color:"#60A5FA",fontFamily:FONT,fontSize:10,fontWeight:600,padding:"2px 8px",cursor:"pointer",borderRadius:2}}>{fetchState==="done"?"↺ Re-pull":"↓ Pull"}</button>
+          )}
+          <button onClick={onPasteClick} style={{background:"transparent",border:`1px solid ${BORDER}`,color:"#60A5FA",fontFamily:FONT,fontSize:10,fontWeight:600,padding:"2px 8px",cursor:"pointer",borderRadius:2}}>Paste JSON</button>
+          {[["json","JSON"],["tree","Tree"]].map(([k,label])=>(
+            <button key={k} onClick={()=>onSetMode(k)}
+              style={{background:mode===k?"#1D4ED8":"transparent",border:`1px solid ${mode===k?"#3B82F6":BORDER}`,color:mode===k?"#93C5FD":"#4B5563",fontFamily:FONT,fontSize:10,fontWeight:700,padding:"2px 8px",cursor:"pointer",borderRadius:2}}>
+              {label}
+            </button>
+          ))}
+          <button onClick={onClose} title="Hide payload panel"
+            style={{background:"transparent",border:"none",color:"#4B5563",fontSize:13,cursor:"pointer",padding:"0 2px",lineHeight:1,marginLeft:2}}>✕</button>
+        </div>
+      </div>
+      {/* Content */}
+      {sampleJson ? (
+        <div style={{flex:1,overflow:"auto"}}>
+          {mode==="json" ? (
+            <div style={{display:"flex",fontFamily:MONO,fontSize:11,lineHeight:"18px",minWidth:"max-content"}}>
+              <div style={{color:LNUM,textAlign:"right",paddingRight:8,paddingLeft:6,paddingTop:10,paddingBottom:10,userSelect:"none",flexShrink:0,borderRight:`1px solid ${BORDER}`,background:BG2,minWidth:30}}>
+                {sampleJson.split('\n').map((_,i)=><div key={i}>{i+1}</div>)}
+              </div>
+              <pre style={{margin:0,color:TEXT,padding:"10px 14px",background:"transparent",whiteSpace:"pre",flex:1}}>{sampleJson}</pre>
+            </div>
+          ) : (
+            <div style={{padding:"10px 14px",color:TEXT}}>
+              {(()=>{
+                try { return <JsonNode val={JSON.parse(sampleJson)} depth={0} highlightKeys={highlightKeys}/>; }
+                catch { return <span style={{fontFamily:MONO,fontSize:11,color:"#FC8181"}}>Invalid JSON</span>; }
+              })()}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:12,padding:24}}>
+          <span style={{fontFamily:FONT,fontSize:12,color:"#4B5563",textAlign:"center"}}>No payload available.</span>
+          <button onClick={onPasteClick}
+            style={{background:"#1E3A5F",border:"1px solid #2563EB",color:"#93C5FD",fontFamily:FONT,fontSize:12,fontWeight:600,padding:"6px 16px",cursor:"pointer",borderRadius:3}}>
+            Paste JSON
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── SELECTION CARD ───────────────────────────────────────────────────────────
 // Compact wizard-style option card for Direction and Method selection.
 // Title + one-line subtitle. No paragraphs. Reduced padding for a tighter wizard feel.
@@ -1073,7 +1141,8 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
   const [fetchState, setFetch]              = useState("idle");
   const [filterText, setFilterText]         = useState("");
   const [collapsedGrps, setCollapsedGrps]   = useState({});
-  const [sampleJsonOpen, setSampleJsonOpen] = useState(false);
+  const [payloadOpen, setPayloadOpen]       = useState(true);
+  const [payloadMode, setPayloadMode]       = useState("json");
   const [pasteJsonOpen, setPasteJsonOpen]   = useState(false);
   const [pasteJsonText, setPasteJsonText]   = useState("");
   const [pasteJsonError, setPasteJsonError] = useState(null);
@@ -1090,10 +1159,9 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
     if(!open){
       setAutoMapResult(null); setValidateResult(null); setValOpen(false);
       setFetch("idle"); setFilterText(""); setCollapsedGrps({}); setPinnedSrc(null); setHoveredSrc(null);
-      setSampleJsonOpen(false); setPasteJsonOpen(false); setPasteJsonText(""); setPasteJsonError(null);
+      setPayloadOpen(true); setPayloadMode("json"); setPasteJsonOpen(false); setPasteJsonText(""); setPasteJsonError(null);
     } else {
-      // Always open the JSON viewer when the workspace opens
-      setSampleJsonOpen(true);
+      setPayloadOpen(true);
       // Pre-populate with the canonical sample payload if no JSON has been fetched/pasted yet
       if(!formRef.current.sampleJson){
         setForm(f=>({...f, sampleJson:DEFAULT_SAMPLE_JSON, sampleFetched:true,
@@ -1158,7 +1226,7 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
     fetchTimer.current=setTimeout(()=>{
       const sample=`{\n  "id": "OBS-1042",\n  "timestamp": "2025-04-14T08:30:00Z",\n  "asset": {\n    "id": "PUMP-12",\n    "name": "Primary Feed Pump",\n    "location": { "site": "Houston Plant" }\n  },\n  "measurements": [\n    { "value": 98.4, "unit": "degC" }\n  ],\n  "severity": "warning",\n  "description": "Temperature threshold exceeded",\n  "links": { "workOrder": { "href": "/api/workorders/WO-9921" } },\n  "metadata": { "source": "PI-historian", "version": "2.1" }\n}`;
       setForm(f=>({...f,sampleJson:sample,sampleFetched:true,schemaSummary:{recordsReturned:1,fieldsDetected:12,nestedObjects:4,arraysDetected:1,referenceLikeFields:2,pulledAt:new Date().toISOString()}}));
-      setFetch("done"); setSampleJsonOpen(true);
+      setFetch("done"); setPayloadOpen(true);
     },1800);
   }
 
@@ -1184,7 +1252,7 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
     walk(parsed, "");
     setForm(f=>({...f, sampleJson:JSON.stringify(parsed,null,2), sampleFetched:true,
       schemaSummary:{recordsReturned:1,fieldsDetected:leafPaths.size,nestedObjects:nested,arraysDetected:arrs,referenceLikeFields:0,pulledAt:new Date().toISOString()}}));
-    setSampleJsonOpen(true); setPasteJsonOpen(false); setPasteJsonText("");
+    setPayloadOpen(true); setPasteJsonOpen(false); setPasteJsonText("");
   }
 
   function handleAutoMap() {
@@ -1344,8 +1412,8 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
         {/* Body */}
         <div style={{flex:1,display:"flex",overflow:"hidden"}}>
 
-          {/* Left panel: target collections + payload field tree */}
-          <div style={{width:320,flexShrink:0,borderRight:`1px solid ${C.border0}`,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+          {/* Left panel: target collections + source field tree */}
+          <div style={{width:220,flexShrink:0,borderRight:`1px solid ${C.border0}`,display:"flex",flexDirection:"column",overflow:"hidden"}}>
             {/* Collections */}
             <div style={{padding:"10px 14px",borderBottom:`1px solid ${C.border0}`,flexShrink:0}}>
               <div style={{fontFamily:FONT,fontSize:10,fontWeight:700,color:C.text2,textTransform:"uppercase",letterSpacing:"0.08em",marginBottom:6}}>Destination Objects</div>
@@ -1355,57 +1423,6 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
                 ))}
               </div>
             </div>
-
-            {/* Sample Data — header + controls */}
-            <div style={{padding:"10px 14px",borderBottom:`1px solid ${C.border0}`,flexShrink:0}}>
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-                <div style={{fontFamily:FONT,fontSize:10,fontWeight:700,color:C.text2,textTransform:"uppercase",letterSpacing:"0.08em"}}>Sample Data</div>
-                {form.sampleJson&&<button onClick={()=>setSampleJsonOpen(o=>!o)} style={{background:"none",border:"none",color:C.blue,fontFamily:FONT,fontSize:11,fontWeight:600,cursor:"pointer",padding:0}}>{sampleJsonOpen?"Collapse ▲":"Expand ▼"}</button>}
-              </div>
-              <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-                {hasPullEndpoint?(
-                  fetchState==="idle"?<button onClick={handleFetchSample} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.blue,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"4px 10px",cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>▶ Pull sample</button>:
-                  fetchState==="loading"?<button disabled style={{background:C.bg0,border:`1px solid ${C.border0}`,color:C.text3,fontFamily:FONT,fontSize:12,padding:"4px 10px",display:"flex",alignItems:"center",gap:5}}><Spinner size={12}/> Pulling…</button>:
-                  <button onClick={handleFetchSample} style={{background:C.greenBg,border:`1px solid ${C.greenBorder}`,color:C.green,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"4px 10px",cursor:"pointer"}}>✓ Re-pull</button>
-                ):null}
-                <button onClick={()=>{setPasteJsonOpen(o=>!o);setPasteJsonError(null);}} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"4px 10px",cursor:"pointer"}}>
-                  {pasteJsonOpen?"✕ Cancel":"Paste Sample JSON"}
-                </button>
-              </div>
-              {pasteJsonOpen&&(
-                <div style={{marginTop:8}}>
-                  <textarea
-                    value={pasteJsonText}
-                    onChange={e=>setPasteJsonText(e.target.value)}
-                    placeholder='{ "id": "...", "value": 1.23 }'
-                    style={{width:"100%",height:90,fontFamily:MONO,fontSize:11,color:C.text0,background:C.bg1,border:`1px solid ${C.border1}`,padding:"6px 8px",resize:"vertical",outline:"none",boxSizing:"border-box"}}
-                  />
-                  {pasteJsonError&&<div style={{fontFamily:FONT,fontSize:11,color:C.red,marginTop:2}}>{pasteJsonError}</div>}
-                  <div style={{display:"flex",gap:6,marginTop:4}}>
-                    <button onClick={handleApplyPaste} style={{background:C.blue,border:"none",color:"#fff",fontFamily:FONT,fontSize:12,fontWeight:700,padding:"4px 12px",cursor:"pointer"}}>Apply</button>
-                    <button onClick={()=>{setPasteJsonOpen(false);setPasteJsonText("");setPasteJsonError(null);}} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:12,padding:"4px 10px",cursor:"pointer"}}>Cancel</button>
-                  </div>
-                </div>
-              )}
-            </div>
-            {/* JSON tree viewer — always visible when sample data exists */}
-            {form.sampleJson?(
-              sampleJsonOpen&&(
-                <div style={{borderBottom:`1px solid ${C.border0}`,background:C.bg1,overflowY:"auto",maxHeight:260,flexShrink:0,padding:"8px 14px"}}>
-                  {form.schemaSummary&&<div style={{fontFamily:FONT,fontSize:11,color:C.green,marginBottom:6}}>✓ {form.schemaSummary.fieldsDetected} fields detected</div>}
-                  {(()=>{
-                    const hlKeys = selectedSrc ? new Set([selectedSrc.split(/[\.\[]/)[0]]) : null;
-                    try { return <JsonNode val={JSON.parse(form.sampleJson)} depth={0} highlightKeys={hlKeys}/>; }
-                    catch { return <span style={{fontFamily:MONO,fontSize:11,color:C.red}}>Invalid JSON</span>; }
-                  })()}
-                </div>
-              )
-            ):(
-              <div style={{padding:"14px",borderBottom:`1px solid ${C.border0}`,background:C.bg1,flexShrink:0,display:"flex",flexDirection:"column",gap:8,alignItems:"flex-start"}}>
-                <span style={{fontFamily:FONT,fontSize:12,color:C.text3}}>No sample JSON available.</span>
-                <button onClick={()=>{setPasteJsonOpen(true);setPasteJsonError(null);}} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.blue,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"4px 10px",cursor:"pointer"}}>Paste Sample JSON</button>
-              </div>
-            )}
 
             {/* Payload field tree */}
             <div style={{flex:1,overflowY:"auto"}}>
@@ -1426,12 +1443,31 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
             </div>
           </div>
 
+          {/* Payload Preview Panel — dark code-editor panel between field tree and mapping table */}
+          {payloadOpen&&(
+            <PayloadPreviewPanel
+              sampleJson={form.sampleJson}
+              mode={payloadMode}
+              onSetMode={setPayloadMode}
+              onPasteClick={()=>{setPasteJsonOpen(true);setPasteJsonError(null);}}
+              onClose={()=>setPayloadOpen(false)}
+              highlightKeys={selectedSrc?new Set([selectedSrc.split(/[\.\[]/)[0]]):null}
+              hasPullEndpoint={hasPullEndpoint}
+              fetchState={fetchState}
+              onFetchSample={handleFetchSample}
+            />
+          )}
+
           {/* Right panel: mapping table */}
           <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
             {/* Toolbar */}
             <div style={{padding:"10px 20px",borderBottom:`1px solid ${C.border0}`,display:"flex",alignItems:"center",gap:10,flexShrink:0,background:C.bg0,flexWrap:"wrap"}}>
               <AIActionButton label="Auto Map" desc="Match source fields to target paths automatically" running={autoMapRunning} result={autoMapResult} onClick={handleAutoMap} onClear={()=>setAutoMapResult(null)}/>
               <AIActionButton label="Validate" desc="Check required fields, types, and duplicates" running={validateRunning} result={validateResult} onClick={handleValidate} onClear={()=>setValidateResult(null)}/>
+              <button onClick={()=>setPayloadOpen(o=>!o)}
+                style={{background:payloadOpen?"#1E3A5F":"none",border:`1px solid ${payloadOpen?"#2563EB":C.border1}`,color:payloadOpen?"#93C5FD":C.text1,fontFamily:FONT,fontSize:12,fontWeight:600,padding:"4px 10px",cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
+                {payloadOpen?"◀ Payload":"▶ Payload"}
+              </button>
               <div style={{flex:1}}/>
               {dupTargets.length>0&&<span style={{background:C.amberBg,border:`1px solid ${C.amberBorder}`,fontFamily:FONT,fontSize:12,fontWeight:700,color:C.amber,padding:"3px 8px"}}>Duplicate target</span>}
               {form.validationResult&&<button onClick={()=>setValOpen(o=>!o)} style={{background:"none",border:`1px solid ${C.border0}`,fontFamily:FONT,fontSize:12,fontWeight:600,color:C.text1,padding:"4px 10px",cursor:"pointer"}}>{valOpen?"Hide":"Show"} validation</button>}
@@ -1574,6 +1610,28 @@ function MappingWorkspace({ open, form, setForm, system, onBack, onSave }) {
           >Publish Integration</button>
         </div>
       </div>
+
+      {/* Paste JSON modal overlay */}
+      {pasteJsonOpen&&(
+        <div style={{position:"fixed",inset:0,zIndex:220,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(0,0,0,0.55)"}}
+          onClick={e=>{if(e.target===e.currentTarget){setPasteJsonOpen(false);setPasteJsonText("");setPasteJsonError(null);}}}>
+          <div style={{background:C.bg0,border:`1px solid ${C.border1}`,width:480,maxWidth:"90vw",padding:24,display:"flex",flexDirection:"column",gap:12,boxShadow:"0 8px 32px rgba(0,0,0,0.4)"}}>
+            <div style={{fontFamily:FONT,fontSize:14,fontWeight:700,color:C.text0}}>Paste Sample JSON</div>
+            <textarea
+              autoFocus
+              value={pasteJsonText}
+              onChange={e=>setPasteJsonText(e.target.value)}
+              placeholder='{ "id": "...", "value": 1.23 }'
+              style={{width:"100%",height:180,fontFamily:MONO,fontSize:12,color:C.text0,background:"#090C14",border:`1px solid ${C.border1}`,padding:"8px 10px",resize:"vertical",outline:"none",boxSizing:"border-box"}}
+            />
+            {pasteJsonError&&<div style={{fontFamily:FONT,fontSize:12,color:C.red}}>{pasteJsonError}</div>}
+            <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
+              <button onClick={()=>{setPasteJsonOpen(false);setPasteJsonText("");setPasteJsonError(null);}} style={{background:C.bg0,border:`1px solid ${C.border1}`,color:C.text1,fontFamily:FONT,fontSize:13,padding:"6px 16px",cursor:"pointer"}}>Cancel</button>
+              <button onClick={handleApplyPaste} style={{background:C.blue,border:"none",color:"#fff",fontFamily:FONT,fontSize:13,fontWeight:700,padding:"6px 20px",cursor:"pointer"}}>Apply</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
